@@ -1,0 +1,1357 @@
+{
+  "contract": "toolkit-r8-asi-first-five-test-matrix/1-SYNTHETIC",
+  "synthetic": true,
+  "not_authoritative": true,
+  "not_installed_gateway": true,
+  "no_execution_or_catalog_mutation": true,
+  "source_refs": {
+    "main": "fa5765da26522f3b420294e4c858dd6d01b68393",
+    "catalog_pr1322": "96ba1e6c5d355367ec52440297f7558c14f2f953",
+    "read_contract_pr1330": "4fbef8950293c4e92185ed35c04fe3ecc4da7dcb",
+    "planning_pr1349": "d5aed3662d11999ff6d386d5b89b1e93b6ca4aa7"
+  },
+  "fixture_notes": [
+    "Only MOG-09 and INV-OBS-01 are grounded in published canonical data; fixture_only/SYNTH-CASE-1 and all SYNTH refs are strictly simulated examples, never registered runners.",
+    "All 64-digit a/b/c digest strings are artificial syntax placeholders, not hashes of canonical files, signed artifacts or deployed/source bytes.",
+    "credential, scope, cursor_condition and data-size values are symbolic test facts, not usable bearer credentials or actual signed cursors.",
+    "These vectors exercise a bounded pure review model, not an installed /api/supervisor gateway or independent proof of source/oracle/status.",
+    "Published rows now contain EXACTLY the two source-grounded keys; synthetic_v2_probe is isolated and NEVER included in a public-like list/get/sources/preflight/read model.",
+    "All four per-case GETs require the same symbolic publication_snapshot_id and exact local digest. Real catalog publication snapshots, auth middleware, HMAC cursor and rendered byte budgets are NOT implemented or authenticated by this model.",
+    "The in-process isolated probe vectors P05,P13,N21,N26,N27 are evaluated only with project_isolated_v2_probe; ordinary project_synthetic rejects the fictitious case as unpublished.",
+    "Wave 6 #1376: optional runner_class is bounded to FIXED_LOCAL_OPERATOR_OBSERVATION or UNASSIGNED_DESIGN_ONLY from the two published fixture rows; never source this enum from synthetic_v2_probe.",
+    "list now returns deterministic sorted (feature_id,case_id) page rows, published_count as filtered TOTAL, page_count, and an UNSIGNED synthetic-only position marker when there is a following page. P11 then P15 represent a two-page traversal; the '$SYNTH_FIRST_PAGE_CURSOR' literal is resolved only inside the offline fixture evaluation harness.",
+    "Synthetic cursor hashes encode fixture actor, filter tuple, limit, local symbolic publication ID and last key but HAVE NO HMAC, key storage, expiry, transport authentication, real UTF-8 envelope validation or proof against forged cursor generation. Actual ASGI and crypto tests remain NOT_RUN."
+  ],
+  "published_fixture_rows": [
+    {
+      "feature_id": "moghancement",
+      "case_id": "MOG-09",
+      "schema_version": 1,
+      "contract_version": null,
+      "local_definition_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "runner_classification": "FIXED_LOCAL_OPERATOR_OBSERVATION",
+      "source_claims": {
+        "case": [],
+        "steps": {}
+      },
+      "real_id_from_published_spec": true
+    },
+    {
+      "feature_id": "inventory_observation",
+      "case_id": "INV-OBS-01",
+      "schema_version": 1,
+      "contract_version": null,
+      "local_definition_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "runner_classification": "UNASSIGNED_DESIGN_ONLY",
+      "source_claims": {
+        "case": [],
+        "steps": {}
+      },
+      "real_id_from_published_spec": true
+    }
+  ],
+  "vectors": [
+    {
+      "id": "P01",
+      "group": "published_catalog",
+      "operation": "supervisor_scenario_list",
+      "request": {},
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 2
+      }
+    },
+    {
+      "id": "P02",
+      "group": "filtered_catalog",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "moghancement",
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 1
+      }
+    },
+    {
+      "id": "P03",
+      "group": "exact_detail",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "metadata_only"
+      }
+    },
+    {
+      "id": "P04",
+      "group": "local_revision",
+      "operation": "supervisor_scenario_revision",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "local_revision_only"
+      }
+    },
+    {
+      "id": "P05",
+      "group": "case_only_sources",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNKNOWN",
+        "reason": "source_claims_only",
+        "case_source_refs": [
+          "synthetic_case_ref"
+        ],
+        "step_source_refs": {
+          "SYNTH_STEP_1": [
+            "synthetic_step_ref"
+          ],
+          "SYNTH_STEP_2": []
+        }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
+    },
+    {
+      "id": "P06",
+      "group": "step_sources_do_not_infer",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNKNOWN",
+        "reason": "source_claims_only",
+        "case_source_refs": [],
+        "step_source_refs": {}
+      }
+    },
+    {
+      "id": "P07",
+      "group": "advisory_mog_preflight",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNKNOWN",
+        "reason": "advisory_only"
+      }
+    },
+    {
+      "id": "P08",
+      "group": "design_only_not_runner",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "inventory_observation",
+        "case_id": "INV-OBS-01",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "runner_unassigned"
+      }
+    },
+    {
+      "id": "P09",
+      "group": "unsupported_identity",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "gardening",
+        "case_id": "SYNTH-NOT-PUBLISHED",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "P10",
+      "group": "unknown_source_revision",
+      "operation": "supervisor_scenario_revision",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "source_authority": "UNKNOWN"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "local_revision_only"
+      }
+    },
+    {
+      "id": "P11",
+      "group": "published_page_one_with_continuation",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 2,
+        "page_count": 1,
+        "has_more": true
+      }
+    },
+    {
+      "id": "P12",
+      "group": "exact_local_digest",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "metadata_only"
+      }
+    },
+    {
+      "id": "P13",
+      "group": "synthetic_v2_case_details",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "metadata_only"
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
+    },
+    {
+      "id": "N01",
+      "group": "missing_bearer_known",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "auth": "MISSING"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N02",
+      "group": "missing_bearer_unknown",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "nonexistent",
+        "case_id": "SYNTH-UNKNOWN",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "auth": "MISSING"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N03",
+      "group": "bad_bearer_invalid_identity",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "../secrets",
+        "case_id": "bad??",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "auth": "INVALID"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N04",
+      "group": "invalid_identity_authorized",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "../secrets",
+        "case_id": "bad??",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_identity"
+      }
+    },
+    {
+      "id": "N05",
+      "group": "cross_actor_scope",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "scope": "CROSS_ACTOR"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N06",
+      "group": "permissions_denied",
+      "operation": "supervisor_scenario_list",
+      "request": {},
+      "context": {
+        "scope": "DENIED"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N07",
+      "group": "page_26",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 26
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_page_limit"
+      }
+    },
+    {
+      "id": "N08",
+      "group": "forged_cursor",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "FORGED"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N09",
+      "group": "cursor_other_actor",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "OTHER_ACTOR"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N10",
+      "group": "cursor_changed_filters",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "moghancement",
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "WRONG_FILTER"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N11",
+      "group": "cursor_stale_snapshot",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "STALE_SNAPSHOT"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N12",
+      "group": "digest_mismatch",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "revision_conflict"
+      }
+    },
+    {
+      "id": "N13",
+      "group": "revision_digest_conflict",
+      "operation": "supervisor_scenario_revision",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "revision_conflict"
+      }
+    },
+    {
+      "id": "N14",
+      "group": "illegal_contract_version",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "contract_version": 3,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N15",
+      "group": "forged_step_source",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "step_source_ref": "synthetic_case_ref",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N16",
+      "group": "claimed_oracle_approval",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "oracle_approval": "APPROVED",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N17",
+      "group": "proposal_preview_mutation",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "proposal_id": "synthetic-proposal",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N18",
+      "group": "execution_claim",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "execute_now": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N19",
+      "group": "submit_method_not_in_first_five",
+      "operation": "supervisor_scenario_submit",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "unsupported_operation"
+      }
+    },
+    {
+      "id": "N20",
+      "group": "unauthorized_actor_selector",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "actor_id": "synthetic_actor_b"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N21",
+      "group": "stale_source_declaration",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {
+        "source_authority": "STALE"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "source_stale"
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
+    },
+    {
+      "id": "N22",
+      "group": "provider_only_on_pr",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "observer_state": "PR_ONLY"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "observer_not_verified"
+      }
+    },
+    {
+      "id": "N23",
+      "group": "unsupported_observer",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "observer_state": "NOT_IMPLEMENTED"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "BLOCKED",
+        "reason": "observer_unsupported"
+      }
+    },
+    {
+      "id": "N24",
+      "group": "oversized_envelope",
+      "operation": "supervisor_scenario_list",
+      "request": {},
+      "context": {
+        "response_bytes": 65537
+      },
+      "expect": {
+        "http_status": 413,
+        "status": "BLOCKED",
+        "reason": "budget_exceeded"
+      }
+    },
+    {
+      "id": "N25",
+      "group": "oversized_spec",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "spec_bytes": 32769
+      },
+      "expect": {
+        "http_status": 413,
+        "status": "BLOCKED",
+        "reason": "budget_exceeded"
+      }
+    },
+    {
+      "id": "N26",
+      "group": "too_many_sources",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {
+        "source_count": 51
+      },
+      "expect": {
+        "http_status": 413,
+        "status": "BLOCKED",
+        "reason": "budget_exceeded"
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
+    },
+    {
+      "id": "N27",
+      "group": "source_case_only_no_fuzzy_promotion",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {
+        "source_authority": "UNVERIFIED"
+      },
+      "expect": {
+        "http_status": 200,
+        "status": "UNKNOWN",
+        "reason": "source_claims_only",
+        "case_source_refs": [
+          "synthetic_case_ref"
+        ],
+        "step_source_refs": {
+          "SYNTH_STEP_1": [
+            "synthetic_step_ref"
+          ],
+          "SYNTH_STEP_2": []
+        }
+      },
+      "mode": "ISOLATED_SYNTHETIC_V2_PROBE"
+    },
+    {
+      "id": "N28",
+      "group": "unpublished_fictional_identity_no_cursor",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-2",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N29",
+      "group": "smuggled_character_id",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "charid": 1000,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N30",
+      "group": "preflight_claim_lease",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "lease_claimed": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_request"
+      }
+    },
+    {
+      "id": "N31",
+      "group": "unauthorized_before_disclosure",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "execute_now": true,
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {
+        "auth": "INVALID"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N32",
+      "group": "nonascii_identity",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-☃",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_identity"
+      }
+    },
+    {
+      "id": "N33",
+      "group": "invalid_local_digest_format",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "/etc/passwd",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_digest"
+      }
+    },
+    {
+      "id": "N34",
+      "group": "synthetic_probed_id_not_published_get",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N35",
+      "group": "synthetic_probed_id_not_published_sources",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N36",
+      "group": "synthetic_probed_id_not_published_preflight",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "fixture_only",
+        "case_id": "SYNTH-CASE-1",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "UNSUPPORTED",
+        "reason": "not_published"
+      }
+    },
+    {
+      "id": "N37",
+      "group": "authorized_malformed_matched_route_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": "abc"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_page_limit"
+      }
+    },
+    {
+      "id": "N38",
+      "group": "unauthenticated_malformed_matched_route_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": "abc"
+      },
+      "context": {
+        "auth": "MISSING"
+      },
+      "expect": {
+        "http_status": 403,
+        "status": "BLOCKED",
+        "reason": "unauthorized"
+      }
+    },
+    {
+      "id": "N39",
+      "group": "missing_required_publication_snapshot",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_snapshot"
+      }
+    },
+    {
+      "id": "N40",
+      "group": "malformed_publication_snapshot",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "../snap",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_snapshot"
+      }
+    },
+    {
+      "id": "N41",
+      "group": "catalog_changed_after_get_list",
+      "operation": "supervisor_scenario_get",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N42",
+      "group": "source_associations_after_catalog_change",
+      "operation": "supervisor_scenario_sources",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N43",
+      "group": "preflight_after_catalog_change",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N44",
+      "group": "revision_after_catalog_change",
+      "operation": "supervisor_scenario_revision",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1",
+        "expected_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "stale_publication"
+      }
+    },
+    {
+      "id": "N45",
+      "group": "cursor_expired",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "EXPIRED"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N46",
+      "group": "cursor_key_rotated",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "ROTATED_KEY"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N47",
+      "group": "cursor_replayed_at_other_limit",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "synthetic-cursor"
+      },
+      "context": {
+        "cursor_condition": "CHANGED_LIMIT"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N48",
+      "group": "missing_case_digest_in_pinned_snapshot",
+      "operation": "supervisor_scenario_preflight",
+      "request": {
+        "feature_id": "moghancement",
+        "case_id": "MOG-09",
+        "publication_snapshot_id": "synthetic-publication-v1"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_digest"
+      }
+    },
+    {
+      "id": "N49",
+      "group": "twentyfive_item_page_byte_overflow",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 25
+      },
+      "context": {
+        "response_bytes": 65537
+      },
+      "expect": {
+        "http_status": 413,
+        "status": "BLOCKED",
+        "reason": "budget_exceeded"
+      }
+    },
+    {
+      "id": "P14",
+      "group": "runner_fixed_operator_only",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": "FIXED_LOCAL_OPERATOR_OBSERVATION"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 1,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P15",
+      "group": "second_page_after_true_page_one",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 2,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P16",
+      "group": "feature_runner_class_conjunction",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "inventory_observation",
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 1,
+        "page_count": 1,
+        "has_more": false
+      }
+    },
+    {
+      "id": "P17",
+      "group": "feature_runner_class_empty_conjunction",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "feature_id": "moghancement",
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "limit": 1
+      },
+      "context": {},
+      "expect": {
+        "http_status": 200,
+        "status": "OK",
+        "reason": "published_declarations_only",
+        "published_count": 0,
+        "page_count": 0,
+        "has_more": false
+      }
+    },
+    {
+      "id": "N50",
+      "group": "invalid_runner_class",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": "UNREVIEWED_EXECUTION_RUNNER"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_runner_class"
+      }
+    },
+    {
+      "id": "N51",
+      "group": "nonstring_runner_class",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "runner_class": [
+          "FIXED_LOCAL_OPERATOR_OBSERVATION"
+        ]
+      },
+      "context": {},
+      "expect": {
+        "http_status": 400,
+        "status": "BLOCKED",
+        "reason": "invalid_runner_class"
+      }
+    },
+    {
+      "id": "N52",
+      "group": "cursor_other_actor_from_real_page_one",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {
+        "actor": "fixture_actor_b"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N53",
+      "group": "cursor_changed_runner_filter",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "runner_class": "UNASSIGNED_DESIGN_ONLY",
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N54",
+      "group": "cursor_changed_feature_filter",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "feature_id": "moghancement",
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N55",
+      "group": "cursor_changed_page_limit_real_first_page",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 2,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {},
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    },
+    {
+      "id": "N56",
+      "group": "cursor_stale_snapshot_real_first_page",
+      "operation": "supervisor_scenario_list",
+      "request": {
+        "limit": 1,
+        "cursor": "$SYNTH_FIRST_PAGE_CURSOR"
+      },
+      "context": {
+        "publication_snapshot_state": "STALE"
+      },
+      "expect": {
+        "http_status": 409,
+        "status": "BLOCKED",
+        "reason": "cursor_invalid"
+      }
+    }
+  ],
+  "synthetic_v2_probe": {
+    "feature_id": "fixture_only",
+    "case_id": "SYNTH-CASE-1",
+    "schema_version": 1,
+    "contract_version": 2,
+    "local_definition_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "runner_classification": "UNASSIGNED_DESIGN_ONLY",
+    "source_claims": {
+      "case": [
+        "synthetic_case_ref"
+      ],
+      "steps": {
+        "SYNTH_STEP_1": [
+          "synthetic_step_ref"
+        ],
+        "SYNTH_STEP_2": []
+      }
+    },
+    "real_id_from_published_spec": false,
+    "synthetic_only": true,
+    "never_published": true
+  },
+  "publication_snapshot_fixture": {
+    "id": "synthetic-publication-v1",
+    "kind": "SYNTHETIC_IN_MEMORY_ONLY",
+    "digest_authority": "LOCAL_SERIALIZATION_ONLY",
+    "immutable_snapshot_simulated_only": true
+  }
+}
