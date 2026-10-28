@@ -36,6 +36,16 @@ def main():
     assert '@router.get("", response_class=HTMLResponse)' in testing_router
     assert 'app.include_router(feature_testing_router)' in host
     gets.add("/feature-testing")
+    # Scenario Developer is a separate, explicitly registered design-only GET page.
+    # Verify both the router's handler and the app include rather than
+    # treating a Help link or a menu entry as proof of route availability.
+    scenario_router = (ROOT / "src/workbench/server_admin/scenario_authoring/editor_router.py").read_text(encoding="utf-8")
+    app_host = (ROOT / "src/workbench/app/host.py").read_text(encoding="utf-8")
+    assert 'APIRouter(prefix="/scenario-developer"' in scenario_router
+    assert '@router.get("", response_class=HTMLResponse, include_in_schema=False)' in scenario_router
+    assert 'from workbench.server_admin.scenario_authoring.editor_router import router as scenario_developer_router' in app_host
+    assert 'app.include_router(scenario_developer_router)' in app_host
+    gets.add("/scenario-developer")
     seen = set()
     for page in PAGES:
         html = (ROOT / "gui/templates" / page).read_text(encoding="utf-8")

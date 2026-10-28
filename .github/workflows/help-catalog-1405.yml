@@ -1,0 +1,20 @@
+name: Help and Catalog Scenario Boundaries 1405
+on:
+  pull_request:
+    paths:
+      - 'gui/templates/help.html'
+      - 'feature_catalog/features.json'
+      - 'test_fixtures/test_help_catalog_1405.cjs'
+      - '.github/workflows/help-catalog-1405.yml'
+  workflow_dispatch:
+jobs:
+  document-boundaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test test_fixtures/test_help_catalog_1405.cjs
