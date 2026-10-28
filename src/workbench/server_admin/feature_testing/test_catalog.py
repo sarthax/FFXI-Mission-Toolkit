@@ -239,4 +239,10 @@ def get_entry(feature_id: str, case_id: str) -> dict | None:
     revisions = [{"revision": r[0], "specification": json.loads(r[1]), "content_sha256": r[2], "base_spec_sha256": r[3],
                   "source": r[4], "tags": json.loads(r[5]), "created_at": r[6],
                   "events": [{"state": e[1], "note": e[2], "at": e[3]} for e in events if e[0] == r[0]]} for r in rows]
+    from .typed_action_library import execution_path_blockers
+    for rev in revisions:
+        native = (rev["specification"] or {}).get("native_steps")
+        steps = native.get("steps") if isinstance(native, dict) else None
+        if isinstance(steps, list) and all(isinstance(x, dict) for x in steps):
+            rev["execution_path_blockers"] = execution_path_blockers(steps)
     return {**summary, "revisions": revisions}

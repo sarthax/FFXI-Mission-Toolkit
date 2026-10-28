@@ -283,3 +283,14 @@ def test_from_draft_route_needs_the_token_and_maps_errors(client):
     assert client.post(url, json={**body, "draft_revision": 2}, headers=h).json()["revision"] == 2
     assert client.post(url, json={**body, "case_id": "NOPE"}, headers=h).status_code == 400
     assert client.get("/feature-testing/test-catalog/inventory_observation/DRF-1").json()["revision_count"] == 2
+
+
+def test_entry_revision_reports_execution_path_blockers_1412(store):
+    native = {"library_version": 1, "steps": [{"name": "Wait", "do": {"wait_ms": 100}},
+                                              {"name": "Zone", "expect": {"zone": 80}}]}
+    cat.add_revision(spec(native_steps=native), source="manual")
+    rev = cat.get_entry("inventory_observation", "CAT-1")["revisions"][0]
+    blockers = rev["execution_path_blockers"]
+    assert blockers["mcp_task_start"]["status"] == "BLOCKED"
+    assert [b["key"] for b in blockers["mcp_task_start"]["blocked_steps"]] == ["zone"]
+    assert blockers["execution_enabled"] is False
