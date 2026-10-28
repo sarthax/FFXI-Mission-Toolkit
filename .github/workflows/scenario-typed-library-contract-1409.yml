@@ -1,0 +1,20 @@
+name: Scenario Typed Library Contract 1409
+on:
+  pull_request:
+    paths:
+      - "tools/scenario_typed_library_contract_1409.py"
+      - "test_fixtures/test_scenario_typed_library_contract_1409.py"
+      - "docs/workbench/SCENARIO_TYPED_LIBRARY_CONTRACT_1409.md"
+      - ".github/workflows/scenario-typed-library-contract-1409.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  typed-proposal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python test_fixtures/test_scenario_typed_library_contract_1409.py
