@@ -5,6 +5,10 @@ on:
     paths:
       - "src/workbench/server_admin/feature_testing/test_catalog.py"
       - "src/workbench/server_admin/feature_testing/spec_drafts.py"
+      - "src/workbench/server_admin/feature_testing/catalog_view.py"
+      - "gui/templates/feature_testing.html"
+      - "gui/templates/feature_testing_catalog_entry.html"
+      - "test_fixtures/test_test_catalog_browse_1410.py"
       - "src/workbench/server_admin/feature_testing/router.py"
       - "test_fixtures/test_test_catalog_1410.py"
       - "docs/workbench/TEST_CATALOG_1410.md"
@@ -29,4 +33,4 @@ jobs:
         env:
           PYTHONPATH: "src:."
         run: |
-          python -m pytest -q test_fixtures/test_test_catalog_1410.py test_fixtures/test_feature_testing_spec_drafts.py
+          python -m pytest -q test_fixtures/test_test_catalog_1410.py test_fixtures/test_test_catalog_browse_1410.py test_fixtures/test_feature_testing_spec_drafts.py test_fixtures/test_feature_testing_dashboard.py

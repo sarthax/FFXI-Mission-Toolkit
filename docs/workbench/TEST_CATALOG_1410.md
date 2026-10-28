@@ -1,7 +1,7 @@
 # Test Catalog — versioned design-only scenario revisions (#1410)
 
-**Status:** first slice implemented (store, review states, search, local API). No page, no Scenario Developer
-integration and no importer yet. Nothing here makes a scenario runnable.
+**Status:** slices 1 and 2 implemented (store, review states, search, local API, and a read-only browse page). No Scenario
+Developer integration and no importer yet. Nothing here makes a scenario runnable.
 
 ## What it is
 A catalog of scenario **revisions**, distinct from the global Feature Catalog (Toolkit capabilities, `/feature-catalog`)
@@ -35,7 +35,13 @@ with the old content. A revision's review state moves forward through append-onl
 ## Slices
 1. **This one:** `test_catalog.py`, the routes, and tests (immutability, forward-only states, conflict, design-only guard,
    search, auth).
-2. Browse page: a searchable list and entry detail with revision and state history, inside the existing Test catalog tab.
+2. **Done:** browse page. The Test catalog tab (`/feature-testing?tab=catalog`) starts with a "Saved scenario revisions" section (search by
+   text, feature, tag and state; latest revision and state; current published revision; empty and not-configured states;
+   local readers only). Each row opens `/feature-testing/catalog-entry/{feature}/{case}`, a read-only page with the revision table
+   (state history with reviewer notes, source, content hash), a readable view of one revision (default: the current published
+   one, else the latest; `?revision=N` picks another) including the saved typed steps as When / Then, and the full JSON. The
+   page says plainly that it is design-only and that publishing does not make anything runnable. The existing built-in
+   definitions follow below it, unchanged.
 3. "Add to catalog" from Scenario Developer (a saved draft becomes revision N+1; `source = draft:…`).
 4. Import of native XIHeadless scenario JSON into draft revisions. The earlier offline prototype (#1424) predates the typed
    action library and is not reused as is; the importer should call `typed_action_library.review_native_steps`.

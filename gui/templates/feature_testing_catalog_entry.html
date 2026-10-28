@@ -1,0 +1,54 @@
+{% extends "workbench_page.html" %}
+{% block page_archetype %}workbench{% endblock %}
+{% block title %}Catalog entry {{ case_id }}{% endblock %}
+{% block page_heading %}Catalog entry {{ case_id }}{% endblock %}
+{% block page_status %}<span class="wb-readonly-badge">Design-only · read-only</span>{% endblock %}
+{% block page_body %}
+<style>
+.ft-ce-table{width:100%}.ft-ce-table th,.ft-ce-table td{text-align:left;vertical-align:top;overflow-wrap:anywhere;padding:.2rem .8rem .2rem 0}
+.ft-ce-scroll{overflow-x:auto}.ft-ce-warning{border-left:3px solid currentColor;padding-left:.8rem}
+.ft-ce-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto}
+</style>
+<p><a href="/feature-testing?tab=catalog">← Test catalog</a></p>
+{% if not entry %}
+<section class="wb-panel" aria-label="Catalog entry not found"><h2>Not found</h2><p>{{ problem }}</p><p>Entry looked for: <code>{{ feature_id }}</code> / <code>{{ case_id }}</code>.</p></section>
+{% else %}
+<section class="wb-panel">
+<h2>{{ entry.name or entry.case_id }}</h2>
+<p class="ft-ce-warning"><strong>Design-only.</strong> A saved revision can be reviewed and published, which records a reviewer's decision. It does not make the scenario runnable and says nothing about whether it is correct. Run availability: <strong>{{ entry.run_availability }}</strong>.</p>
+<dl>
+<dt>Feature / case</dt><dd><code>{{ entry.feature_id }}</code> / <code>{{ entry.case_id }}</code></dd>
+<dt>Tags</dt><dd>{{ entry.tags|join(', ') if entry.tags else 'None' }}</dd>
+<dt>Latest revision</dt><dd>r{{ entry.latest_revision }} · {{ entry.latest_state }}</dd>
+<dt>Current published revision</dt><dd>{% if entry.current_published_revision %}r{{ entry.current_published_revision }}{% else %}None. No revision has been published.{% endif %}</dd>
+</dl>
+</section>
+<section class="wb-panel" aria-label="Revisions">
+<h3>Revisions and review history</h3>
+<div class="ft-ce-scroll"><table class="ft-ce-table"><thead><tr><th>Revision</th><th>State history</th><th>Source</th><th>Saved (UTC)</th><th>Content SHA-256</th></tr></thead><tbody>
+{% for r in entry.revisions %}<tr{% if r.revision == chosen.revision %} aria-current="true"{% endif %}>
+<td><a href="/feature-testing/catalog-entry/{{ entry.feature_id|urlencode }}/{{ entry.case_id|urlencode }}?revision={{ r.revision }}">r{{ r.revision }}</a>{% if r.revision == chosen.revision %} (shown){% endif %}</td>
+<td>{% for ev in r.events %}{{ ev.state }}{% if ev.note %} <small>“{{ ev.note }}”</small>{% endif %}{% if not loop.last %} → {% endif %}{% endfor %}</td>
+<td>{{ r.source }}</td><td>{{ r.created_at[:19] }}</td><td><code title="{{ r.content_sha256 }}">{{ r.content_sha256[:16] }}</code></td></tr>{% endfor %}
+</tbody></table></div>
+</section>
+<section class="wb-panel" aria-label="Revision r{{ chosen.revision }}">
+<h3>Revision r{{ chosen.revision }}{% if chosen.revision == entry.current_published_revision %} (current published){% endif %}</h3>
+{% if unknown_revision %}<p role="alert">That revision does not exist; showing r{{ chosen.revision }} instead.</p>{% endif %}
+{% if described.purpose %}<p><strong>Purpose:</strong> {{ described.purpose }}</p>{% endif %}
+{% if described.rationale %}<p><strong>Why it matters:</strong> {{ described.rationale }}</p>{% endif %}
+{% if described.preconditions %}<h4>Preconditions</h4><ul>{% for item in described.preconditions %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+{% if described.behavior.given or described.behavior.when or described.behavior.then %}<h4>Given / When / Then (narrative)</h4>
+{% for phase in ['given', 'when', 'then'] %}{% if described.behavior[phase] %}<p><strong>{{ phase|capitalize }}</strong></p><ul>{% for item in described.behavior[phase] %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}{% endfor %}{% endif %}
+<h4>Automatable steps</h4>
+{% if described.steps %}{% for line in described.steps %}<p><strong>{{ line.keyword }}</strong> {{ line.text }} <small>({{ line.step }})</small></p>{% endfor %}
+<p><small>A reading of the saved native steps. It shows no result and does not mean the runner can execute them.</small></p>
+{% else %}<p>No typed steps are saved in this revision.</p>{% endif %}
+{% if described.assertion_ids %}<h4>Assertions</h4><p>{{ described.assertion_ids|join(', ') }}</p>{% endif %}
+{% if described.cleanup %}<h4>Cleanup</h4><ul>{% for item in described.cleanup %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+{% if described.blocking_gaps %}<h4>Open limitations</h4><ul>{% for item in described.blocking_gaps %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+<p><strong>Execution status:</strong> {{ described.execution_status or 'not stated' }} · <strong>Runner:</strong> {{ described.runner or 'not stated' }}</p>
+<details><summary>Full stored specification (JSON)</summary><pre class="ft-ce-json">{{ chosen.specification|tojson(indent=2) }}</pre></details>
+</section>
+{% endif %}
+{% endblock %}
