@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-10-28 — Scenario Developer typed steps and Run Results (#1406 workstream)
+
+**Merged on main:** typed action library with independent actions and checks (#1409, #1452), saved `native_steps` in drafts (#1452, schema record `SCENARIO_NATIVE_STEPS_SCHEMA_PROPOSAL.md`), editor wiring and read-only Advanced mode (#1453, #1460), Add Action Step / Add Check Step (#1454), Given/When/Then preview (#1455), export `"expect": {}` for action-only steps and per-key observed execution paths (#1461), and local verification against a real DSP checkout and XiHeadless loaders (#1456).
+
+**What that does not establish:** drafts are design-only and nothing here is executable. At XiHeadless `e5e8035071` the file loader accepted all 18 native keys but the MCP task path accepted only `wait_ms` (#1459); whether the runner executes accepted steps was not run (no authorized operator). #1411 stays open for that controlled run.
+
+**Run Results:** a read-only page already exists (`/feature-testing/run/{id}`, history at `?tab=runs`). Remaining gaps tracked under #1408: a Compare-runs view (needs the importer to record definition digest, environment and fixture identity before `revision_comparison` can say anything but NOT_COMPARABLE) and plain-language BLOCKED/UNKNOWN/bare-PASS states with the runner job shown separately from the verdict. Authentic MOG-09 receipts (#1420) stay unmerged pending the owner's privacy decision. Publish, preflight and supervised run remain #1412 and need an authorized operator.
+
+---
+
 # Current Workbench Roadmap
 
 ## 2026-10-22 — R7 integrated, browser-accepted subset / R8 offline candidates (latest release checkpoint)

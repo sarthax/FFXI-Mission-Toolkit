@@ -26,6 +26,7 @@
 </div>
 <p><a href="/feature-testing/scenario/{{ result.feature_id|urlencode }}/{{ result.case_id|urlencode }}?run={{ run_id|urlencode }}">Open scenario definition with this run selected</a></p>
 <div class="ft-metadata"><span><strong>Stage:</strong> {{ result.stage }}</span><span><strong>Observed UTC:</strong> {{ result.observed_at }}</span></div>
+{% with outcome=outcomes.get(loop.index0) %}{% include "feature_testing_outcome.html" %}{% endwith %}
 {% set reevaluation = reevaluations.get(loop.index0) %}
 {% with scenario_view=scenario_views.get(loop.index0) %}{% include "feature_testing_steps.html" %}{% endwith %}
 {% if reevaluation %}

@@ -63,6 +63,28 @@ def jobs(limit: int = 20) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def job_for_run(run_id: str) -> dict | None:
+    """The runner job that produced ``run_id``: status, phase, verdict and error only (never account or character).
+
+    Read-only. Returns None when no job store is configured or present, or no job recorded that run. It never
+    creates the store.
+    """
+    try:
+        path = _db_path()
+    except ValueError:
+        return None
+    if not path.is_file():
+        return None
+    try:
+        with _LOCK, _connect() as db:
+            db.row_factory = sqlite3.Row
+            row = db.execute("SELECT status, phase, verdict, error FROM feature_test_jobs WHERE run_id=? "
+                             "ORDER BY created_at DESC LIMIT 1", (run_id,)).fetchone()
+    except sqlite3.Error:
+        return None
+    return dict(row) if row else None
+
+
 def _set_phase(job_id: str, phase: str) -> None:
     if phase not in {"not_started", "runner_invoked", "runner_finished", "report_validated", "evidence_imported", "operator_reconciled", "failed"}:
         raise ValueError("unknown execution phase")

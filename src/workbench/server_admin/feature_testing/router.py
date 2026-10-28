@@ -152,9 +152,14 @@ def run_page(request: Request, run_id: str):
             reevaluations.get(index, {"recorded_verdict": row["verdict"]}),
             run_id,
         )
+    from .execution_jobs import job_for_run
+    from .run_outcome import describe_outcome
+    job = job_for_run(run_id)
+    outcomes = {index: describe_outcome(row, job) for index, row in enumerate(rows)}
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
                                       context={"title": "Test Run", "run_id": run_id, "records": rows,
-                                               "reevaluations": reevaluations, "scenario_views": scenario_views})
+                                               "reevaluations": reevaluations, "scenario_views": scenario_views,
+                                               "outcomes": outcomes})
 
 
 def _summaries() -> list[dict]:
