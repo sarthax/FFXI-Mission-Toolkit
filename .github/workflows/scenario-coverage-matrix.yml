@@ -2,6 +2,7 @@ name: Scenario Coverage Matrix (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "src/workbench/server_admin/scenario_coverage/**"
       - "gui/templates/feature_testing_coverage.html"
@@ -14,8 +15,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   synthetic-coverage:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
