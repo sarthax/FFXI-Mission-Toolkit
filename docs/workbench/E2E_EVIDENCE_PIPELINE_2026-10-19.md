@@ -7,7 +7,7 @@ Result: **achieved** for the deterministic path; tool server registered and a gr
 
 | Repo | Branch @ SHA | Local state |
 |---|---|---|
-| Toolkit `D:\Claude\mission_toolkit` | `main` fast-forwarded to `b42e0c65` (#1111); this work on `fix/supervisor-openapi-empty-paths-20261018` | untracked/modified files pre-existed (`docs/shift_report.log`, `data/assault/assault_reviews.db`, `data/root_archive/`, 4 `domains/definitions.d/*.json`) — untouched |
+| Toolkit `<local Toolkit checkout>` | `main` fast-forwarded to `b42e0c65` (#1111); this work on `fix/supervisor-openapi-empty-paths-20261018` | untracked/modified files pre-existed (`docs/shift_report.log`, `data/assault/assault_reviews.db`, `data/root_archive/`, 4 `domains/definitions.d/*.json`) — untouched |
 | XiHeadless `...\headless-research\xiheadless-dsp` | `main` @ `1c657bc46b7297479337b86027d9c15dfcc551d4` | **dirty, owned by another agent**: `Capabilities/Inventory.cs`, `Game/PacketParsers.cs`, `Game/WorldState.cs`, `Interfaces/IInventory.cs`, `Mcp/McpBrain.cs`, `tools/scenario_runner.py`. Not modified. The built `bin/mcp/XiHeadless.dll` includes these edits (sha256 recorded in each report). |
 | DSP `<local DSP checkout>` | `main` @ `f2d771e0fc818cf2b2a65aea123253f5f4be438c` | `GIT_VER`, `data/` untracked |
 
@@ -16,7 +16,7 @@ Result: **achieved** for the deterministic path; tool server registered and a gr
 ## 2. Supervisor gateway (tested against an isolated instance on 127.0.0.1:8421)
 
 A second Toolkit process was started so the already-running 8420 instance (older code, no supervisor token) was not disturbed.
-Launcher + env: `D:\MissionToolkitData\start_toolkit.ps1`, `supervisor.env.ps1` (secrets, outside any repo).
+Launcher + env: `<local data dir>\start_toolkit.ps1`, `supervisor.env.ps1` (secrets, outside any repo).
 
 | Endpoint | Result |
 |---|---|
@@ -57,12 +57,12 @@ Limits of this PASS: "uninstalled" is inferred from zero aura / KI 0 via GM info
 Runner: `tools/observation_runner.py` (xiheadless-dsp). Reproduce:
 
 ```powershell
-. D:\MissionToolkitData\supervisor.env.ps1
-py -3 tools\observation_runner.py --out-dir D:\MissionToolkitData\artifacts\runN
-python -m workbench.server_admin.feature_testing.importer --catalog data\testing\feature_test_readiness.json --database D:\MissionToolkitData\feature_results.sqlite --report D:\MissionToolkitData\artifacts\runN\report.json
+. <local data dir>\supervisor.env.ps1
+py -3 tools\observation_runner.py --out-dir <local data dir>\artifacts\runN
+python -m workbench.server_admin.feature_testing.importer --catalog data\testing\feature_test_readiness.json --database <local data dir>\feature_results.sqlite --report <local data dir>\artifacts\runN\report.json
 ```
 
-Raw evidence: `D:\MissionToolkitData\artifacts\run1|run2\{client_observations,persisted_inventory,report}.json`, `run1\discovery.json` (full tool schemas).
+Raw evidence: `<local data dir>\artifacts\run1|run2\{client_observations,persisted_inventory,report}.json`, `run1\discovery.json` (full tool schemas).
 `headless_commit` is the real xiheadless git HEAD; the working tree was dirty (listed in each report's `provenance`).
 
 ## 6. Import status
@@ -93,7 +93,7 @@ Conclusion: registration is secure and end-to-end grounded tool use works with a
 ## 8. Gaps and blockers
 
 - Port 8420 Toolkit instance runs old code without supervisor env; needs a restart by its owner.
-- Toolkit `.venv` lacks `pytest` and `PyMySQL`; system Python has an antlr runtime mismatch. This run vendored PyMySQL into `D:\MissionToolkitData\extra_site` on `PYTHONPATH`.
+- Toolkit `.venv` lacks `pytest` and `PyMySQL`; system Python has an antlr runtime mismatch. This run vendored PyMySQL into `<local data dir>\extra_site` on `PYTHONPATH`.
 - Supervisor has no key-item endpoint, no Safe 2 / furniture-layout view, and `headless` log source is unconfigured.
 - Importer `headless_commit` must be a git SHA, but the headless checkout has uncommitted changes, so the report is not exactly reproducible from the SHA alone (DLL hash recorded as compensation).
 - Env-file pitfall hit during setup: writing Windows paths with `\f` through Python/shell escapes silently corrupted `MISSION_TOOLKIT_TEST_RESULTS_DB`; `health` still said `results_configured: true` because it only checks the variable is set, not that the file exists.
