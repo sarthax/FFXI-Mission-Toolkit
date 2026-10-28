@@ -69,7 +69,8 @@ draft's steps into the builder through the same server review used for pasted JS
 `native_steps` back and count as unsaved work. If the builder cannot show a draft's steps (library unavailable,
 a step with an extra field such as `note`, a shape it does not recognise) it says so, disables adding, and the
 saved steps are left exactly as they were. In Advanced mode the JSON text is the document and the builder is
-read-only. Builder provenance notes (which catalog row filled a value) are not saved with the draft.
+read-only: the builder's own handlers refuse edits (not only the browser's `inert`) and a note says why. The lock follows the
+mode on every document replacement, so opening, forking or creating a draft while Advanced is open returns to an editable builder. Builder provenance notes (which catalog row filled a value) are not saved with the draft.
 
 ## Reviewing native scenario JSON (#1411)
 `review_native_steps(steps)` checks pasted native scenario steps (for example from an agent or a scenario file)
