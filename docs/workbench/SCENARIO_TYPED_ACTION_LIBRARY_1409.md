@@ -68,7 +68,7 @@ MCP `task_scenario_start` path accepted that key when the local verification fed
 exported), and MCP accepted only `wait_ms`: other actions are rejected as `scenario_resource_actions_not_yet_supported`,
 `invite`/`accept_invite` as `scenario_legacy_actions_not_supported`, and every check as
 `scenario_expectations_not_yet_supported`. The builder shows this beside the chosen step type and on each step. It
-is acceptance only: `execution_tested` is always false, and nothing here says the runner dispatches a key. The table is
+is acceptance only: `execution_tested` is always false, and nothing here says the runner dispatches a key. One later live run (see the runner follow-up in `SCENARIO_1411_LOCAL_VERIFICATION.md`) showed the runner dispatching `walk_to` but failing its `x_near` check, so it does not change any row. The table is
 a snapshot and goes stale if XiHeadless changes; a test pins the keys against the library so a new key cannot be added
 without a decision about its row.
 
