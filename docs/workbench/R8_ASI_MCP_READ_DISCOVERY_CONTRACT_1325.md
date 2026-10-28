@@ -116,6 +116,29 @@ implementation may return `OK` only for structurally valid metadata,
 not authenticated client/server truth. All discovered scenarios,
 including MOG-09, contain the same denied-authority object.
 
+### 3A. Normative `data.recent[]` item schema (evidence summary)
+
+Applies only to `supervisor_scenario_evidence_summary`. `data.recent` is a
+list of **at most 10** items (also bounded by `pagination.limit`); each item
+has **exactly** these fields and no others (unknown fields are rejected):
+
+| Field | Rule |
+| --- | --- |
+| `ref_id` | String, 1-120 printable ASCII characters (`!` through `~`), **no whitespace**; colons are **allowed**. Own `REF_ID` pattern `[!-~]{1,120}`; it is deliberately **not** the identity `KEY` pattern (which forbids colons). Same bounds as #1329 `scenario_evidence_ref_v0_NONCANONICAL.ref_id`, whose synthetic vectors start `evidence:synthetic:`. A display string only: never authentication, a path, or an executable locator |
+| `recorded_verdict` | `null`, `PASS`, `FAIL`, `PARTIAL` or `UNKNOWN`; an imported/recorded label, never independent verification |
+| `attempt_completeness` | `COMPLETE`, `PARTIAL` or `UNKNOWN` |
+| `excerpt` | Short bounded human text, 1-200 printable ASCII characters (space allowed, no control characters/newlines), sanitized and redacted; no raw chat, paths or account data |
+
+**Identity mapping with #1329.** In this contract the envelope key
+`scenario.scenario_id` is the **canonical** case identifier for joins, with
+`feature_id`. #1329 `scenario.case_id` carries the **same value** and maps to
+`scenario_id` by exact string equality (`feature_id` equal and
+`case_id == scenario_id`); no case folding, trimming or fuzzy matching. Any
+disagreement is `BLOCKED`, not a best-effort join. Items do not repeat the
+scenario identity; it is taken from the envelope. The #1328
+`failure_evidence_refs` mapping to this `ref_id` is **not yet checked** and
+remains a separate review item.
+
 ### Identity, security, bounds and deterministic paging
 
 - Service scope: local loopback (existing supervisor gateway only).
@@ -216,8 +239,11 @@ proposal, evidence or capability schemas. At this design checkpoint:
   Headless v2 import. Agent D's own `scenario_evidence_summary`
   is a provisional conceptual tool name, **not registered**. Use the
   gateway's stricter **10-record / 64-KiB** cap even if a downstream
-  read model allows a larger query. If #1329 is unmerged or unavailable,
-  return `UNKNOWN` rather than fabricated zero or facts.
+  read model allows a larger query. #1329 is now merged, but only as a
+  **design-only** contract: no evidence projector is implemented or accepted.
+  Until a separately reviewed projector and an approved, bounded SELECT-only
+  data source exist, the gateway must return `UNKNOWN` rather than fabricated
+  zero or facts. The `data.recent[]` item shape is normative in section 3A.
 - **Agent E [#1327](https://github.com/sarthax/FFXI-Mission-Toolkit/pull/1327)**
   owns the **proposed** observation provider inventory. Canonical
   `observations[]` labels (`db_bag`, `db_safe`,
