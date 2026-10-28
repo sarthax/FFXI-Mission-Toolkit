@@ -150,6 +150,11 @@ Imported/recalculated PASS is not independently verified proof.
 <p class="sd-muted">Claims only: metadata is not independently authenticated. Direct CASE and STEP citations require explicit canonical contract_v2.source_associations validated by source_attribution_report; oracle-linked citations are separate expected-value candidates and never establish source-to-step attribution. This panel does not approve, save or execute.</p>
 <div id="sd-contract-v2" aria-live="polite">Legacy v1 — no contract_v2 metadata.</div>
 </section>
+<section class="sd-block" id="sd-typed-steps" aria-label="Typed step builder">
+<h2>Typed step builder — native Headless draft steps</h2>
+<p class="sd-muted">Pick a reviewed step type, fill in typed values and copy valid native Headless <code>do</code> / <code>expect</code> JSON. Values are checked by the Toolkit's typed action library. This does not edit or save the scenario draft above and does not run anything.</p>
+<div id="sd-typed-root" aria-live="polite">Loading the typed step library&hellip;</div>
+</section>
 <div class="sd-block">
 <h2>Validate, preview and save</h2>
 <div class="sd-bar">
@@ -175,4 +180,5 @@ Imported/recalculated PASS is not independently verified proof.
 <script src="/static/scenario_draft_guard.js"></script>
 <script src="/static/scenario_validation_feedback.js"></script>
 <script src="/static/scenario_developer.js"></script>
+<script src="/static/scenario_typed_steps.js"></script>
 {% endblock %}

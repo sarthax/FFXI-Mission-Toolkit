@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Any
 
 from .context_handoff import coverage_context, inspect_evidence_review
 from .validation_feedback import field_errors
@@ -26,6 +27,7 @@ from workbench.server_admin.feature_testing.scenario_presentation import scenari
 from workbench.server_admin.feature_testing.scenario_contract_v2 import (
     compatibility_report, source_attribution_report,
 )
+from workbench.server_admin.feature_testing import typed_action_library
 from workbench.server_admin.feature_testing.router import load_test_catalog
 from workbench.server_admin.feature_testing.spec_drafts import _validate_draft
 from workbench.server_admin.feature_testing.test_specifications import (
@@ -143,6 +145,28 @@ def validate_editor_spec(payload: dict) -> dict:
             "warnings": (["Assertions without step coverage: " + ", ".join(uncovered)] if uncovered else [])
                         + (["UNKNOWN expected oracle in " + ", ".join(unknowns)] if unknowns else [])
                         + gaps}
+
+
+class TypedStepRequest(BaseModel):
+    template_id: str
+    action_value: Any = None
+    expectation_value: Any = None
+
+
+@router.get("/typed-library", include_in_schema=False)
+def typed_library(request: Request):
+    """The reviewed typed action library (#1409) as read-only data; nothing here executes anything."""
+    return typed_action_library.export_registry()
+
+
+@router.post("/typed-step", include_in_schema=False)
+def typed_step(request: Request, body: TypedStepRequest):
+    """Validate values against a library template and return the native draft step, or say what is wrong."""
+    _local_origin(request)
+    try:
+        return typed_action_library.build_step(body.template_id, body.action_value, body.expectation_value)
+    except typed_action_library.TypedStepError as exc:
+        raise HTTPException(422, {"message": str(exc), "part": exc.part}) from exc
 
 
 @router.get("", response_class=HTMLResponse, include_in_schema=False)

@@ -87,6 +87,14 @@ _CHECKS = {
 }
 
 
+class TypedStepError(ValueError):
+    """A step could not be built. ``part`` says what was wrong: ``template``, ``action`` or ``expectation``."""
+
+    def __init__(self, message: str, part: str):
+        super().__init__(message)
+        self.part = part
+
+
 def check_param(spec: dict, value: object) -> str | None:
     """Return None if ``value`` satisfies the parameter spec, else a short reason."""
     return _CHECKS[spec["type"]](value, spec)
@@ -174,7 +182,7 @@ def get_template(template_id: str) -> dict:
     for template in _TEMPLATES:
         if template["id"] == template_id:
             return _public(template)
-    raise ValueError(f"unknown template: {template_id!r}")
+    raise TypedStepError(f"unknown template: {template_id!r}", "template")
 
 
 def export_registry() -> dict:
@@ -191,13 +199,13 @@ def build_step(template_id: str, action_value: object, expectation_value: object
     """
     template = get_template(template_id)
     if template["kind"] != "action_expectation":
-        raise ValueError(f"{template_id} is a Toolkit readback ({template['readback']['route']}), "
-                         "not a Headless step; it has no native action or expectation")
+        raise TypedStepError(f"{template_id} is a Toolkit readback ({template['readback']['route']}), "
+                             "not a Headless step; it has no native action or expectation", "template")
     for part, value in (("action", action_value), ("expectation", expectation_value)):
         param = template[part]["param"]
         problem = check_param(param, value)
         if problem:
-            raise ValueError(f"{template_id}: {part} parameter {param['name']!r} {problem}")
+            raise TypedStepError(f"{template_id}: {part} parameter {param['name']!r} {problem}", part)
     return {"template_id": template_id,
             "do": {template["action"]["native_key"]: copy.deepcopy(action_value)},
             "expect": {template["expectation"]["native_key"]: copy.deepcopy(expectation_value)},
