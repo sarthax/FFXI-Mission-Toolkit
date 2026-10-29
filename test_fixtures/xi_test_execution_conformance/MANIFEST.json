@@ -1,0 +1,42 @@
+{
+ "digest_scope": "raw file bytes (sha256-bytes-v1)",
+ "files": [
+  {
+   "length": 4942,
+   "path": "cancelled.json",
+   "sha256": "acf4aca6f4c436b08f06cd3ac14c88fbfff628e86f9dd0407435aea6caf0d91a"
+  },
+  {
+   "length": 3811,
+   "path": "interrupted.json",
+   "sha256": "a38e279a85f75345206f24fa3f2e7f4df7f1a24c3f88f77f43518de9c2a85708"
+  },
+  {
+   "length": 4305,
+   "path": "multi_bot.json",
+   "sha256": "6cd9379e8a8812f7b216b50322bb0fe8e65b2fc568faa032a03afc7dbef49d90"
+  },
+  {
+   "length": 1614,
+   "path": "refused.json",
+   "sha256": "2730d40c37a0f23e4af6e1c82cf58d30a02c5dc375fa42a9e33124f809a6c080"
+  },
+  {
+   "length": 4369,
+   "path": "success.json",
+   "sha256": "22ae32d4bf366b0b670c6da48043e766ec4be300d1913a0500f8eedac082e217"
+  },
+  {
+   "length": 3801,
+   "path": "timed_out.json",
+   "sha256": "881891515d416413ba981d69d3f02111f866dcce1528ecacbd8ad29899998e7b"
+  },
+  {
+   "length": 3806,
+   "path": "unknown_oracle.json",
+   "sha256": "967e14941c16d0ccf706ce2350956077ed0856c71f284f2520249e971778d5c4"
+  }
+ ],
+ "protocol": "xi-test-execution",
+ "protocol_revision": "1.0.0-draft.1"
+}

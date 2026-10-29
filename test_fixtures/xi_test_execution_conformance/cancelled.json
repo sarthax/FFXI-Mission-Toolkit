@@ -1,0 +1,190 @@
+{
+ "case": "cancelled",
+ "messages": [
+  {
+   "data": {
+    "idempotency_key": "idem.1",
+    "limits": {
+     "deadline_at": "2026-10-20T10:05:00Z",
+     "max_runtime_ms": 300000
+    },
+    "prerequisites": {
+     "authorization_ref": "auth.local",
+     "capabilities": [
+      "party"
+     ],
+     "environment_id": "env.local",
+     "required_roles": [
+      {
+       "role": "leader",
+       "slot_id": "slot.leader"
+      }
+     ]
+    },
+    "requested_by": "local_authorized_controller",
+    "requested_revisions": {
+     "dsp_commit": null,
+     "headless_commit": null,
+     "toolkit_commit": null
+    },
+    "run_id": "run.synthetic",
+    "test_definition": {
+     "case_id": "case.synthetic",
+     "definition_digest": "sha256-bytes-v1:0000000000000000000000000000000000000000000000000000000000000000",
+     "definition_revision": "1",
+     "feature_id": "feat.synthetic",
+     "oracle_ids": [
+      "oracle.roster"
+     ],
+     "scenario_digest": "sha256-bytes-v1:0000000000000000000000000000000000000000000000000000000000000000",
+     "scenario_id": "wait8",
+     "stage": "gameplay"
+    }
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "submit_request",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.1"
+  },
+  {
+   "data": {
+    "admission": "accepted",
+    "execution_id": "exec.1",
+    "operation_id": "op.1",
+    "state": "accepted"
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "submit_response",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.1"
+  },
+  {
+   "data": {
+    "execution_id": "exec.1",
+    "reason_code": "operator_requested"
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "cancel_request",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.4"
+  },
+  {
+   "data": {
+    "code": "cancellation_requested",
+    "observed_state": "running",
+    "request_accepted": true
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "cancel_response",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.4"
+  },
+  {
+   "data": {
+    "admission": "accepted",
+    "cleanup": {
+     "baseline_restored": null,
+     "completed_at": null,
+     "details_codes": [],
+     "lease_released": false,
+     "logout_verified": false,
+     "state": "pending"
+    },
+    "journal_recovery_status": "none",
+    "result_available": false,
+    "state": "cancelled",
+    "state_observed_at": "2026-10-20T10:00:00Z"
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "status_response",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.2"
+  },
+  {
+   "data": {
+    "artifacts": [
+     {
+      "digest": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "digest_algorithm": "sha256-bytes-v1",
+      "media_type": "application/json",
+      "ref": "out/result.json",
+      "status": "available"
+     }
+    ],
+    "assertions": [
+     {
+      "authority": "client_observed",
+      "expected": "3 members",
+      "observation_kind": "party_roster",
+      "observed": "n/a",
+      "observed_at": "2026-10-20T10:05:00Z",
+      "oracle_id": "oracle.roster",
+      "oracle_revision": "1",
+      "origin": "headless_client",
+      "verdict": "BLOCKED"
+     }
+    ],
+    "attempt": 1,
+    "cleanup": {
+     "baseline_restored": null,
+     "completed_at": null,
+     "details_codes": [],
+     "lease_released": true,
+     "logout_verified": true,
+     "state": "verified"
+    },
+    "execution_id": "exec.1",
+    "finished_at": "2026-10-20T10:05:00Z",
+    "operation": {
+     "operations": [],
+     "source_state": "cancelled",
+     "state": "cancelled"
+    },
+    "revisions": {
+     "dsp_commit": null,
+     "headless_commit": null,
+     "toolkit_commit": null
+    },
+    "role_results": [
+     {
+      "role": "leader",
+      "slot_id": "slot.leader",
+      "state": "done"
+     }
+    ],
+    "run_id": "run.synthetic",
+    "started_at": "2026-10-20T10:00:00Z",
+    "synthetic": true,
+    "test_definition": {
+     "case_id": "case.synthetic",
+     "definition_digest": "sha256-bytes-v1:0000000000000000000000000000000000000000000000000000000000000000",
+     "definition_revision": "1",
+     "feature_id": "feat.synthetic",
+     "oracle_ids": [
+      "oracle.roster"
+     ],
+     "scenario_digest": "sha256-bytes-v1:0000000000000000000000000000000000000000000000000000000000000000",
+     "scenario_id": "wait8",
+     "stage": "gameplay"
+    },
+    "unknowns": [
+     "toolkit_commit: not recorded (synthetic)",
+     "headless_commit: not recorded (synthetic)",
+     "dsp_commit: not recorded (synthetic)"
+    ],
+    "verdict": "BLOCKED"
+   },
+   "emitted_at": "2026-10-20T10:00:00Z",
+   "kind": "result_bundle",
+   "protocol": "xi-test-execution",
+   "protocol_version": "1.0.0-draft.1",
+   "request_id": "req.3"
+  }
+ ],
+ "synthetic": true
+}
