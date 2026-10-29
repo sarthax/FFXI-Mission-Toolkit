@@ -1,53 +1,9 @@
-from types import SimpleNamespace
-
 import pytest
 
 from workbench.server_admin.auction_house.legacy_test_executor import LegacyTestExecutionBlocked
 from workbench.server_admin.auction_house.reward_delivery import preview_reward_delivery
 
-
-class Cursor:
-    def __init__(self, connection):
-        self.connection = connection
-        self.rows = []
-
-    def execute(self, sql, params=()):
-        if sql.startswith("DESCRIBE `chars`"):
-            self.rows = [("charid",), ("charname",)]
-        elif "FROM `chars`" in sql:
-            if " IN (" in sql:
-                wanted = {int(value) for value in params}
-                self.rows = [row for row in self.connection.characters if row[0] in wanted]
-            else:
-                limit = int(params[0]) if params else 5001
-                self.rows = list(self.connection.characters)[:limit]
-        else:
-            raise AssertionError(sql)
-
-    def fetchall(self):
-        return list(self.rows)
-
-    def close(self):
-        pass
-
-
-class Connection:
-    def __init__(self, characters):
-        self.characters = list(characters)
-
-    def cursor(self):
-        return Cursor(self)
-
-
-class Service:
-    def __init__(self):
-        self.connection = Connection([(1, "Alpha"), (2, "Beta")])
-        self.schema = SimpleNamespace(family_hint="legacy-compatible")
-
-    def item_snapshot(self, item_id):
-        if int(item_id) != 100:
-            return None
-        return {"item_id": 100, "name": "Potion", "stack_size": 12}
+from _auction_house_reward_support import Service
 
 
 def test_preview_selected_resolves_exact_recipient_order():
