@@ -14,7 +14,7 @@ import re
 import pytest
 
 from workbench.server_admin.feature_testing.importer import validate_report
-from workbench.server_admin.feature_testing.results import VERDICTS
+from workbench.server_admin.feature_testing.results import VERDICTS as TOOLKIT_VERDICTS
 
 
 CORPUS = Path(__file__).parent / "xi_test_execution_conformance"
@@ -240,7 +240,7 @@ def test_legacy_importer_is_not_a_direct_wire_protocol_consumer():
 def test_toolkit_unknown_supported_but_not_wire_authorization():
     # The current Toolkit v1 local importer recognizes UNKNOWN, unlike older
     # guidance; that does NOT make a synthetic Headless wire result importable.
-    assert "UNKNOWN" in VERDICTS
+    assert "UNKNOWN" in TOOLKIT_VERDICTS
     catalog = {"features": [{"id": "feat.synthetic", "cases": [{"id": "case.synthetic"}]}]}
     row = {
         "run_id": "run.synthetic", "case_id": "case.synthetic", "feature_id": "feat.synthetic",
