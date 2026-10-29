@@ -110,6 +110,7 @@
 {% elif not entities %}
 <p class="muted">No entities with path data found for this zone in this capture.</p>
 {% else %}
-<p class="muted">No zone-geometry cache available for this zone yet.</p>
+{% include "_build_topdown_cache.html" %}
+{% if zoneid is none %}<p class="muted">Could not resolve this zone to a zone id.</p>{% endif %}
 {% endif %}
 {% endblock %}
