@@ -74,6 +74,10 @@
 <label>Test account<input id="ft-run-account" value="{{ run_defaults.account }}" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
 <label>Character ID<input id="ft-run-character" value="{{ run_defaults.charid }}" type="number" min="1" required></label>
 <label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
+<fieldset id="ft-run-options"><legend>Run options</legend>
+<p class="ft-note">Defaults are the safe state. Shortcut switches skip normal bot behaviour, so a run that uses them is recorded as such and is not a normal-play result. Some switches only work on xiheadless builds that carry them.</p>
+{% for opt in run_option_switches %}<label class="ft-check"><input type="checkbox" data-env="{{ opt.env }}" {% if opt.default %}checked{% endif %}> {{ opt.label }}{% if opt.shortcut %} <strong>(shortcut)</strong>{% endif %} <small>{{ opt.help }}</small></label>
+{% endfor %}</fieldset>
 <label class="ft-check"><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
 <button type="submit" class="ft-primary" {% if not builder_preflight.ready_for_operator_review %}disabled aria-disabled="true" title="Fix blocked prerequisites before requesting operator launch"{% endif %}>Launch MOG-09</button>
 <button type="button" id="ft-refresh-jobs">Refresh</button>
@@ -126,7 +130,8 @@ form.addEventListener('submit',async event=>{
   const body={account:document.getElementById('ft-run-account').value,
     charid:Number(document.getElementById('ft-run-character').value),
     supervisor_port:Number(document.getElementById('ft-run-port').value),
-    approval:document.getElementById('ft-run-approval').checked};
+    approval:document.getElementById('ft-run-approval').checked,
+    run_options:Object.fromEntries([...document.querySelectorAll('#ft-run-options input[data-env]')].map(el=>[el.dataset.env,el.checked]))};
   const result=await request('/feature-testing/builder/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   note.textContent='Queued job '+result.job_id+'. Refresh status to see results.';
   await refresh();
