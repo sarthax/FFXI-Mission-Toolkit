@@ -13,6 +13,12 @@
 .ft-metadata{display:flex;flex-wrap:wrap;gap:.6rem 1.5rem;margin:.75rem 0}
 .ft-assertions{overflow-x:auto}
 .ft-inspect{max-width:100%;overflow-wrap:anywhere}
+.ft-run-overview{margin:.75rem 0 1rem}
+.ft-run-overview dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.4rem 1rem;margin:.6rem 0}
+.ft-run-overview dt{font-weight:700}
+.ft-run-overview dd{margin:0;overflow-wrap:anywhere}
+.ft-run-verdicts{display:flex;gap:.45rem 1rem;flex-wrap:wrap}
+@media(max-width:520px){.ft-run-overview dl{grid-template-columns:1fr}}
 </style>
 <p><a href="/feature-testing?tab=runs">← Run history</a> · <a href="/feature-testing?tab=catalog">Test catalog</a>{% if not missing %} · <a href="/feature-testing/compare?right={{ run_id|urlencode }}">Compare with another run</a>{% endif %}</p>
 {% if missing %}
@@ -22,6 +28,16 @@
 <p><a href="/feature-testing?tab=runs">Browse the run history</a> to pick an imported run.</p>
 </section>
 {% else %}
+<section class="wb-panel ft-run-overview" aria-labelledby="ft-run-overview-heading">
+<h2 id="ft-run-overview-heading">Run overview — reported results only</h2>
+<p>{{ overview.record_count }} imported result record{{ '' if overview.record_count == 1 else 's' }} across {{ overview.scenario_count }} scenario{{ '' if overview.scenario_count == 1 else 's' }}. These are stored reports, not a newly calculated overall test verdict.</p>
+<dl>
+<dt>Recorded verdicts</dt><dd><div class="ft-run-verdicts" aria-label="Imported result counts by verdict">{% for item in overview.verdict_counts %}<span><strong>{{ item.verdict }}</strong>: {{ item.count }}</span>{% endfor %}</div></dd>
+<dt>Runner lifecycle</dt><dd>{% if overview.job %}<strong>{{ overview.job.status }}</strong> — {{ overview.job.meaning }}. A finished job is not proof of PASS.{% else %}No linked runner job. Imported evidence does not establish whether a task executed.{% endif %}</dd>
+<dt>Independent gameplay verification</dt><dd><strong>NOT_ESTABLISHED</strong> by these stored reports. A reported PASS is not an independently authenticated outcome.</dd>
+</dl>
+{% if overview.mixed_recorded_verdicts %}<p><strong>Mixed recorded verdicts:</strong> inspect each record below; no single overall verdict is inferred.</p>{% endif %}
+</section>
 <section class="wb-panel">
 <h2>Recorded results ({{ records|length }})</h2>
 <p>Imported reports are not independently authenticated runtime execution. A PASS verdict reflects supplied evidence and validation, not an independent gameplay attestation.</p>
