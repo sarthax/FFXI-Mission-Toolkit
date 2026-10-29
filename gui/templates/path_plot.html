@@ -90,6 +90,8 @@
 </script>
 {% endif %}
 
+{% if not topdown_available and entry %}{% include "_build_topdown_cache.html" %}{% endif %}
+
 <div class="capture-path-lower" style="align-items:start;">
   <div>
     <h2>Path (autoscaled to real x/z coordinates)</h2>
