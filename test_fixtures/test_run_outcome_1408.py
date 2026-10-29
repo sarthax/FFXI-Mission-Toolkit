@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from workbench.server_admin.feature_testing import execution_jobs, results, router as ft_router
-from workbench.server_admin.feature_testing.run_outcome import describe_outcome
+from workbench.server_admin.feature_testing.run_outcome import describe_outcome, summarize_run
 
 BASE = dict(dsp_commit="a" * 40, headless_commit="b" * 40, toolkit_commit="c" * 40)
 
@@ -86,6 +86,34 @@ def test_unknown_values_are_not_trusted():
     assert "Unrecognised verdict" in out["meaning"] and out["job"]["meaning"] == "an unrecognised state"
 
 
+
+# --- run-wide overview ---------------------------------------------------------------------------------------------
+
+def test_run_overview_never_infers_a_single_overall_verdict():
+    records = [rec("PASS", rows(True), case="GRD-01"),
+               rec("FAIL", rows(False), case="GRD-02"),
+               rec("UNKNOWN", {"summary": "no readback"}, case="GRD-03")]
+    overview = summarize_run(records, {"status": "COMPLETED", "verdict": "PASS",
+                                       "account": "private-account", "charid": 12345})
+    assert overview["record_count"] == 3 and overview["scenario_count"] == 3
+    assert overview["verdict_counts"] == [
+        {"verdict": "FAIL", "count": 1}, {"verdict": "UNKNOWN", "count": 1},
+        {"verdict": "PASS", "count": 1}]
+    assert overview["mixed_recorded_verdicts"] is True
+    assert overview["job"] == {"status": "COMPLETED", "meaning": "finished running"}
+    assert "overall_verdict" not in overview and "private-account" not in repr(overview)
+    assert "12345" not in repr(overview)
+
+
+def test_run_overview_preserves_unrecognized_values_and_missing_job_without_pass():
+    overview = summarize_run([rec("MAYBE", rows(True)), rec("PASS", rows(True))])
+    assert overview["verdict_counts"] == [
+        {"verdict": "PASS", "count": 1}, {"verdict": "UNRECOGNIZED", "count": 1}]
+    assert overview["mixed_recorded_verdicts"] is True and overview["job"] is None
+    assert summarize_run([], {"status": "secret-account", "error": "token"})["job"] == {
+        "status": "UNKNOWN", "meaning": "status not recognized"}
+
+
 # --- the job lookup ----------------------------------------------------------------------------------------------
 
 def test_job_lookup_is_read_only_and_exposes_no_account_or_character(tmp_path, monkeypatch):
@@ -125,6 +153,27 @@ def page(client, run_id):
     response = client.get(f"/feature-testing/run/{run_id}")
     assert response.status_code == 200
     return response.text
+
+
+def test_run_overview_precedes_details_and_keeps_mixed_results_separate(client):
+    # A single run can contain several case rows with different recorded verdicts.
+    results.append_result(ft_router._results_db(), rec("PASS", rows(True), run_id="r-fail", case="GRD-02"))
+    html = page(client, "r-fail")
+    assert html.index("Run overview — reported results only") < html.index("Recorded results (2)")
+    overview = html.split("Recorded results (2)")[0]
+    assert "<strong>FAIL</strong>: 1" in overview
+    assert "<strong>PASS</strong>: 1" in overview
+    assert "Mixed recorded verdicts" in overview
+    assert "NOT_ESTABLISHED" in overview
+    assert "no single overall verdict is inferred" in overview
+    assert html.count("What happened") >= 2
+
+
+def test_missing_run_does_not_display_a_fabricated_overview(client):
+    response = client.get("/feature-testing/run/absent")
+    assert response.status_code == 404
+    assert "Run not found" in response.text
+    assert "Run overview — reported results only" not in response.text
 
 
 def test_page_says_what_happened_for_each_state(client):
