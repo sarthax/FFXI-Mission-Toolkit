@@ -221,6 +221,13 @@ def test_run_overview_shows_launcher_shortcut_setting_without_claiming_use(clien
     assert "Shortcut settings" in overview
     assert "Enabled in launcher settings: Quick travel." in overview
     assert "Enabling a switch is not evidence that the bot used it." in overview
+    # The per-record row must make the SAME claim as the run overview.
+    # Launcher config alone cannot prove an in-game warp/travel action occurred.
+    assert html.count("Enabled in launcher settings: Quick travel.") == 2
+    assert html.count("Enabling a switch is not evidence that the bot used it.") == 2
+    assert "All enabled settings: Quick travel, Position trace." in html
+    assert "This run used shortcuts:" not in html
+    assert "No shortcuts used." not in html
     assert "Independent gameplay verification" in overview
     assert "private-acct" not in html and "XIBOT_QUICK_TRAVEL" not in overview
     monkeypatch.delenv("MISSION_TOOLKIT_TEST_JOBS_DB")
@@ -235,6 +242,7 @@ def test_page_shows_the_job_as_separate_from_the_verdict(client, tmp_path, monke
                    "VALUES ('j1','2026-10-28T00:00:00Z','2026-10-28T00:00:00Z','GRD-03','COMPLETED','acct',1,'r-unknown','UNKNOWN',NULL,'evidence_imported')")
     html = page(client, "r-unknown")
     assert "COMPLETED — finished running" in html and "A finished job is not a pass" in html
+    assert "Not recorded for this run; shortcut use cannot be determined." in html
     assert "acct" not in html
 
 
