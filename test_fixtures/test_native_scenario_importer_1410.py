@@ -96,7 +96,7 @@ def test_a_scenario_with_any_unsupported_step_is_rejected_whole_and_listed(repo,
 
 def test_two_actions_in_one_step_fail_closed(repo, store):
     two = next(r for r in run(repo)["rejected"] if r["path"] == "scenarios/two.json")
-    assert "exactly one action" in two["steps"][0]["reasons"][0]
+    assert "regardless of file order" in two["steps"][0]["reasons"][0]
 
 
 def test_timeout_ms_is_carried_by_default_and_the_flag_is_a_no_op(repo, store):
