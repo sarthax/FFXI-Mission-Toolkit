@@ -2,6 +2,7 @@
 
 Every record here is SYNTHETIC test data, not a real run, and nothing is executed.
 """
+import re
 import sqlite3
 
 import pytest
@@ -285,6 +286,38 @@ def test_recorded_steps_put_human_intent_first_and_ids_behind_disclosure(recorde
         assert "Technical step ID" not in summary
         assert '<details class="ft-tech"><summary>Technical step ID</summary>' in card
         assert "Assertion contracts and provenance for step" in card
+
+
+def test_multiple_record_step_navigation_targets_only_its_own_record(client):
+    # Both canonical scenarios have a readable presentation, but share a run ID.
+    # A duplicate id="ft-summary" would make all the Section links jump to
+    # the first record; no historical or design-only navigation should change.
+    records = [
+        rec("PASS", rows(True), run_id="r-multi", feature="moghancement", case="MOG-09"),
+        rec("UNKNOWN", {"reason_class": "ORACLE_UNKNOWN"}, run_id="r-multi",
+            feature="inventory_observation", case="INV-OBS-01"),
+    ]
+    for record in records:
+        results.append_result(ft_router._results_db(), record)
+    html = page(client, "r-multi")
+    sections = ("summary", "behavior", "steps", "evidence")
+    targets = [f"ft-record-{index}-{section}" for index in (0, 1) for section in sections]
+    assert html.count('aria-label="Readable scenario and evidence"') == 2
+    for target in targets:
+        assert html.count(f'id="{target}"') == 1
+        assert html.count(f'href="#{target}"') == 1
+    assert not re.search(r'\bid="ft-(?:summary|behavior|steps|evidence)"', html)
+    assert not re.search(r'href="#ft-(?:summary|behavior|steps|evidence)"', html)
+
+
+def test_standalone_scenario_retains_its_original_section_links(client):
+    response = client.get("/feature-testing/scenario/moghancement/MOG-09")
+    assert response.status_code == 200
+    html = response.text
+    for section in ("summary", "behavior", "steps", "evidence"):
+        assert f'id="ft-{section}"' in html
+        assert f'href="#ft-{section}"' in html
+    assert "ft-record-" not in html
 
 
 def test_recorded_pass_is_still_only_a_recorded_verdict(recorded_client):
