@@ -156,7 +156,8 @@ def run_page(request: Request, run_id: str):
         return templates.TemplateResponse(request=request, name="feature_testing_run.html", status_code=404,
                                           context={"title": "Test Run not found", "run_id": run_id, "records": [],
                                                    "reevaluations": {}, "scenario_views": {}, "outcomes": {},
-                                                   "missing": True, "results_configured": bool(_results_db())})
+                                                   "missing": True, "results_configured": bool(_results_db()),
+                                                   "overview": None})
     from .normalized_evidence import evaluate_imported_mog09
     reevaluations = {}
     scenario_views = {}
@@ -172,13 +173,14 @@ def run_page(request: Request, run_id: str):
             run_id,
         )
     from .execution_jobs import job_for_run
-    from .run_outcome import describe_outcome
+    from .run_outcome import describe_outcome, summarize_run
     job = job_for_run(run_id)
+    overview = summarize_run(rows, job)
     outcomes = {index: describe_outcome(row, job) for index, row in enumerate(rows)}
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
                                       context={"title": "Test Run", "run_id": run_id, "records": rows,
                                                "reevaluations": reevaluations, "scenario_views": scenario_views,
-                                               "outcomes": outcomes})
+                                               "outcomes": outcomes, "overview": overview})
 
 
 def _compare_context(request: Request, left: str, right: str, **extra):

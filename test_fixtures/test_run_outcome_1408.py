@@ -2,6 +2,7 @@
 
 Every record here is SYNTHETIC test data, not a real run, and nothing is executed.
 """
+import re
 import sqlite3
 
 import pytest
@@ -9,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from workbench.server_admin.feature_testing import execution_jobs, results, router as ft_router
-from workbench.server_admin.feature_testing.run_outcome import describe_outcome
+from workbench.server_admin.feature_testing.run_outcome import describe_outcome, summarize_run
 
 BASE = dict(dsp_commit="a" * 40, headless_commit="b" * 40, toolkit_commit="c" * 40)
 
@@ -86,6 +87,50 @@ def test_unknown_values_are_not_trusted():
     assert "Unrecognised verdict" in out["meaning"] and out["job"]["meaning"] == "an unrecognised state"
 
 
+# --- run-wide overview ---------------------------------------------------------------------------------------------
+
+def test_run_overview_never_infers_a_single_overall_verdict():
+    records = [rec("PASS", rows(True), case="GRD-01"),
+               rec("FAIL", rows(False), case="GRD-02"),
+               rec("UNKNOWN", {"summary": "no readback"}, case="GRD-03")]
+    overview = summarize_run(records, {"status": "COMPLETED", "verdict": "PASS",
+                                       "account": "private-account", "charid": 12345})
+    assert overview["record_count"] == 3 and overview["scenario_count"] == 3
+    assert overview["verdict_counts"] == [
+        {"verdict": "FAIL", "count": 1}, {"verdict": "UNKNOWN", "count": 1},
+        {"verdict": "PASS", "count": 1}]
+    assert overview["mixed_recorded_verdicts"] is True
+    assert overview["job"] == {"status": "COMPLETED", "meaning": "finished running"}
+    assert "overall_verdict" not in overview and "private-account" not in repr(overview)
+    assert "12345" not in repr(overview)
+
+
+def test_run_overview_preserves_unrecognized_values_and_missing_job_without_pass():
+    overview = summarize_run([rec("MAYBE", rows(True)), rec("PASS", rows(True))])
+    assert overview["verdict_counts"] == [
+        {"verdict": "PASS", "count": 1}, {"verdict": "UNRECOGNIZED", "count": 1}]
+    assert overview["mixed_recorded_verdicts"] is True and overview["job"] is None
+    for bad_status in ("secret-account", ["COMPLETED"], {"status": "COMPLETED"}):
+        assert summarize_run([], {"status": bad_status, "error": "token"})["job"] == {
+            "status": "UNKNOWN", "meaning": "status not recognized"}
+
+
+def test_run_overview_exposes_only_recorded_shortcut_labels_not_raw_configuration():
+    summary = summarize_run([rec("PASS", rows(True))],
+                            {"status": "COMPLETED", "run_options": {
+                                "XIBOT_QUICK_TRAVEL": True, "XI_POS_TRACE": True}})
+    assert summary["run_options"] == {"recorded": True,
+                                       "shortcuts": ["Quick travel"],
+                                       "on": ["Quick travel", "Position trace"]}
+    assert "XIBOT_QUICK_TRAVEL" not in repr(summary)
+    unknown = summarize_run([rec("PASS", rows(True))], {"status": "COMPLETED",
+                            "run_options": {"UNTRUSTED_PRIVATE_OPTION": True}})
+    assert unknown["run_options"] == {"recorded": False, "shortcuts": [], "on": []}
+    assert "UNTRUSTED_PRIVATE_OPTION" not in repr(unknown)
+    assert summarize_run([], None)["run_options"] is None
+    assert summarize_run([], {"status": "COMPLETED"})["run_options"]["recorded"] is False
+
+
 # --- the job lookup ----------------------------------------------------------------------------------------------
 
 def test_job_lookup_is_read_only_and_exposes_no_account_or_character(tmp_path, monkeypatch):
@@ -128,6 +173,27 @@ def page(client, run_id):
     return response.text
 
 
+def test_run_overview_precedes_details_and_keeps_mixed_results_separate(client):
+    # A single run can contain several case rows with different recorded verdicts.
+    results.append_result(ft_router._results_db(), rec("PASS", rows(True), run_id="r-fail", case="GRD-02"))
+    html = page(client, "r-fail")
+    assert html.index("Run overview — reported results only") < html.index("Recorded results (2)")
+    overview = html.split("Recorded results (2)")[0]
+    assert "<strong>FAIL</strong>: 1" in overview
+    assert "<strong>PASS</strong>: 1" in overview
+    assert "Mixed recorded verdicts" in overview
+    assert "NOT_ESTABLISHED" in overview
+    assert "no single overall verdict is inferred" in overview
+    assert html.count("What happened") >= 2
+
+
+def test_missing_run_does_not_display_a_fabricated_overview(client):
+    response = client.get("/feature-testing/run/absent")
+    assert response.status_code == 404
+    assert "Run not found" in response.text
+    assert "Run overview — reported results only" not in response.text
+
+
 def test_page_says_what_happened_for_each_state(client):
     fail = page(client, "r-fail")
     assert "What happened" in fail and "1 passing, 1 failing, 0 unclear" in fail
@@ -141,6 +207,34 @@ def test_page_says_what_happened_for_each_state(client):
     assert "no structured checks" in bare and "nothing independent has confirmed it" in bare
 
 
+def test_run_overview_shows_launcher_shortcut_setting_without_claiming_use(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_JOBS_DB", str(tmp_path / "jobs.sqlite"))
+    with execution_jobs._connect() as db:
+        db.execute("INSERT INTO feature_test_jobs "
+                   "(id, created_at, updated_at, case_id, status, account, charid, run_id, verdict, error, phase, run_options) "
+                   "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                   ("j-shortcut", "2026-10-28T00:00:00Z", "2026-10-28T00:00:00Z", "GRD-01",
+                    "COMPLETED", "private-acct", 999, "r-fail", "FAIL", None, "evidence_imported",
+                    '{"XIBOT_QUICK_TRAVEL": true, "XI_POS_TRACE": true}'))
+    html = page(client, "r-fail")
+    overview = html.split("Recorded results (", 1)[0]
+    assert "Shortcut settings" in overview
+    assert "Enabled in launcher settings: Quick travel." in overview
+    assert "Enabling a switch is not evidence that the bot used it." in overview
+    # The per-record row must make the SAME claim as the run overview.
+    # Launcher config alone cannot prove an in-game warp/travel action occurred.
+    assert html.count("Enabled in launcher settings: Quick travel.") == 2
+    assert html.count("Enabling a switch is not evidence that the bot used it.") == 2
+    assert "All enabled settings: Quick travel, Position trace." in html
+    assert "This run used shortcuts:" not in html
+    assert "No shortcuts used." not in html
+    assert "Independent gameplay verification" in overview
+    assert "private-acct" not in html and "XIBOT_QUICK_TRAVEL" not in overview
+    monkeypatch.delenv("MISSION_TOOLKIT_TEST_JOBS_DB")
+    missing = page(client, "r-fail").split("Recorded results (", 1)[0]
+    assert "Not recorded for this run; shortcut use cannot be determined." in missing
+
+
 def test_page_shows_the_job_as_separate_from_the_verdict(client, tmp_path, monkeypatch):
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_JOBS_DB", str(tmp_path / "jobs.sqlite"))
     with execution_jobs._connect() as db:
@@ -148,6 +242,7 @@ def test_page_shows_the_job_as_separate_from_the_verdict(client, tmp_path, monke
                    "VALUES ('j1','2026-10-28T00:00:00Z','2026-10-28T00:00:00Z','GRD-03','COMPLETED','acct',1,'r-unknown','UNKNOWN',NULL,'evidence_imported')")
     html = page(client, "r-unknown")
     assert "COMPLETED — finished running" in html and "A finished job is not a pass" in html
+    assert "Not recorded for this run; shortcut use cannot be determined." in html
     assert "acct" not in html
 
 
@@ -208,6 +303,66 @@ def test_recorded_fail_keeps_unrelated_steps_and_the_limits(recorded_client):
     assert "Independent verification: NOT_ESTABLISHED" in html
     assert "Steps PASS (recalculated only): 4/6" in html
     assert "Assertion FAILED" in step_card(html, 5)
+
+
+def test_recorded_run_shows_all_six_steps_equally_with_expected_and_observed(recorded_client):
+    # A runner-reported PASS must not hide passing steps, and failures do not
+    # get privileged visibility. The cards remain user-collapsible.
+    for run_id in ("obs-20261021T025326Z", "obs-20261021T040036Z"):
+        html = recorded_client.get("/feature-testing/run/" + run_id).text
+        assert html.count('<li><details class="ft-step" open>') == 6
+        assert html.count('<summary class="ft-step-line">') == 6
+        for number in range(1, 7):
+            card = step_card(html, number)
+            assert "Expected outcome" in card and "Observed outcome" in card
+        assert "Expand all" in html and "Collapse all" in html
+        assert "Independent verification: NOT_ESTABLISHED" in html
+
+
+def test_recorded_steps_put_human_intent_first_and_ids_behind_disclosure(recorded_client):
+    html = recorded_client.get("/feature-testing/run/obs-20261021T025326Z").text
+    assert html.count('<summary>Technical step ID</summary>') == 6
+    # Every step headline is human-readable rather than an assertion ID/value dump.
+    for number in range(1, 7):
+        card = step_card(html, number)
+        summary = card.split("</summary>", 1)[0]
+        assert 'class="ft-brief"' in summary
+        assert "<code>" not in summary
+        assert "Technical step ID" not in summary
+        assert '<details class="ft-tech"><summary>Technical step ID</summary>' in card
+        assert "Assertion contracts and provenance for step" in card
+
+
+def test_multiple_record_step_navigation_targets_only_its_own_record(client):
+    # Both canonical scenarios have a readable presentation, but share a run ID.
+    # A duplicate id="ft-summary" would make all the Section links jump to
+    # the first record; no historical or design-only navigation should change.
+    records = [
+        rec("PASS", rows(True), run_id="r-multi", feature="moghancement", case="MOG-09"),
+        rec("UNKNOWN", {"reason_class": "ORACLE_UNKNOWN"}, run_id="r-multi",
+            feature="inventory_observation", case="INV-OBS-01"),
+    ]
+    for record in records:
+        results.append_result(ft_router._results_db(), record)
+    html = page(client, "r-multi")
+    sections = ("summary", "behavior", "steps", "evidence")
+    targets = [f"ft-record-{index}-{section}" for index in (0, 1) for section in sections]
+    assert html.count('aria-label="Readable scenario and evidence"') == 2
+    for target in targets:
+        assert html.count(f'id="{target}"') == 1
+        assert html.count(f'href="#{target}"') == 1
+    assert not re.search(r'\bid="ft-(?:summary|behavior|steps|evidence)"', html)
+    assert not re.search(r'href="#ft-(?:summary|behavior|steps|evidence)"', html)
+
+
+def test_standalone_scenario_retains_its_original_section_links(client):
+    response = client.get("/feature-testing/scenario/moghancement/MOG-09")
+    assert response.status_code == 200
+    html = response.text
+    for section in ("summary", "behavior", "steps", "evidence"):
+        assert f'id="ft-{section}"' in html
+        assert f'href="#ft-{section}"' in html
+    assert "ft-record-" not in html
 
 
 def test_recorded_pass_is_still_only_a_recorded_verdict(recorded_client):

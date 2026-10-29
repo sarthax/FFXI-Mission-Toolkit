@@ -81,3 +81,39 @@ def describe_outcome(record: dict, job: dict | None = None) -> dict:
                       "verdict_agrees": job.get("verdict") in (None, verdict),
                       "run_options": _run_options_summary(job.get("run_options"))}
     return out
+
+
+# A run can contain several independently recorded case/stage verdicts. Never collapse
+# these into a fabricated overall PASS or infer gameplay from a finished runner job.
+_RUN_VERDICT_ORDER = ("FAIL", "BLOCKED", "UNKNOWN", "SKIPPED", "PASS", "UNRECOGNIZED")
+
+
+def summarize_run(records: list[dict], job: dict | None = None) -> dict:
+    """Read-only run overview: count imported verdicts, never issue a new verdict.
+
+    Deliberately excludes account, character and raw job/evidence fields. A missing
+    or unexpected verdict is visible as UNRECOGNIZED, never silently treated as PASS.
+    """
+    counts = dict.fromkeys(_RUN_VERDICT_ORDER, 0)
+    scenarios = set()
+    for record in records:
+        verdict = record.get("verdict")
+        key = verdict if isinstance(verdict, str) and verdict in counts else "UNRECOGNIZED"
+        counts[key] += 1
+        scenarios.add((record.get("feature_id"), record.get("case_id")))
+    presented = [{"verdict": name, "count": counts[name]}
+                 for name in _RUN_VERDICT_ORDER if counts[name]]
+    linked_job = None
+    if isinstance(job, dict):
+        status = job.get("status")
+        # Do not echo untrusted job status, account, character, error or phase data.
+        if isinstance(status, str) and status in _JOB_MEANING:
+            linked_job = {"status": status, "meaning": _JOB_MEANING[status]}
+        else:
+            linked_job = {"status": "UNKNOWN", "meaning": "status not recognized"}
+    # Settings are a launcher record, NOT proof that a shortcut was actually
+    # exercised by the bot. Absent or invalid legacy data stays NOT_RECORDED.
+    options = _run_options_summary(job.get("run_options")) if isinstance(job, dict) else None
+    return {"record_count": len(records), "scenario_count": len(scenarios),
+            "verdict_counts": presented, "mixed_recorded_verdicts": len(presented) > 1,
+            "job": linked_job, "run_options": options}
