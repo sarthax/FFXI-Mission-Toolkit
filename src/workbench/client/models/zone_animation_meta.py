@@ -18,9 +18,9 @@ import re
 
 import yaml
 
-from workbench.devtools.indexing import build_lsb_index
+from workbench.runtime.paths import REPO_ROOT
 
-LSB_ROOT = build_lsb_index.LSB_ROOT
+LSB_ROOT = REPO_ROOT / "LandSandBoat"
 ANIMATION_YAML = LSB_ROOT / "data" / "enums" / "animation.yaml"
 ANIMATION_STRING_LUA = LSB_ROOT / "scripts" / "enum" / "animation_string.lua"
 

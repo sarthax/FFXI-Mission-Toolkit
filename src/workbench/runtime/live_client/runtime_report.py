@@ -183,7 +183,7 @@ def recording_report(path: Path, *, game_version: str | None = None,
 def packet_evidence_report(path: Path, recording_label: str, frames, *,
                            capture_database: Path | None = None, capture_id: int | None = None) -> dict:
     """Exact source/time candidates only; reuse Capture validation without decoding."""
-    from workbench.captures.ashita_packet_ingest import MAX_BYTES, parse_observations
+    from .ashita_packets import MAX_BYTES, parse_observations
 
     data = bounded_bytes(path, MAX_BYTES)
     rows = parse_observations(data)

@@ -13,15 +13,15 @@ def test_root_module_is_retired_and_package_is_canonical():
     assert canonical.look.__name__ == "workbench.client.models.look_decode"
     assert canonical.mob_model_tables.__name__ == "workbench.client.models.mob_model_tables"
     assert canonical.msd.__name__ == "workbench.client.models.schedule_dump"
-    assert canonical.zone_plot.__name__.startswith("workbench.devtools.spatial")
+    assert canonical.server_env.__name__ == "workbench.runtime.server_env"
 
 
 def test_build_catalog_uses_package_safe_ffxi_lookup(monkeypatch):
     canonical.clear_cache()
     row = canonical._empty(740)
-    monkeypatch.setattr(canonical.zone_plot, "get_server", lambda: "topaz")
-    monkeypatch.setattr(canonical.zone_plot, "get_environment_key", lambda: "topaz")
-    monkeypatch.setattr(canonical.zone_plot, "get_environment", lambda: None)
+    monkeypatch.setattr(canonical.server_env, "get_server", lambda: "topaz")
+    monkeypatch.setattr(canonical.server_env, "get_environment_key", lambda: "topaz")
+    monkeypatch.setattr(canonical.server_env, "get_environment", lambda: None)
     monkeypatch.setattr(canonical, "get_ffxi_install", lambda: "C:/FFXI")
     monkeypatch.setattr(canonical, "_collect_server_models", lambda server: {740: row})
     monkeypatch.setattr(

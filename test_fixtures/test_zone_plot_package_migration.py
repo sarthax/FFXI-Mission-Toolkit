@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from workbench.devtools.spatial import active_zone_plot as canonical
-from workbench.runtime import legacy_settings
+from workbench.runtime import legacy_settings, server_env
 from workbench.runtime.paths import DATA_ROOT
 
 
@@ -27,8 +27,8 @@ def test_server_root_uses_named_active_environment_by_default(tmp_path, monkeypa
 def test_explicit_topaz_and_dsp_selectors_remain_legacy_compatible(tmp_path, monkeypatch):
     topaz = tmp_path / "topaz"
     dsp = tmp_path / "dsp"
-    monkeypatch.setattr(canonical, "get_topaz_root", lambda: topaz)
-    monkeypatch.setattr(canonical, "get_dsp_root", lambda: dsp)
+    monkeypatch.setattr(server_env, "get_topaz_root", lambda: topaz)
+    monkeypatch.setattr(server_env, "get_dsp_root", lambda: dsp)
 
     assert canonical._server_root("topaz") == topaz
     assert canonical._server_root("dsp") == dsp
@@ -69,7 +69,7 @@ def test_ambiguous_family_selector_requires_named_environment(monkeypatch):
 def test_set_server_preserves_missing_dsp_guard(monkeypatch):
     monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)
     monkeypatch.setattr(legacy_settings, "get_server_profiles", lambda include_disabled=False: [])
-    monkeypatch.setattr(canonical, "get_dsp_root", lambda: None)
+    monkeypatch.setattr(server_env, "get_dsp_root", lambda: None)
 
     try:
         canonical.set_server("dsp")

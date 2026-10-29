@@ -5,7 +5,7 @@ table. Names for AH categories, jobs, slots and flags come from the editor's own
 skill names are the SKILLTYPE enum in the server's src/map/entities/battleentity.h.
 """
 from workbench.editors.items._db_alias import item_db
-from workbench.editors.items import _dat_tools_impl as dat
+from workbench.client.dat import item_dat_tools_impl as dat
 from workbench.editors.items import item_reference
 
 WEAPON_SKILLS = {

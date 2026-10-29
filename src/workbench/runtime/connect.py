@@ -50,7 +50,7 @@ def _edge(con, rid, src, dst, rel, evidence_id, confidence="VERIFIED", status="D
     )
 
 
-from workbench.captures import review_queue as _rq   # quarantined captures never feed the graph
+from workbench.runtime import capture_quarantine as _rq   # quarantined captures never feed the graph
 
 
 def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
