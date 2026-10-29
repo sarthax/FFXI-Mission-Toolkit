@@ -1,0 +1,621 @@
+{
+ "artifact_type": "mog_house_2f_domain_design_not_canonical_catalog",
+ "schema_version": 1,
+ "execution_enabled": false,
+ "source_revision": {
+  "dsp_commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+  "dsp_branch": "feature/mog-house-2f-patio",
+  "deployed": "UNKNOWN"
+ },
+ "integration_status": "DRAFT_MANUAL_EVIDENCE_ONLY",
+ "canonical_target": "data/testing/test_specifications.json",
+ "capability_gaps": [
+  "No XIHeadless action to set char_stats.mhflag between zone-ins with servers stopped",
+  "No client-side menu readback for greyed entries (only screenshots)",
+  "0x00A readback of +0xA8/+0xAA/+0xAE is capturable via PacketViewer/XIHeadless but no assertion operation is bound",
+  "Quest-bit mapping to mhflag set by scripts (Kuu_Mohzolhi 1, Valah_Molkot 2, Ojha_Rhawash 4, Zona_Shodhun 8, Ahkk_Jharcham 16)"
+ ],
+ "cases": [
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-01",
+   "name": "Fresh character: stock menu, no unlock",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x00",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "mhflag 0 (no exit bits)"
+    ],
+    "when": [
+     "Zone into Mog House in each nation"
+    ],
+    "then": [
+     "Stock exit menu: only 'area you entered from'",
+     "No unlock cutscene",
+     "0x00A +0xA8 = 0x00, +0xAE = 0 (retail new-character capture)"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-02",
+   "name": "Single nation bit opens that nation's exit set",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x02",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "mhflag 2 (Bastok)"
+    ],
+    "when": [
+     "Zone into Bastok Mog House, use exit menu"
+    ],
+    "then": [
+     "Full exit menu with working exits to every Bastok zone"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-03",
+   "name": "mhflag 3: home vs non-home floor option",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x03",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "Bastok-native; SDO+BAS bits"
+    ],
+    "when": [
+     "Open exit menu in San d'Oria, Bastok, Windurst"
+    ],
+    "then": [
+     "San d'Oria: full menu, 'Change floors' greyed by the client (non-home model)",
+     "Bastok: 'Change floors' enabled; choosing it refuses and returns to 1F; flags unchanged; no unlock CS",
+     "Windurst: stock menu (no bit)"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-04",
+   "name": "mhflag 5",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x05",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "SDO+WIN bits"
+    ],
+    "when": [
+     "Open exit menu in Bastok, Windurst, San d'Oria"
+    ],
+    "then": [
+     "Bastok: stock menu",
+     "Windurst and San d'Oria: full exit menu, floor option greyed (non-home)"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-05",
+   "name": "mhflag 6",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x06",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "BAS+WIN bits"
+    ],
+    "when": [
+     "Open exit menu in Bastok, Windurst, San d'Oria"
+    ],
+    "then": [
+     "Bastok: floor option enabled, refused -> 1F",
+     "Windurst: greyed, exits correct",
+     "San d'Oria: stock menu"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-06",
+   "name": "mhflag 7: unlock in home city only, floor travel, exits",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x07",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "All three exit bits, 2F not yet unlocked (0x20 clear)"
+    ],
+    "when": [
+     "Zone into Windurst, San d'Oria and Bastok Mog Houses in turn; in Bastok change floors 1F->2F->1F; exit to other zones from both floors"
+    ],
+    "then": [
+     "Unlock cutscene fires once, only in the home-nation city (Bastok)",
+     "mhflag gains 0x20",
+     "Floor travel works both ways (zoneLine 1903324538, zone byte 125 up / 126 down)",
+     "Exit menu complete on both floors; +0xA8 = 0x38 on 1F, 0x3A on 2F"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-07",
+   "name": "2F with exit bits unset still has an exit menu",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "UNTESTED_AFTER_FIX_IN_THIS_MATRIX (fix present in commit; covered by earlier session testing only)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x60",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "GM-style state: 0x20|0x40 set, 0x0F clear"
+    ],
+    "when": [
+     "Zone into the Mog House on 2F"
+    ],
+    "then": [
+     "Exit menu present (server treats exit bits as set while on 2F)"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-08",
+   "name": "Locked floor request leaves state unchanged",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "MANUAL_PASS_2026-10-22 (human in-game, char Bastok-native; not automated)",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x03",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "2F locked"
+    ],
+    "when": [
+     "Choose 'Change floors' in the home Mog House"
+    ],
+    "then": [
+     "Client rezones into same 1F with working door menu",
+     "char_stats.mhflag identical before and after"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-09",
+   "name": "Persistence across relog",
+   "kind": "positive",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "NOT_RUN",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x27",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "Unlocked, on 1F"
+    ],
+    "when": [
+     "Go up, relog, check floor/exits"
+    ],
+    "then": [
+     "0x20/0x40 persist"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  },
+  {
+   "schema_version": 1,
+   "feature_id": "mog_house_2f",
+   "case_id": "MH2F-10",
+   "name": "OPEN: grey the floor option in a locked HOME house",
+   "kind": "evidence_gap",
+   "runner": "unassigned",
+   "execution_status": "design_only",
+   "lane": "needs-mutation",
+   "verdict": "OPEN_EVIDENCE_GAP",
+   "setup": {
+    "disposable_character": "required",
+    "stop_map_server_before_db_edit": true,
+    "char_stats.mhflag": "0x03",
+    "note": "The running map server overwrites char_stats.mhflag on save; stop servers, edit, then start."
+   },
+   "behavior": {
+    "given": [
+     "Retail sample of this state does not exist"
+    ],
+    "when": [
+     "Capture retail 0x00A for a home Mog House with the three quests incomplete"
+    ],
+    "then": [
+     "UNKNOWN - no byte found; only evidence is that greying follows non-home model, not +0xA8"
+    ]
+   },
+   "evidence_refs": [
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/CapFFXI - SandOria - Growing Flowers + Mog House 2F - Mog Safe 2 Access.zip",
+     "note": "retail 0x00A Mog House zone-ins: +0xA8 0x30/0x38/0x3A, home vs non-home model, +0xAE exit set"
+    },
+    {
+     "kind": "capture",
+     "path": "Playthrough Captures/Misc - New Character Moghouse Cutscenes.zip",
+     "note": "fresh San d'Oria character: +0xA8=0x00, model 0x121"
+    }
+   ],
+   "oracle_refs": [
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packets/zone_in.cpp"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "src/map/packet_system.cpp",
+     "note": "SmallPacket0x05E floor-change block"
+    },
+    {
+     "repository": "sarthax/darkstar-to-valhalla",
+     "commit": "2fb0d6120002965e8c60b5bba7df81a892163191",
+     "path": "scripts/zones/Residential_Area/Zone.lua",
+     "note": "2F unlock block"
+    }
+   ]
+  }
+ ]
+}
