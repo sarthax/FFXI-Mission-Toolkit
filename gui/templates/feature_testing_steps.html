@@ -16,6 +16,7 @@
 {%- else -%}{{ v|tojson }}{%- endif -%}
 {%- endmacro %}
 {% if scenario_view and scenario_view.available %}
+{% set story_section_prefix = story_anchor_prefix|default('ft-') %}
 <style>
 .ft-story .ft-nav{position:sticky;top:0;z-index:2;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;padding:.4rem .6rem;background:var(--bg,Canvas);border-bottom:1px solid var(--border,#aaa)}
 .ft-story .ft-summary{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
@@ -51,8 +52,8 @@
 .ft-story th,.ft-story td{text-align:left;vertical-align:top;overflow-wrap:anywhere}
 </style>
 <section class="ft-story" aria-label="Readable scenario and evidence">
-<nav class="ft-nav" aria-label="Sections"><a href="#ft-summary">Summary</a><a href="#ft-behavior">Behavior</a><a href="#ft-steps">Steps</a><a href="#ft-evidence">Evidence &amp; provenance</a></nav>
-<h2 id="ft-summary">Scenario purpose and evidence</h2>
+<nav class="ft-nav" aria-label="Sections"><a href="#{{ story_section_prefix }}summary">Summary</a><a href="#{{ story_section_prefix }}behavior">Behavior</a><a href="#{{ story_section_prefix }}steps">Steps</a><a href="#{{ story_section_prefix }}evidence">Evidence &amp; provenance</a></nav>
+<h2 id="{{ story_section_prefix }}summary">Scenario purpose and evidence</h2>
 <div class="ft-summary">
 {%- set ns = namespace(passed=0) -%}{%- for st in scenario_view.steps %}{% if st.status == 'PASS' %}{% set ns.passed = ns.passed + 1 %}{% endif %}{% endfor %}
 <span class="ft-badge">Recorded: {{ scenario_view.recorded_verdict or 'UNKNOWN' }}</span>
@@ -80,7 +81,7 @@
 <p><strong>Recorded verdict:</strong> UNKNOWN · <strong>Recalculated verdict:</strong> UNKNOWN (no imported run selected)</p>
 {% endif %}
 
-<h3 id="ft-behavior">Given / When / Then</h3>
+<h3 id="{{ story_section_prefix }}behavior">Given / When / Then</h3>
 {% if scenario_view.legacy %}
 <p class="ft-warning">Legacy assertion-only specification: authored Given/When/Then and stable scenario-step metadata have not been supplied. The rows below are assertions, not an inferred sequence of gameplay actions.</p>
 <p><strong>Existing preconditions (not an authored Given):</strong></p>
@@ -95,7 +96,7 @@
 {% endfor %}
 {% endif %}
 
-<h3 id="ft-steps">Ordered steps and expected vs observed</h3>
+<h3 id="{{ story_section_prefix }}steps">Ordered steps and expected vs observed</h3>
 <div class="ft-tools"><button type="button" class="ft-expand-all">Expand all</button><button type="button" class="ft-collapse-all">Collapse all</button></div>
 <p>Step statuses are <strong>recalculated from imported observations</strong> when an imported record is selected. Otherwise they are UNKNOWN. These are assertion outcomes, not independent verification.</p>
 <ol class="ft-steps">
@@ -155,7 +156,7 @@
 </li>
 {% else %}<li>UNKNOWN — no canonical assertions or authored steps supplied.</li>{% endfor %}
 </ol>
-<details class="ft-evidence-group" id="ft-evidence" open><summary><strong>Evidence &amp; provenance</strong> — limitations, uncertainties, cleanup</summary>
+<details class="ft-evidence-group" id="{{ story_section_prefix }}evidence" open><summary><strong>Evidence &amp; provenance</strong> — limitations, uncertainties, cleanup</summary>
 {% if scenario_view.blocking_gaps %}
 <h3>Unverified or blocking claims</h3>
 <ul>{% for gap in scenario_view.blocking_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
