@@ -130,6 +130,9 @@ def build_one(con, zoneid: int, ffxi_path: str, collision: bool = True, visual: 
     if collision:
         print(f"  zoneid {zoneid} ({name}): parsing collision mesh...")
         try:
+            if not hasattr(xi_tinkerer, "parse_zone_collision_obj"):
+                raise RuntimeError("the installed xi_tinkerer build has no parse_zone_collision_obj; "
+                                   "rebuild the xi-tinkerer Python extension to get collision variants")
             obj_text = xi_tinkerer.parse_zone_collision_obj(dat_path)
             ok = rasterize(
                 zoneid,
