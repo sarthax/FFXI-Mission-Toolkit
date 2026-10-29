@@ -49,7 +49,7 @@ def test_run_inspector_includes_missing_evidence_and_mismatch(monkeypatch):
 
 
 def test_template_displays_dual_verdict_and_provenance():
-    html=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing_run.html").read_text()
+    html=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing_run.html").read_text(encoding="utf-8")
     assert "Reevaluate with Specification" in html
     assert "Recorded verdict:" in html
     assert "Recalculated verdict:" in html

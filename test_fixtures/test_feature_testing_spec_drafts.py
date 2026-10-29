@@ -48,4 +48,4 @@ def test_draft_editor_not_in_supervisor_schema():
     from pathlib import Path
     from workbench.server_admin.feature_testing.supervisor import supervisor_openapi
     assert "/feature-testing/builder/drafts" not in supervisor_openapi()["paths"]
-    assert 'id="ft-draft-editor"' in (Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text()
+    assert 'id="ft-draft-editor"' in (Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text(encoding="utf-8")

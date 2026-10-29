@@ -56,7 +56,7 @@ def test_execution_rejects_unapproved_identity_and_remote_urls(monkeypatch, tmp_
 
 def test_scenario_page_has_preflight_without_execution_button():
     root = Path(__file__).resolve().parents[1]
-    template = (root / "gui/templates/feature_testing_scenario.html").read_text()
+    template = (root / "gui/templates/feature_testing_scenario.html").read_text(encoding="utf-8")
     assert "preflight.checks" in template
     assert "preflight.ready_for_operator_review" in template
     assert "Execution from this page is not enabled" in template
