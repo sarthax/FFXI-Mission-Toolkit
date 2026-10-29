@@ -16,7 +16,7 @@ def test_packaged_host_loader_uses_packaged_impl_and_canonical_uvicorn_target():
 
 def test_gui_host_implementation_is_owned_under_src():
     impl = Path("src/workbench/app/_host_impl.py").read_text(encoding="utf-8")
-    assert 'app = FastAPI(title="Mission Toolkit GUI")' in impl
+    assert 'app = FastAPI(title="Mission Toolkit GUI"' in impl
     assert '@app.get("/captures/search"' in impl
     assert '@app.get("/researchgaps"' in impl
     assert '@app.get("/domains"' in impl
