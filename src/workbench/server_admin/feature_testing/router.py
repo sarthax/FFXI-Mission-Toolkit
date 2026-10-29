@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.paths import GUI_ROOT
 from .results import recent_results
+from .run_options import switches as run_option_switches
 from .scenario_presentation import scenario_presentation
 from .test_specifications import specification
 
@@ -466,6 +467,7 @@ class LaunchRequest(BaseModel):
     charid: int
     supervisor_port: int = 8420
     approval: bool = False
+    run_options: dict | None = None
 
 
 def _operator_auth(request: Request, operator_token: str | None) -> None:
@@ -551,7 +553,7 @@ def launch_test(request: Request, payload: LaunchRequest,
         raise HTTPException(400, "Explicit operator confirmation required")
     from .execution_jobs import enqueue
     try:
-        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port)
+        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port, payload.run_options)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     return {"job_id": job_id, "status": "QUEUED", "case_id": "MOG-09"}
@@ -623,7 +625,8 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "features": _summaries(), "evidence_count": len(records),
             "builder_preflight": _builder_preflight(),
             "results_configured": bool(_results_db()), "execution_enabled": False,
-            "ui_mode": _ui_mode(), "run_defaults": _run_defaults()}
+            "ui_mode": _ui_mode(), "run_defaults": _run_defaults(),
+            "run_option_switches": run_option_switches()}
 
 
 def _saved_catalog_view(request: Request, q: str, feature_id: str, tag: str, state: str) -> dict:

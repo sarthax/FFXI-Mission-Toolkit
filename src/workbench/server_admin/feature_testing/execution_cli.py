@@ -17,11 +17,13 @@ from urllib.parse import urlparse
 from .execution_preflight import preflight
 from .importer import import_report
 from .router import _REPO
+from .run_options import apply_to_env as apply_run_options, switches as run_option_switches
 
 
 def execute_mog09(*, account: str, charid: int, out_dir: Path,
                   supervisor: str, approved: bool, timeout: int = 900,
-                  progress: Callable[[str], None] | None = None) -> dict:
+                  progress: Callable[[str], None] | None = None,
+                  run_options: dict | None = None) -> dict:
     if not approved:
         raise ValueError("explicit operator approval required")
     if not re.fullmatch(r"[A-Za-z0-9_\-]{1,32}", account):
@@ -50,7 +52,8 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     script = root / "tools" / "observation_runner.py"
     env = dict(os.environ)
     env["TOOLKIT_SRC"] = str(_REPO / "src")
-    args = [sys.executable, str(script), "--out-dir", str(out),
+    chosen_options = apply_run_options(env, run_options)  # validated allowlist; also clears switches inherited from the operator shell
+    args =[sys.executable, str(script), "--out-dir", str(out),
             "--account", account, "--charid", str(charid), "--supervisor", supervisor]
     # No shell, no user supplied script or passthrough command arguments.
     # XiHeadless checks dirty tracked files and refuses by default.
@@ -84,7 +87,7 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     if progress:
         progress("evidence_imported")
     return {"run_id": rows[0]["run_id"], "verdict": rows[0]["verdict"],
-            "imported_records": count, "artifacts": str(out)}
+            "imported_records": count, "artifacts": str(out), "run_options": chosen_options}
 
 
 def main() -> None:
@@ -96,11 +99,18 @@ def main() -> None:
     parser.add_argument("--supervisor", required=True, help="Loopback Toolkit base URL with port")
     parser.add_argument("--approve-mog09", action="store_true",
                         help="Operator confirms disposable test account and read-only !moghancement info")
+    parser.add_argument("--enable", action="append", default=[], metavar="ENV",
+                        choices=[s["env"] for s in run_option_switches()],
+                        help="Turn on one run option (repeatable). Default is the safe state: shortcuts off.")
+    parser.add_argument("--disable", action="append", default=[], metavar="ENV",
+                        choices=[s["env"] for s in run_option_switches()],
+                        help="Turn off one run option (repeatable).")
     args = parser.parse_args()
+    options = {**{name: True for name in args.enable}, **{name: False for name in args.disable}}
     try:
         result = execute_mog09(account=args.account, charid=args.charid,
                                out_dir=args.out_dir, supervisor=args.supervisor,
-                               approved=args.approve_mog09)
+                               approved=args.approve_mog09, run_options=options)
     except (ValueError, RuntimeError, OSError) as exc:
         parser.exit(1, f"Test did not complete: {exc}\n")
     print(f"Imported {result['imported_records']} record(s): {result['run_id']} {result['verdict']}")
