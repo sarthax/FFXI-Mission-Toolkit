@@ -115,6 +115,22 @@ def test_run_overview_preserves_unrecognized_values_and_missing_job_without_pass
             "status": "UNKNOWN", "meaning": "status not recognized"}
 
 
+def test_run_overview_exposes_only_recorded_shortcut_labels_not_raw_configuration():
+    summary = summarize_run([rec("PASS", rows(True))],
+                            {"status": "COMPLETED", "run_options": {
+                                "XIBOT_QUICK_TRAVEL": True, "XI_POS_TRACE": True}})
+    assert summary["run_options"] == {"recorded": True,
+                                       "shortcuts": ["Quick travel"],
+                                       "on": ["Quick travel", "Position trace"]}
+    assert "XIBOT_QUICK_TRAVEL" not in repr(summary)
+    unknown = summarize_run([rec("PASS", rows(True))], {"status": "COMPLETED",
+                            "run_options": {"UNTRUSTED_PRIVATE_OPTION": True}})
+    assert unknown["run_options"] == {"recorded": False, "shortcuts": [], "on": []}
+    assert "UNTRUSTED_PRIVATE_OPTION" not in repr(unknown)
+    assert summarize_run([], None)["run_options"] is None
+    assert summarize_run([], {"status": "COMPLETED"})["run_options"]["recorded"] is False
+
+
 # --- the job lookup ----------------------------------------------------------------------------------------------
 
 def test_job_lookup_is_read_only_and_exposes_no_account_or_character(tmp_path, monkeypatch):
@@ -189,6 +205,27 @@ def test_page_says_what_happened_for_each_state(client):
     assert "no reason was recorded" in unknown.lower() and "not a pass and not a failure" in unknown
     bare = page(client, "r-bare-pass")
     assert "no structured checks" in bare and "nothing independent has confirmed it" in bare
+
+
+def test_run_overview_shows_launcher_shortcut_setting_without_claiming_use(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_JOBS_DB", str(tmp_path / "jobs.sqlite"))
+    with execution_jobs._connect() as db:
+        db.execute("INSERT INTO feature_test_jobs "
+                   "(id, created_at, updated_at, case_id, status, account, charid, run_id, verdict, error, phase, run_options) "
+                   "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                   ("j-shortcut", "2026-10-28T00:00:00Z", "2026-10-28T00:00:00Z", "GRD-01",
+                    "COMPLETED", "private-acct", 999, "r-fail", "FAIL", None, "evidence_imported",
+                    '{"XIBOT_QUICK_TRAVEL": true, "XI_POS_TRACE": true}'))
+    html = page(client, "r-fail")
+    overview = html.split("Recorded results (", 1)[0]
+    assert "Shortcut settings" in overview
+    assert "Enabled in launcher settings: Quick travel." in overview
+    assert "Enabling a switch is not evidence that the bot used it." in overview
+    assert "Independent gameplay verification" in overview
+    assert "private-acct" not in html and "XIBOT_QUICK_TRAVEL" not in overview
+    monkeypatch.delenv("MISSION_TOOLKIT_TEST_JOBS_DB")
+    missing = page(client, "r-fail").split("Recorded results (", 1)[0]
+    assert "Not recorded for this run; shortcut use cannot be determined." in missing
 
 
 def test_page_shows_the_job_as_separate_from_the_verdict(client, tmp_path, monkeypatch):
