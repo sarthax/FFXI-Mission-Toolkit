@@ -7,9 +7,10 @@ from pathlib import Path
 from workbench.runtime import legacy_settings, paths, settings_store
 
 
-def test_root_settings_is_exact_canonical_alias():
-    root_settings = importlib.import_module("settings")
-    assert root_settings is settings_store
+def test_root_settings_alias_is_retired():
+    # The root compatibility alias was removed (e56e9b7c); the canonical module is the only entry point.
+    assert not (paths.REPO_ROOT / "settings.py").exists()
+    assert importlib.import_module("workbench.runtime.settings_store") is settings_store
 
 
 def test_settings_store_uses_canonical_runtime_paths():

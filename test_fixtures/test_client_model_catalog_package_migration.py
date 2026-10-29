@@ -20,6 +20,8 @@ def test_build_catalog_uses_package_safe_ffxi_lookup(monkeypatch):
     canonical.clear_cache()
     row = canonical._empty(740)
     monkeypatch.setattr(canonical.zone_plot, "get_server", lambda: "topaz")
+    monkeypatch.setattr(canonical.zone_plot, "get_environment_key", lambda: "topaz")
+    monkeypatch.setattr(canonical.zone_plot, "get_environment", lambda: None)
     monkeypatch.setattr(canonical, "get_ffxi_install", lambda: "C:/FFXI")
     monkeypatch.setattr(canonical, "_collect_server_models", lambda server: {740: row})
     monkeypatch.setattr(
