@@ -1,4 +1,28 @@
-> **Operating model update — 2026-10-27:** The A–E hourly coordinator/dispatch experiment is retired; #1348 and #1398 are closed. Historical Wave tables, claims and review queues below are **archive only**. Use normal owner-directed development and evaluate unfinished PRs individually. Prioritize an actually usable Scenario Results screen and other accepted functionality over creating planning/review issues. Preserve unresolved evidence, security, and local browser/gameplay acceptance gates; do not equate CI with product acceptance. No automatic merge is implied.
+# Archived Workbench roadmap — preserved current-main snapshot (2026-10-28)
+
+> **HISTORICAL RECORD ONLY.** This archive preserves the complete former `docs/workbench/ROADMAP_CURRENT.md` including the October 28 Scenario Developer update, copied from the repository's `main` roadmap blob `c70b39bf809e697af17274c8b57dce626149753c` on 2026-10-28. Its older agent assignments, issue/PR statuses, temporary branches, acceptance claims and long dated implementation notes are snapshots, not instructions or current release certifications. The owner retired the A–E coordinator process; do not reactivate it. Review [the short current roadmap](../ROADMAP_CURRENT.md) and live GitHub issue/PR states instead.
+
+---
+
+# Development status — 2026-10-27 coordinator retirement
+
+**Working model:** The A–E / Codex-helper multi-agent dispatcher experiment is retired. Coordinator [#1348](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1348) is closed and policy [#1398](https://github.com/sarthax/FFXI-Mission-Toolkit/issues/1398) retired. This document's older agent-wave references, dated assignments, PR snapshots and CI claims are **historical**, not active priorities or requirements to create additional review issues.
+
+**Current workflow:** Owner/local agent chooses concrete feature/defect work, confirms existing branches/PRs and current main, implements and tests offline, then records actual results in a focused PR. Continue using normal code/security review and local acceptance where necessary; remove duplicate planning and review-only backlog instead of multiplying coordination tasks. Never treat synthetic tests as gameplay, original MOG-09 receipts as authenticated without source attestation, or an unmerged PR as installed functionality.
+
+**Priority backlog (technical work, not A–E dispatch):** finish and verify actual Scenario Developer/Results UI against operator workflow; resolve authentic MOG-09 provenance/privacy and full source/receipt comparability; preserve auth-before-validation and safe supervisor contracts; maintain wiki/trace/capture integration with evidence provenance. Validate current code and real open issues before ranking or closing any technical work. B20 browser/security acceptance remains separate from offline CI.
+
+---
+
+## 2026-10-28 — Scenario Developer typed steps and Run Results (#1406 workstream)
+
+**Merged on main:** typed action library with independent actions and checks (#1409, #1452), saved `native_steps` in drafts (#1452, schema record `SCENARIO_NATIVE_STEPS_SCHEMA_PROPOSAL.md`), editor wiring and read-only Advanced mode (#1453, #1460), Add Action Step / Add Check Step (#1454), Given/When/Then preview (#1455), export `"expect": {}` for action-only steps and per-key observed execution paths (#1461), and local verification against a real DSP checkout and XiHeadless loaders (#1456).
+
+**What that does not establish:** drafts are design-only and nothing here is executable. At XiHeadless `e5e8035071` the file loader accepted all 18 native keys but the MCP task path accepted only `wait_ms` (#1459); whether the runner executes accepted steps was not run (no authorized operator). #1411 stays open for that controlled run.
+
+**Run Results:** a read-only page already exists (`/feature-testing/run/{id}`, history at `?tab=runs`). Remaining gaps tracked under #1408: a Compare-runs view (needs the importer to record definition digest, environment and fixture identity before `revision_comparison` can say anything but NOT_COMPARABLE) and plain-language BLOCKED/UNKNOWN/bare-PASS states with the runner job shown separately from the verdict. Authentic MOG-09 receipts (#1420) stay unmerged pending the owner's privacy decision. Publish, preflight and supervised run remain #1412 and need an authorized operator.
+
+---
 
 # Current Workbench Roadmap
 
