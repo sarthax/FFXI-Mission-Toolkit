@@ -110,8 +110,9 @@ def test_run_overview_preserves_unrecognized_values_and_missing_job_without_pass
     assert overview["verdict_counts"] == [
         {"verdict": "PASS", "count": 1}, {"verdict": "UNRECOGNIZED", "count": 1}]
     assert overview["mixed_recorded_verdicts"] is True and overview["job"] is None
-    assert summarize_run([], {"status": "secret-account", "error": "token"})["job"] == {
-        "status": "UNKNOWN", "meaning": "status not recognized"}
+    for bad_status in ("secret-account", ["COMPLETED"], {"status": "COMPLETED"}):
+        assert summarize_run([], {"status": bad_status, "error": "token"})["job"] == {
+            "status": "UNKNOWN", "meaning": "status not recognized"}
 
 
 # --- the job lookup ----------------------------------------------------------------------------------------------
