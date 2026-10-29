@@ -13,6 +13,11 @@ def _import_lsb_indexer(monkeypatch):
         "workbench.devtools.indexing.build_database",
     ):
         sys.modules.pop(name, None)
+    # `from pkg import mod` prefers the package attribute over sys.modules, so a stale one from an earlier import
+    # would hand the facade a different module object than a fresh import_module() returns.
+    package = importlib.import_module("workbench.devtools.indexing")
+    for attr in ("build_lsb_index", "build_database"):
+        monkeypatch.delattr(package, attr, raising=False)
     return importlib.import_module("workbench.devtools.indexing.build_lsb_index")
 
 
