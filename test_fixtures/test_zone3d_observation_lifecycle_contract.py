@@ -11,6 +11,6 @@ def test_history_contract():
     assert "function rememberLiveEntitySnapshot()" in JS
     assert "function clearObservationHistory()" in JS
     assert "lastLiveEntitiesById.clear()" in JS
-    assert "if (!live.length && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS) kind = 'last_seen';" in JS
+    assert "if (!live.length && telemetryUsable && previous && now - previous.seenAt <= OBSERVATION_HISTORY_SECONDS && map.length <= 1) kind = 'last_seen';" in JS
     assert "not proof of despawn" in JS
     assert "rememberLiveEntitySnapshot();\n    updateLiveEntityPicker();" in JS

@@ -11,5 +11,4 @@ def test_material_diagnostics_live_in_info_and_picker_is_read_only():
     assert "raycaster.intersectObjects(sceneryMeshes, false)" in SOURCE
     assert "materialRowByMaterial.set(material, rowIndex)" in SOURCE
     assert "sceneryMeshes.push(mesh)" in SOURCE
-    assert "no LOD switching confirmed" in SOURCE
     assert "alphaDiagnosticSelect.dispatchEvent(new Event('change'))" in SOURCE

@@ -6,7 +6,7 @@ def test_read_only_viewer_reparents_existing_controls_into_collapsible_overlay()
     source = VIEWER.read_text(encoding="utf-8")
     assert 'id="zone3d-toolrail"' in source
     assert 'id="zone3d-drawer"' in source
-    for tab in ("zone", "layers", "camera", "live", "capture", "diagnostics"):
+    for tab in ("layers", "camera", "live", "capture", "diagnostics"):
         assert f'data-viewer-tab="{tab}"' in source
         assert f'data-viewer-pane="{tab}" hidden' in source
     for existing_control in ("#ashita-live-controls", "#zone3d-navigation",

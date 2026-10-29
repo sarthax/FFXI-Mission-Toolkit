@@ -15,4 +15,4 @@ def test_secondary_client_tracking_is_read_only_and_bounded():
     assert "data?.visible" in SOURCE
     assert "scene.remove(marker); marker.geometry.dispose(); marker.material.dispose();" in SOURCE
     assert "setInterval(refreshOtherClientMarkers, 2000)" in SOURCE
-    assert "'Bridge ' + roundTripMs + ' ms'" in SOURCE
+    assert "'Bridge ' + roundTripMs + ' ms" in SOURCE

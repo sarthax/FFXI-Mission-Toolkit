@@ -10,7 +10,7 @@ def test_zone_viewer_reports_mesh_origin_and_recoverable_failure():
     assert 'id="viewer-mesh-source"' in source
     assert 'id="viewer-mesh-error"' in source
     assert 'id="viewer-retry-mesh"' in source
-    assert "showMeshSource('Client DAT · live textured mesh')" in source
+    assert "showMeshSource(`Client DAT · ${audit.accepted}/${audit.total} instances" in source
     assert "showMeshSource('Cached OBJ · untextured fallback')" in source
     assert "showMeshError('The cached OBJ is missing or unreadable." in source
     assert "loadObjFallback();" in source
