@@ -92,7 +92,7 @@ def summarize_run(records: list[dict], job: dict | None = None) -> dict:
     if isinstance(job, dict):
         status = job.get("status")
         # Do not echo untrusted job status, account, character, error or phase data.
-        if status in _JOB_MEANING:
+        if isinstance(status, str) and status in _JOB_MEANING:
             linked_job = {"status": status, "meaning": _JOB_MEANING[status]}
         else:
             linked_job = {"status": "UNKNOWN", "meaning": "status not recognized"}
