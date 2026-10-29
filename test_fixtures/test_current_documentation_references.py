@@ -29,7 +29,10 @@ def main():
         assert name in help_text, f"Global Help missing current guide: {name}"
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     current = (docs / "ROADMAP_CURRENT.md").read_text(encoding="utf-8")
-    assert GUIDES[0] in readme and GUIDES[0] in current
+    # The short current-priorities page links the history/audit pages rather than every guide.
+    assert GUIDES[0] in readme
+    for linked in ("archive/ROADMAP_CURRENT_PRE_COORDINATOR_RETIREMENT_20261027.md", "ROADMAP.md", "AUDIT_STATUS.md"):
+        assert linked in current, f"ROADMAP_CURRENT.md must link {linked}"
     # Check local Markdown links in these curated guides, without following
     # URLs or treating code-formatted source paths as Markdown links.
     for name in GUIDES:
