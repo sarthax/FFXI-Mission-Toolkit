@@ -148,6 +148,11 @@
       "note": "Shared packet decode/opcode index; packet_opcode_index.py was captures.",
       "owner": "captures",
       "prefix": "src/workbench/packets/"
+    },
+    {
+      "note": "Server admin tooling (feature testing, calculators, scenario authoring, GM commands).",
+      "owner": "devtools",
+      "prefix": "src/workbench/server_admin/"
     }
   ],
   "root_python_files": {
