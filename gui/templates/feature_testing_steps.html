@@ -100,14 +100,14 @@
 <p>Step statuses are <strong>recalculated from imported observations</strong> when an imported record is selected. Otherwise they are UNKNOWN. These are assertion outcomes, not independent verification.</p>
 <ol class="ft-steps">
 {% for step in scenario_view.steps %}
-<li><details class="ft-step"{% if step.status != 'PASS' %} open{% endif %}>
+<li><details class="ft-step"{% if scenario_view.recorded_verdict or step.status != 'PASS' %} open{% endif %}>
 <summary class="ft-step-line"><strong>{{ step.number }}. {{ step.title }}</strong><span class="ft-signal">{{ step.status if step.status != 'PASS' else 'PASS (recalculated only)' }}</span>
 {% if step.confidence_note %}<span class="ft-chip" title="{{ step.confidence_note }}">⚠ limitation</span>{% endif %}
 {% if step.has_failed_assertion %}<span class="ft-kind ft-kind-failed" title="A supported observation was present and the assertion evaluated FAIL.">Assertion FAILED</span>{% endif %}
 {% if step.has_missing_observation %}<span class="ft-kind" title="No normalized observation was imported, so this is unknown, not failed.">Observation missing (not failed)</span>{% endif %}
 {% for kind in step.source_kinds %}<span class="ft-kind" title="Derived from the observation field name; runner-reported, not independently verified.">{{ kind }}</span>{% endfor %}
-<span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else sz(assertion.observed) }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
-<p class="ft-meta"><code>{{ step.id }}</code> · {{ step.intent }}</p>
+<span class="ft-brief">{{ step.intent }}</span></summary>
+<details class="ft-tech"><summary>Technical step ID</summary><p class="ft-meta"><code>{{ step.id }}</code></p></details>
 {% if step.confidence_note %}<p class="ft-warning"><strong>Evidence limitation:</strong> {{ step.confidence_note }}</p>{% endif %}
 <div class="ft-pair">
 <div class="ft-cell"><strong>Expected outcome</strong>
