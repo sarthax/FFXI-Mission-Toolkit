@@ -79,20 +79,35 @@ def _consumer_core(message: dict) -> None:
             raise ValueError("refusal cannot create an operation")
     if kind == "status_response" and data.get("state") not in STATES:
         raise ValueError("unknown status")
-    if kind == "cancel_response" and data.get("code") not in {"cancellation_requested", "already_terminal", "unknown_operation"}:
-        raise ValueError("cancel acknowledgement is not terminal cancellation")
+    if kind == "cancel_response":
+        if data.get("code") not in {"cancellation_requested", "already_terminal", "unknown_operation"}:
+            raise ValueError("unknown cancellation response")
+        if data["code"] == "cancellation_requested" and data.get("observed_state") == "cancelled":
+            raise ValueError("cancel acknowledgement cannot establish terminal cancellation")
     if kind != "result_bundle":
         return
     operation = data.get("operation")
     cleanup = data.get("cleanup")
     revisions = data.get("revisions")
     assertions = data.get("assertions")
-    if (not isinstance(operation, dict) or operation.get("state") not in STATES
+    if (not isinstance(operation, dict) or operation.get("state") not in
+            {"completed", "failed", "cancelled", "interrupted"}
             or not isinstance(cleanup, dict) or cleanup.get("state") not in CLEANUP
             or not isinstance(revisions, dict)
             or set(revisions) != {"dsp_commit", "headless_commit", "toolkit_commit"}
             or not isinstance(assertions, list) or data.get("verdict") not in VERDICTS):
         raise ValueError("missing/unknown result core")
+    unknowns = data.get("unknowns")
+    if not isinstance(unknowns, list) or not all(isinstance(x, str) for x in unknowns):
+        raise ValueError("missing provenance reasons")
+    for source, revision in revisions.items():
+        if revision is None:
+            if not any(source in reason for reason in unknowns):
+                raise ValueError("missing revision requires an explicit unknown reason")
+        elif not isinstance(revision, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", revision):
+            raise ValueError("invalid revision SHA")
+    if data["verdict"] == "PASS" and operation["state"] != "completed":
+        raise ValueError("non-completed execution cannot establish PASS")
     if any(a.get("verdict") not in VERDICTS or a.get("authority") not in {
             "client_observed", "server_authoritative", "unverified"}
            or a.get("origin") not in {"headless_client", "dsp_read_only", "runner_derived"}
@@ -216,6 +231,35 @@ def test_unknown_core_changes_refused_but_additive_optional_fields_are_not_gamep
         change(damaged)
         with pytest.raises(ValueError):
             _consumer_core(damaged)
+
+
+def test_pass_requires_completed_operation_even_with_verified_assertions():
+    for state in ("failed", "cancelled", "interrupted", "running"):
+        damaged = _message("success", "result_bundle")
+        damaged["data"]["operation"]["state"] = state
+        with pytest.raises(ValueError, match="result core|non-completed"):
+            _consumer_core(damaged)
+
+
+def test_missing_revision_reason_and_malformed_sha_rejected():
+    for source in ("dsp_commit", "headless_commit", "toolkit_commit"):
+        damaged = _message("success", "result_bundle")
+        damaged["data"]["unknowns"] = [
+            reason for reason in damaged["data"]["unknowns"] if source not in reason
+        ]
+        with pytest.raises(ValueError, match="unknown reason"):
+            _consumer_core(damaged)
+        damaged = _message("success", "result_bundle")
+        damaged["data"]["revisions"][source] = "not-a-full-sha"
+        with pytest.raises(ValueError, match="revision SHA"):
+            _consumer_core(damaged)
+
+
+def test_cancel_ack_cannot_claim_observed_cancellation():
+    acknowledgement = _message("cancelled", "cancel_response")
+    acknowledgement["data"]["observed_state"] = "cancelled"
+    with pytest.raises(ValueError, match="cannot establish terminal"):
+        _consumer_core(acknowledgement)
 
 
 def test_legacy_importer_is_not_a_direct_wire_protocol_consumer():
