@@ -424,6 +424,7 @@ def status() -> dict:
             driver = True
         except ImportError:
             driver = False
+    chosen_detected = any(r["path"] == chosen for r in roots)
     pre = preflight("moghancement", "MOG-09")
     if isolation["isolated"] and not isolation["ok"]:
         db_ready = False
@@ -435,8 +436,11 @@ def status() -> dict:
     steps.extend([
         {"id": "enabled", "ok": settings["enabled"], "title": "Test execution turned on",
          "fix": "Press \"Turn on test execution\" below. Tokens are generated for you."},
-        {"id": "checkout", "ok": bool(chosen),
-         "title": "XiHeadless checkout chosen", "fix": "Pick a detected checkout from the list. None listed? Build XiHeadless first (see the guide)."},
+        {"id": "checkout", "ok": bool(chosen) and chosen_detected,
+         "title": "XiHeadless checkout chosen",
+         "fix": (f"The saved checkout ({chosen}) is no longer found. Pick a detected checkout from the list and press Save."
+                 if chosen and not chosen_detected else
+                 "Pick a detected checkout from the list. None listed? Build XiHeadless first (see the guide).")},
         {"id": "dll", "ok": bool(chosen) and (Path(chosen) / "bin" / "mcp" / "XiHeadless.dll").is_file(),
          "title": "XiHeadless is built (bin/mcp/XiHeadless.dll)", "fix": "Build XiHeadless into bin/mcp from a clean commit, then reload this page."},
         {"id": "characters", "ok": bool(settings["charids"]) and isolation["ok"] if isolation["isolated"]
