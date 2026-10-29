@@ -34,10 +34,10 @@ def main():
     assert "Product features outside the recent Workbench scope" in gui
     assert "Unified remaining-feature inventory" in text
 
-    current = Path("docs/workbench/ROADMAP_CURRENT.md").read_text(encoding="utf-8")
-    # ROADMAP_CURRENT is a durable capability map, not the historical per-PR ledger. Assert the
-    # current product families rather than headings from the superseded October-1 snapshot.
-    current_sections = [
+    archive = Path("docs/workbench/archive/ROADMAP_CURRENT_PRE_COORDINATOR_RETIREMENT_20261027.md").read_text(encoding="utf-8")
+    # The long capability map was archived when the coordinator was retired (2026-10-27); the
+    # archive must keep it intact so that history is not lost.
+    archive_sections = [
         "Core Workbench architecture",
         "Server environments and runtime context",
         "Character Editor",
@@ -55,27 +55,44 @@ def main():
         "CI / regression safety",
         "Highest-value next work",
     ]
-    missing_sections = [name for name in current_sections if name not in current]
-    assert not missing_sections, f"ROADMAP_CURRENT.md missing current capability families: {missing_sections}"
+    missing_sections = [name for name in archive_sections if name not in archive]
+    assert not missing_sections, f"archived roadmap missing capability families: {missing_sections}"
 
     reconciled = re.search(
         r"Last fully reconciled against merged PR and branch history: \*\*(\d{4}-\d{2}-\d{2})\*\*",
-        current,
+        archive,
     )
-    assert reconciled, "ROADMAP_CURRENT.md must declare its last full reconciliation date"
-    assert reconciled.group(1) >= "2026-10-06", "roadmap reconciliation date regressed before the current closeout baseline"
+    assert reconciled, "archived roadmap must declare its last full reconciliation date"
+    assert reconciled.group(1) >= "2026-10-06", "roadmap reconciliation date regressed before the archive closeout baseline"
 
-    assert "`main` is the product baseline" in current
-    assert "Clarified Flow is the default view" in current
-    assert "BEHAVIOR_INSPECTOR_CLOSEOUT.md" in current
-    assert "Persistent **client item DAT cache**" in current
-    assert "Campaign/session manifest import support" in current
-    assert "Progression transition bundles group trigger/event" in current
-    assert "Native modern-LSB Nyzul adapter parses" in current
-    assert "Evidence-backed contradiction dossiers" in current
-    assert "PR #545 merged evidence-backed lobby/search/map classification" in current
-    assert "Final Phase D source-layout ownership cleanup is complete" in current
-    assert "historical root `settings.py` and `gui_server.py` compatibility surfaces are retired" in current
+    assert "`main` is the product baseline" in archive
+    assert "Clarified Flow is the default view" in archive
+    assert "BEHAVIOR_INSPECTOR_CLOSEOUT.md" in archive
+    assert "Persistent **client item DAT cache**" in archive
+    assert "Campaign/session manifest import support" in archive
+    assert "Progression transition bundles group trigger/event" in archive
+    assert "Native modern-LSB Nyzul adapter parses" in archive
+    assert "Evidence-backed contradiction dossiers" in archive
+    assert "PR #545 merged evidence-backed lobby/search/map classification" in archive
+    assert "Final Phase D source-layout ownership cleanup is complete" in archive
+    assert "historical root `settings.py` and `gui_server.py` compatibility surfaces are retired" in archive
+
+    current = Path("docs/workbench/ROADMAP_CURRENT.md").read_text(encoding="utf-8")
+    # ROADMAP_CURRENT.md is now the short priorities-and-gates page, not the capability map.
+    for heading in (
+        "# Mission Toolkit — current roadmap",
+        "## Product outcomes — actual work still open",
+        "## Recently reconciled backlog",
+        "## Working and review rules",
+    ):
+        assert heading in current, f"ROADMAP_CURRENT.md missing section: {heading}"
+    refreshed = re.search(r"\*\*Status refreshed (\d{4}-\d{2}-\d{2})", current)
+    assert refreshed, "ROADMAP_CURRENT.md must declare when its status was last refreshed"
+    assert refreshed.group(1) >= "2026-10-28", "current roadmap refresh date regressed before the coordinator retirement"
+    priorities = re.findall(r"^\| \*\*(P0|P1|Ongoing)\*\* \|", current, re.M)
+    assert "P0" in priorities, "current roadmap must list at least one P0 outcome"
+    assert "archive/ROADMAP_CURRENT_PRE_COORDINATOR_RETIREMENT_20261027.md" in current, "current roadmap must link the preserved historical roadmap"
+    assert "An **open/draft** PR is not merged functionality" in current
 
     print("roadmap reconciliation self-test: PASS")
 
