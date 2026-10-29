@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 from .execution_preflight import preflight
 from .importer import import_report
 from .router import _REPO
-from .run_options import env_for, resolve_run_options
+from .run_options import RUN_OPTIONS, env_for, resolve_run_options, to_json
 
 
 def execute_mog09(*, account: str, charid: int, out_dir: Path,
@@ -53,12 +53,16 @@ def execute_mog09(*, account: str, charid: int, out_dir: Path,
     script = root / "tools" / "observation_runner.py"
     env = dict(os.environ)
     env["TOOLKIT_SRC"] = str(_REPO / "src")
-    env.update(env_for(options))  # allow-listed bot switches only; explicit so ambient values cannot leak in
+    for name, spec in RUN_OPTIONS.items():
+        if spec.get("path_valued"):
+            env.pop(name, None)
+    env.update(env_for(options, str(out / "telemetry.jsonl")))  # allow-listed bot switches only; explicit so ambient values cannot leak in
     args = [sys.executable, str(script), "--out-dir", str(out),
             "--account", account, "--charid", str(charid), "--supervisor", supervisor]
     # No shell, no user supplied script or passthrough command arguments.
     # XiHeadless checks dirty tracked files and refuses by default.
     out.mkdir(mode=0o700)
+    (out / "run_options.json").write_text(to_json(options) + "\n", encoding="utf-8")  # audit trail if the job row is lost
     try:
         result = subprocess.run(args, cwd=str(root), env=env, capture_output=True,
                                 text=True, timeout=timeout, check=False)

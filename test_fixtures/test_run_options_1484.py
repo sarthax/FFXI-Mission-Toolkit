@@ -32,6 +32,13 @@ def test_env_and_json_roundtrip():
     assert run_options.from_json(None) is None and run_options.from_json("garbage") is None
 
 
+def test_telemetry_is_path_valued():
+    off = run_options.env_for(run_options.resolve_run_options(None), "/x/t.jsonl")
+    assert "XI_TELEMETRY" not in off
+    on = run_options.env_for(run_options.resolve_run_options({"XI_TELEMETRY": True}), "/x/t.jsonl")
+    assert on["XI_TELEMETRY"] == "/x/t.jsonl"
+
+
 def test_job_stores_options_and_rejects_bad(monkeypatch, tmp_path):
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_JOBS_DB", str(tmp_path / "jobs.db"))
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_ARTIFACTS_ROOT", str(tmp_path))
@@ -67,6 +74,7 @@ def test_subprocess_env_gets_switches(monkeypatch, tmp_path):
     root.mkdir()
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_HEADLESS_ROOT", str(root))
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "5")
+    monkeypatch.setenv("XI_TELEMETRY", "stray")
     monkeypatch.setenv("XIBOT_QUICK_TRAVEL", "1")  # ambient value must be overridden by the explicit default
     monkeypatch.setattr(cli, "preflight", lambda *a: {"ready_for_operator_review": True, "checks": []})
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -75,6 +83,8 @@ def test_subprocess_env_gets_switches(monkeypatch, tmp_path):
         cli.execute_mog09(account="a", charid=5, out_dir=out, supervisor="http://127.0.0.1:8420",
                           approved=True, run_options={"XIBOT_VERBOSE": True})
     assert captured["env"]["XIBOT_VERBOSE"] == "1" and captured["env"]["XIBOT_QUICK_TRAVEL"] == "0"
+    assert "XI_TELEMETRY" not in captured["env"]
+    assert (out / "run_options.json").is_file()
 
 
 def test_launch_rejects_unknown_option(monkeypatch):
@@ -84,7 +94,7 @@ def test_launch_rejects_unknown_option(monkeypatch):
     body = {"account": "xitest07", "charid": 21836, "approval": True, "run_options": {"EVIL": True}}
     r = TestClient(host.app).post("/feature-testing/builder/launch", json=body,
                                   headers={"X-Test-Operator-Token": "a" * 64})
-    assert r.status_code in (400, 403)
+    assert r.status_code == 400
 
 
 def test_gui_has_run_options():

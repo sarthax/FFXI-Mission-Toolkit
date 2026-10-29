@@ -17,7 +17,7 @@ RUN_OPTIONS: dict[str, dict] = {
     "XI_POS_TRACE": {"default": True, "shortcut": False, "label": "Log position/zone-in trace"},
     "XI_RDM_SHADOW_TRACE": {"default": False, "shortcut": False, "label": "RDM shadow policy trace"},
     "XIBOT_VERBOSE": {"default": False, "shortcut": False, "label": "Verbose logging"},
-    "XI_TELEMETRY": {"default": False, "shortcut": False, "label": "Per-run telemetry JSONL"},
+    "XI_TELEMETRY": {"default": False, "shortcut": False, "label": "Per-run telemetry JSONL (written to the run artifacts folder)", "path_valued": True},
 }
 
 
@@ -40,9 +40,20 @@ def resolve_run_options(options: object = None) -> dict[str, bool]:
     return {**defaults(), **options}
 
 
-def env_for(options: dict[str, bool]) -> dict[str, str]:
-    """Environment entries for an already-resolved option set (always every allow-listed name)."""
-    return {name: "1" if options[name] else "0" for name in RUN_OPTIONS}
+def env_for(options: dict[str, bool], telemetry_path: str | None = None) -> dict[str, str]:
+    """Environment entries for an already-resolved option set.
+
+    XI_TELEMETRY is a file path in xiheadless (any non-empty value enables it), so it is set to ``telemetry_path``
+    when on and omitted when off; callers must also drop any ambient value.
+    """
+    env = {}
+    for name, spec in RUN_OPTIONS.items():
+        if spec.get("path_valued"):
+            if options[name] and telemetry_path:
+                env[name] = telemetry_path
+        else:
+            env[name] = "1" if options[name] else "0"
+    return env
 
 
 def shortcuts_enabled(options: dict[str, bool]) -> list[str]:
