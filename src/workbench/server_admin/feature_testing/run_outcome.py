@@ -8,6 +8,7 @@ promotes a record, and never invents a cause: a missing reason stays "no reason 
 from __future__ import annotations
 
 from .results import UNCLASSIFIED, reason_class
+from .run_options import shortcuts_enabled, switches as run_option_switches
 
 _MAX_NOTE = 300
 _REASONS = {
@@ -39,6 +40,19 @@ def _assertions(evidence: object) -> tuple[int, int, int, int]:
     return len(rows), ok, bad, len(rows) - ok - bad
 
 
+def _run_options_summary(options: object) -> dict:
+    """What the launcher recorded for this run. None means it predates recording: say so, never assume defaults."""
+    if not isinstance(options, dict):
+        return {"recorded": False, "shortcuts": [], "on": []}
+    try:
+        shortcuts = shortcuts_enabled(options)
+    except ValueError:
+        return {"recorded": False, "shortcuts": [], "on": []}
+    labels = {s["env"]: s["label"] for s in run_option_switches()}
+    return {"recorded": True, "shortcuts": shortcuts,
+            "on": [labels[k] for k, v in options.items() if v is True and k in labels]}
+
+
 def describe_outcome(record: dict, job: dict | None = None) -> dict:
     """Summarise one stored result. ``job`` is the runner job row for the same run, if one is known."""
     verdict = record.get("verdict")
@@ -64,5 +78,6 @@ def describe_outcome(record: dict, job: dict | None = None) -> dict:
         status = job.get("status")
         out["job"] = {"status": status, "meaning": _JOB_MEANING.get(status, "an unrecognised state"),
                       "phase": job.get("phase"), "error_recorded": bool(job.get("error")),
-                      "verdict_agrees": job.get("verdict") in (None, verdict)}
+                      "verdict_agrees": job.get("verdict") in (None, verdict),
+                      "run_options": _run_options_summary(job.get("run_options"))}
     return out

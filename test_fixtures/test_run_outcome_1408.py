@@ -98,7 +98,8 @@ def test_job_lookup_is_read_only_and_exposes_no_account_or_character(tmp_path, m
         db.execute("INSERT INTO feature_test_jobs (id, created_at, updated_at, case_id, status, account, charid, run_id, verdict, error, phase) "
                    "VALUES ('j1','2026-10-28T00:00:00Z','2026-10-28T00:00:00Z','MOG-09','COMPLETED','secret-account',12345,'r1','PASS',NULL,'evidence_imported')")
     job = execution_jobs.job_for_run("r1")
-    assert job == {"status": "COMPLETED", "phase": "evidence_imported", "verdict": "PASS", "error": None}
+    assert job == {"status": "COMPLETED", "phase": "evidence_imported", "verdict": "PASS", "error": None,
+                   "run_options": None}  # None = recorded before #1484 or not recorded
     assert "secret-account" not in repr(job) and "12345" not in repr(job)
     assert execution_jobs.job_for_run("other") is None
 
