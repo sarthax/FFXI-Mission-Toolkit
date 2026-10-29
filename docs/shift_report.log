@@ -618,3 +618,120 @@
 [2026-10-14 01:19:26] capture 2
   observations: 0
   no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:52:17] capture 792
+  observations: 1
+  RULUDE_GARDENS (zone 243): shift unverified hits 1/2 runner-up 0 no confident shift
+[2026-10-24 16:52:18] capture 793
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:52:21] capture 794
+  observations: 1
+  Windurst Woods (zone 241): shift unverified hits 2/2 runner-up 0 no confident shift
+  Upper Jeuno (zone 244): shift unverified hits 0/1 runner-up 0 no confident shift
+[2026-10-24 16:52:25] capture 795
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:15] capture 796
+  observations: 0
+  Southern San d'Oria (zone 230): shift unverified hits 0/276 runner-up 0 no confident shift
+  East Ronfaure (zone 101): shift unverified hits 0/2 runner-up 0 no confident shift
+  Windurst Woods (zone 241): shift unverified hits 0/8 runner-up 0 no confident shift
+[2026-10-24 16:55:18] capture 797
+  observations: 0
+  SOUTHERN_SAN_DORIA (zone 230): shift unverified hits 0/3 runner-up 0 no confident shift
+[2026-10-24 16:55:18] capture 798
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:19] capture 799
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:19] capture 800
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:19] capture 801
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:20] capture 802
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:20] capture 803
+  observations: 0
+  SOUTHERN_SAN_DORIA (zone 230): shift unverified hits 0/4 runner-up 0 no confident shift
+[2026-10-24 16:55:21] capture 804
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:21] capture 805
+  observations: 0
+  SOUTHERN_SAN_DORIA (zone 230): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:23] capture 806
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:23] capture 807
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:24] capture 808
+  observations: 0
+  Southern San d'Oria (zone 230): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:25] capture 809
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/3 runner-up 0 no confident shift
+[2026-10-24 16:55:25] capture 810
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:25] capture 811
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:26] capture 812
+  observations: 1
+  WINDURST_WOODS (zone 241): shift unverified hits 1/5 runner-up 0 no confident shift
+  master zone 241 8523-8523: +12 (obs 3, captures 2)
+[2026-10-24 16:55:26] capture 813
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/1 runner-up 0 no confident shift
+[2026-10-24 16:55:27] capture 814
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:27] capture 815
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:27] capture 816
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:28] capture 817
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:28] capture 818
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/1 runner-up 0 no confident shift
+[2026-10-24 16:55:28] capture 819
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:29] capture 820
+  observations: 1
+  WINDURST_WOODS (zone 241): shift unverified hits 2/8 runner-up 0 no confident shift
+  master zone 241 8523-8523: +12 (obs 5, captures 3)
+[2026-10-24 16:55:29] capture 821
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/2 runner-up 0 no confident shift
+[2026-10-24 16:55:30] capture 822
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/1 runner-up 0 no confident shift
+[2026-10-24 16:55:30] capture 823
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:31] capture 824
+  observations: 1
+  WINDURST_WOODS (zone 241): shift +12 hits 5/12 runner-up 0 CONFIDENT
+  master zone 241 8523-8523: +12 (obs 10, captures 4)
+[2026-10-24 16:55:31] capture 825
+  observations: 0
+  WINDURST_WOODS (zone 241): shift unverified hits 0/4 runner-up 0 no confident shift
+[2026-10-24 16:55:31] capture 826
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
+[2026-10-24 16:55:32] capture 827
+  observations: 0
+  Southern San d'Oria (zone 230): shift unverified hits 0/6 runner-up 0 no confident shift
+[2026-10-24 16:55:33] capture 828
+  observations: 0
+  no 0x036 chat packets matched to a zone (no shift evidence)
