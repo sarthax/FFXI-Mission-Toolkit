@@ -44,23 +44,41 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/log-errors",
         "/api/supervisor/service-health",
         "/api/supervisor/test-character-inventory",
+        "/api/supervisor/test-character-inventory-v2",
+        "/api/supervisor/test-character-progression",
         "/api/supervisor/test-character-keyitems",
         "/api/supervisor/test-character-vars",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
+    assert all(operation["operationId"].startswith("supervisor_")
+               for methods in spec["paths"].values()
+               for operation in methods.values())
+    assert spec["paths"]["/api/supervisor/test-character-inventory-v2"]["get"]["operationId"] == (
+        "supervisor_test_character_inventory_v2")
+    assert spec["paths"]["/api/supervisor/test-character-progression"]["get"]["operationId"] == (
+        "supervisor_test_character_progression")
+    assert spec["components"]["securitySchemes"]["bearerAuth"] == {"type": "http", "scheme": "bearer"}
+    assert all(operation["security"] == [{"bearerAuth": []}]
+               and all(param.get("name", "").lower() != "authorization"
+                       for param in operation.get("parameters", []))
+               for methods in spec["paths"].values()
+               for operation in methods.values())
     assert "/wiki" not in str(spec["paths"])
 
 
 def test_supervisor_log_errors_redacts_credentials(tmp_path, monkeypatch):
     file = tmp_path / "dsp.log"
-    file.write_text("INFO start\\nERROR authorization: BearerTokenExample\\nException password=letmein\\n")
+    file.write_text("INFO start\nERROR authorization: BearerTokenExample\nException password=letmein\n")
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_LOG", str(file))
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_TOKEN", "a" * 64)
     result = supervisor.log_errors(source="dsp", authorization="Bearer " + "a" * 64)
     assert result["configured"]
-    assert len(result["lines"]) == 2
+    assert len(result["lines"]) == 2  # INFO excluded; both physical error lines remain
     assert all("[REDACTED]" in line for line in result["lines"])
+    assert result["lines"][0].startswith("ERROR authorization:")
+    assert result["lines"][1].startswith("Exception password=")
     assert "letmein" not in repr(result)
+    assert "BearerTokenExample" not in repr(result)
 
 
 def test_supervisor_log_errors_requires_authentication(tmp_path, monkeypatch):
@@ -237,7 +255,7 @@ def test_run_evidence_rejects_malformed_stored_json(tmp_path, monkeypatch):
 def test_supervisor_source_search_scoped_and_authenticated(tmp_path, monkeypatch):
     root = tmp_path / "src"
     root.mkdir()
-    (root / "handler.py").write_text("def SaveKeyItems(): pass\\npassword = 'hidden' # SaveKeyItems\\n", encoding="utf-8")
+    (root / "handler.py").write_text("def SaveKeyItems(): pass\npassword = 'hidden' # SaveKeyItems\n", encoding="utf-8")
     (root / "secret.env").write_text("SaveKeyItems", encoding="utf-8")
     (root / "hidden.py").symlink_to(root / "handler.py")
     monkeypatch.setenv("MISSION_TOOLKIT_SUPERVISOR_DSP_SOURCE_ROOT", str(root))
@@ -246,6 +264,8 @@ def test_supervisor_source_search_scoped_and_authenticated(tmp_path, monkeypatch
     result = supervisor.supervisor_search_source("SaveKeyItems", repository="dsp", authorization=token)
     assert [(row["path"], row["line"]) for row in result["matches"]] == [("handler.py", 1)]
     assert result["source_revision"] == "local_checkout_unverified"
+    assert all("password" not in row["excerpt"].lower() for row in result["matches"])
+    assert all(not row["path"].endswith((".env", "hidden.py")) for row in result["matches"])
     with pytest.raises(HTTPException) as exc:
         supervisor.supervisor_search_source("SaveKeyItems", repository="dsp", authorization=None)
     assert exc.value.status_code == 403

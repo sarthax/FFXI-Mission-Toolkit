@@ -28,7 +28,7 @@
 .ft-check input{min-height:auto;width:auto}
 .ft-job{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.35rem 0}
 .ft-pill{display:inline-block;padding:.1rem .6rem;border-radius:1rem;font-size:.8rem;font-weight:700;border:1px solid currentColor}
-.ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-running,.ft-queued{color:#2f6fd6}
+.ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-unknown{color:#6b7280}.ft-running,.ft-queued{color:#2f6fd6}
 .ft-adv>summary{cursor:pointer;list-style:revert}.ft-adv>summary h2{display:inline}
 .ft-adv details{margin:.75rem 0;padding:.5rem .75rem;border:1px solid var(--wb-border,#777);border-radius:.5rem}
 </style>
@@ -46,7 +46,7 @@
 <input type="hidden" name="tab" value="runs">
 <label for="ft-run-search">Run ID contains<input id="ft-run-search" name="query" value="{{ query_filter }}" placeholder="Search run ID"></label>
 <label for="ft-feature-filter">Feature<select id="ft-feature-filter" name="feature"><option value="">All features</option>{% for feature in features %}<option value="{{ feature.id }}" {% if feature_filter == feature.id %}selected{% endif %}>{{ feature.name }}</option>{% endfor %}</select></label>
-<label for="ft-verdict-filter">Contains verdict<select id="ft-verdict-filter" name="verdict"><option value="">All verdicts</option>{% for option in ['PASS','FAIL','BLOCKED','SKIPPED'] %}<option value="{{ option }}" {% if verdict_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
+<label for="ft-verdict-filter">Contains verdict<select id="ft-verdict-filter" name="verdict"><option value="">All verdicts</option>{% for option in ['PASS','FAIL','BLOCKED','SKIPPED','UNKNOWN'] %}<option value="{{ option }}" {% if verdict_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></label>
 <button type="submit">Apply filters</button><a href="/feature-testing?tab=runs">Clear</a>
 </form>
 {% if runs %}
@@ -62,7 +62,7 @@
 <section class="wb-panel ft-card">
 <h2>Run a test</h2>
 <div class="ft-status {{ 'ft-ok' if builder_preflight.ready_for_operator_review else 'ft-bad' }}">
-{% if builder_preflight.ready_for_operator_review %}<strong>Ready to run.</strong> All prerequisites were found.
+{% if builder_preflight.ready_for_operator_review %}<strong>Prerequisites detected — operator approval still required.</strong> This is not execution authorization.
 {% else %}<strong>Not ready yet.</strong> Fix the items below on the <a href="/feature-testing?tab=guide">Setup page</a>, then come back.{% endif %}
 <details {% if not builder_preflight.ready_for_operator_review %}open{% endif %}><summary>Prerequisite checklist</summary>
 <ul class="ft-checks">{% for check in builder_preflight.checks %}<li class="{{ 'ft-ok' if check.ok else 'ft-bad' }}">{{ '✓' if check.ok else '✗' }} {{ check.detail }}</li>{% endfor %}</ul></details>
@@ -74,8 +74,12 @@
 <label>Test account<input id="ft-run-account" value="{{ run_defaults.account }}" pattern="[A-Za-z0-9_-]{1,32}" required autocomplete="off"></label>
 <label>Character ID<input id="ft-run-character" value="{{ run_defaults.charid }}" type="number" min="1" required></label>
 <label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
+<fieldset id="ft-run-options"><legend>Run options</legend>
+<p class="ft-note">Defaults are the safe state. Shortcut switches skip normal bot behaviour, so a run that uses them is recorded as such and is not a normal-play result. Some switches only work on xiheadless builds that carry them.</p>
+{% for opt in run_option_switches %}<label class="ft-check"><input type="checkbox" data-env="{{ opt.env }}" {% if opt.default %}checked{% endif %}> {{ opt.label }}{% if opt.shortcut %} <strong>(shortcut)</strong>{% endif %} <small>{{ opt.help }}</small></label>
+{% endfor %}</fieldset>
 <label class="ft-check"><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
-<button type="submit" class="ft-primary">Launch MOG-09</button>
+<button type="submit" class="ft-primary" {% if not builder_preflight.ready_for_operator_review %}disabled aria-disabled="true" title="Fix blocked prerequisites before requesting operator launch"{% endif %}>Launch MOG-09</button>
 <button type="button" id="ft-refresh-jobs">Refresh</button>
 </form>
 <p id="ft-job-feedback" class="ft-feedback" aria-live="polite" role="status">Nothing launched yet.</p>
@@ -126,7 +130,8 @@ form.addEventListener('submit',async event=>{
   const body={account:document.getElementById('ft-run-account').value,
     charid:Number(document.getElementById('ft-run-character').value),
     supervisor_port:Number(document.getElementById('ft-run-port').value),
-    approval:document.getElementById('ft-run-approval').checked};
+    approval:document.getElementById('ft-run-approval').checked,
+    run_options:Object.fromEntries([...document.querySelectorAll('#ft-run-options input[data-env]')].map(el=>[el.dataset.env,el.checked]))};
   const result=await request('/feature-testing/builder/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   note.textContent='Queued job '+result.job_id+'. Refresh status to see results.';
   await refresh();
@@ -343,7 +348,38 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 </details>
 </section>
 {% elif tab == "catalog" %}
-<section class="wb-panel"><h2>Test catalog</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
+{% with sc = saved_catalog|default({"allowed": false}) %}
+<section class="wb-panel" id="ft-saved-catalog" aria-label="Saved scenario revisions">
+<h2>Saved scenario revisions</h2>
+<p>Design-only scenarios saved with immutable revisions and a review state. <strong>Published here means a reviewer recorded a decision; it does not make a scenario runnable.</strong> Running is unavailable from this catalog. This is separate from the <a href="/feature-catalog">Feature Catalog</a> (Toolkit capabilities) and from the built-in definitions below.</p>
+{% if not sc.allowed %}<p>The saved catalog is only shown to local readers.</p>
+{% elif not sc.configured %}<p>No catalog store is configured. It uses the local drafts file set by <code>MISSION_TOOLKIT_TEST_DRAFTS_DB</code>.</p>
+{% else %}
+<form method="get" action="/feature-testing" class="ft-filters">
+<input type="hidden" name="tab" value="catalog">
+<label>Search <input name="cq" value="{{ sc.q }}" maxlength="100" placeholder="name, purpose, case or tag"></label>
+<label>Feature <input name="cfeature" value="{{ sc.feature_id }}" maxlength="64"></label>
+<label>Tag <input name="ctag" value="{{ sc.tag }}" maxlength="32"></label>
+<label>State <select name="cstate"><option value="">Any</option>{% for st in sc.states %}<option value="{{ st }}"{% if st == sc.state %} selected{% endif %}>{{ st }}</option>{% endfor %}</select></label>
+<button type="submit">Search</button> <a href="/feature-testing?tab=catalog">Clear</a>
+</form>
+{% if sc.error %}<p role="alert">{{ sc.error }}</p>
+{% elif not sc.entries %}<p>{% if sc.q or sc.feature_id or sc.tag or sc.state %}No saved scenarios match these filters.{% else %}Nothing has been saved to the catalog yet.{% endif %}</p>
+{% else %}
+<p>{{ sc.total }} saved scenario{{ '' if sc.total == 1 else 's' }}{% if sc.total > sc.entries|length %} (showing the first {{ sc.entries|length }}){% endif %}.</p>
+<div class="ft-table-scroll"><table><thead><tr><th>Scenario</th><th>Feature</th><th>Tags</th><th>Latest revision</th><th>Published</th><th>Updated (UTC)</th></tr></thead><tbody>
+{% for e in sc.entries %}<tr>
+<td><a href="/feature-testing/catalog-entry/{{ e.feature_id|urlencode }}/{{ e.case_id|urlencode }}">{{ e.case_id }}</a>{% if e.name %}<br><small>{{ e.name }}</small>{% endif %}</td>
+<td>{{ e.feature_id }}</td><td>{{ e.tags|join(', ') if e.tags else '—' }}</td>
+<td>r{{ e.latest_revision }} · {{ e.latest_state }}</td>
+<td>{% if e.current_published_revision %}r{{ e.current_published_revision }}{% else %}None{% endif %}</td>
+<td>{{ e.updated_at[:19] }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endif %}
+</section>
+{% endwith %}
+<section class="wb-panel"><h2>Built-in test definitions</h2><p>Scenario plans describe acceptance criteria, sources, and current blockers. Opening a scenario does not execute it.</p>
 {% for feature in features %}
 <details style="padding:1rem;border:1px solid var(--wb-border,#777);margin:.75rem 0" {% if loop.first %}open{% endif %}>
 <summary><strong>{{ feature.name }}</strong> — {{ feature.cases|length }} scenarios</summary>

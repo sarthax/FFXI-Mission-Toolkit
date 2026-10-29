@@ -3,7 +3,7 @@
 ## Licensing and process boundary (applies to every option)
 Kuluu is **GPL-3.0-or-later**. Copying or linking its code into the Toolkit or into XiHeadless-DSP would make the combined work GPL. Our own licensing for XiHeadless-DSP is itself an open item (upstream xiheadless licence not yet checked). Therefore:
 - Do **not** copy Kuluu source, protocol tables or generated files into our trees.
-- Interoperate only across a **process boundary** (MCP/JSON over stdio or socket), with Kuluu built and kept in a separate directory (`D:\Claude\research\kuluu` today).
+- Interoperate only across a **process boundary** (MCP/JSON over stdio or socket), with Kuluu built and kept in a separate directory (`<local>/research\kuluu` today).
 - Any patch to Kuluu (e.g. a DSP auth flavour) must stay in a fork that is itself GPL.
 - Ideas (tool names, event kinds, goal persistence) are not copyrightable; reimplementing them independently is fine.
 

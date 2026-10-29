@@ -1,0 +1,47 @@
+name: R8 Execution Interop Boundary (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "docs/workbench/R8_SPEC_EXECUTION_INTEROPERABILITY_DECISION_1255.md"
+      - "test_fixtures/r8_execution_boundary_matrix_synthetic.json"
+      - "test_fixtures/test_r8_execution_boundary.py"
+      - "src/workbench/server_admin/feature_testing/execution_preflight.py"
+      - "src/workbench/server_admin/feature_testing/test_specifications.py"
+      - "src/workbench/server_admin/feature_testing/importer.py"
+      - "src/workbench/server_admin/feature_testing/results.py"
+      - "src/workbench/server_admin/feature_testing/normalized_evidence.py"
+      - ".github/workflows/r8-execution-boundary.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  existing-contract-boundaries:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline regression dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Run R8 boundary vectors against existing Toolkit interfaces
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_r8_execution_boundary.py \
+            test_fixtures/test_feature_testing_importer.py \
+            test_fixtures/test_feature_testing_normalized_evidence.py \
+            test_fixtures/test_feature_testing_execution.py \
+            test_fixtures/test_feature_testing_specifications.py \
+            test_fixtures/test_scenario_contract_v2_source_associations.py

@@ -16,6 +16,30 @@ from workbench.core.services.feature_catalog_workflow_audit import (
 )
 
 
+def test_research_migration_capture_provenance_crosswalk_1179():
+    """#1179: source_refs exist on disk, test_refs only where behavior is covered, validation untouched."""
+    items = {f["id"]: f for f in load_catalog()}
+    mapped = {
+        "behavior-inspector": "behavior_visualizer", "feature-checker": "feature_checker",
+        "packages": "packages_library", "research-gaps": "research_gaps",
+        "capture-query": "capture_query", "capture-formats": "capture_help",
+        "capture-paths": "path_plot", "capture-import": "capture_new", "video-ocr": "ocr",
+        "llm-research": "llm", "capture-all-paths": "path_plot_all",
+        "capture-bulk-ingest": "capture_bulk_ingest", "capture-metadata-import": "capture_metadata_import",
+    }
+    for feature_id, template in mapped.items():
+        entry = items[feature_id]
+        assert entry["source_refs"] == [f"gui/templates/{template}.html"], feature_id
+        assert (ROOT / entry["source_refs"][0]).is_file(), feature_id
+        assert entry["validation"] == "unverified", feature_id
+        if feature_id != "capture-formats":
+            assert not entry.get("test_refs"), f"{feature_id}: no specific regression coverage verified"
+    assert items["capture-formats"]["test_refs"] == ["test_fixtures/test_capture_help_support_matrix.py"]
+    assert (ROOT / items["capture-formats"]["test_refs"][0]).is_file()
+    # Mappings stay explicit gaps where no checked-in implementation was verified.
+    assert not items["capture-zone-review"].get("source_refs")
+
+
 def main():
     items = load_catalog()
     assert len(items) >= 75
@@ -25,8 +49,15 @@ def main():
     routes = json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP.json").read_text())["routes"]
     routes += json.loads((ROOT / "docs/workbench/GUI_ROUTE_MAP_AUXILIARY.json").read_text())["routes"]
     known = {r["path"] for r in routes if r["method"] == "GET"}
-    # Dynamic routers are covered by the existing Help route test.
-    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing"}
+    # Dynamic routes are not all listed in the static GUI inventory.
+    # Keep this catalog check source-backed, not a blind route allowlist.
+    editor_router = (ROOT / "src/workbench/server_admin/scenario_authoring/editor_router.py").read_text(encoding="utf-8")
+    app_host = (ROOT / "src/workbench/app/host.py").read_text(encoding="utf-8")
+    assert 'APIRouter(prefix="/scenario-developer"' in editor_router
+    assert '@router.get("", response_class=HTMLResponse, include_in_schema=False)' in editor_router
+    assert 'from workbench.server_admin.scenario_authoring.editor_router import router as scenario_developer_router' in app_host
+    assert 'app.include_router(scenario_developer_router)' in app_host
+    dynamic = {"/synth", "/auction-house/help", "/live-client/bridge/console", "/feature-testing", "/scenario-developer"}
     assert all(f["route"] in known | dynamic for f in items), [f["route"] for f in items if f["route"] not in known | dynamic]
     assert all(f["help"].split("#", 1)[0] in known | dynamic for f in items)
     assert "client-binary" in {f["id"] for f in search_catalog(items, "binary")}
@@ -327,7 +358,7 @@ def main():
     assert len(gui_audit["pages"]) >= 9
     assert gui_audit["missing"] == [], gui_audit["missing"]
     assert audit["help_not_cataloged"] == [], audit
-    assert audit["invalid_catalog_routes"] == [], audit
+    # The design-only editor is a verified dynamic router, absent from the static\n    # GUI inventory snapshot. Reject any other unknown catalog route.\n    assert audit["invalid_catalog_routes"] == ["/scenario-developer"], audit
     assert audit["uncataloged_active_pages"] == [], audit
     # Render the actual Jinja page through the existing GUI shell fixture.
     # This checks template inheritance, context keys, filtering, and coverage UI.
@@ -407,8 +438,10 @@ def main():
                for workspace in WORKSPACES for section in workspace["sections"])
     for page in ("help.html", "roadmap.html"):
         assert 'href="/feature-catalog"' in (ROOT / "gui/templates" / page).read_text()
+    test_research_migration_capture_provenance_crosswalk_1179()
     print("feature catalog smoke: PASS")
 
 
 if __name__ == "__main__":
     main()
+

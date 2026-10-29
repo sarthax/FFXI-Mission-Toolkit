@@ -1,0 +1,116 @@
+{
+  "fixture_kind": "SYNTHETIC_ONLY_NO_RECORDED_GAMEPLAY",
+  "baseline": {
+    "contract": "scenario_revision_baseline_snapshot_v1_NONCANONICAL",
+    "revision": 3,
+    "spec_digest_claim": null,
+    "specification": {
+      "schema_version": 1,
+      "feature_id": "inventory_observation",
+      "case_id": "SYNTH-EDITOR-01",
+      "name": "Synthetic inventory observation draft",
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "purpose": "UNKNOWN — enter a source-backed purpose",
+      "rationale": "Synthetic draft example; no gameplay fact established",
+      "steps": [
+        {
+          "id": "SYNTH-EDITOR-01-S01",
+          "title": "Inspect desired observation",
+          "intent": "observation",
+          "expected": "UNKNOWN — source oracle required",
+          "assertion_ids": [
+            "bag_observed"
+          ],
+          "evidence_refs": [
+            "client_bag"
+          ],
+          "confidence_note": "Synthetic only; not verified"
+        }
+      ],
+      "observations": [
+        "client_bag"
+      ],
+      "assertions": [
+        {
+          "id": "bag_observed",
+          "operation": "nonempty",
+          "observed": "client_bag",
+          "expected": null
+        }
+      ],
+      "preconditions": [
+        "Synthetic observation context only"
+      ],
+      "cleanup": [
+        "No mutation; no execution"
+      ],
+      "behavior": {
+        "given": [
+          "Synthetic fixture, source identities unresolved"
+        ],
+        "when": [
+          "Operator reviews source requirements"
+        ],
+        "then": [
+          "UNKNOWN — independent oracle required"
+        ]
+      },
+      "authoring": {
+        "state": "draft",
+        "execution_policy": "read_only",
+        "evidence_provenance": "synthetic_not_a_run",
+        "blocking_gaps": [
+          "No independently source-backed oracle"
+        ],
+        "review_required": true
+      }
+    }
+  },
+  "proposal": {
+    "contract": "scenario_revision_proposal_preview_v1_NONCANONICAL",
+    "proposal_id": "PROP-SYNTH-01",
+    "idempotency_key": "SYNTH-KEY-01",
+    "scenario": {
+      "feature_id": "inventory_observation",
+      "case_id": "SYNTH-EDITOR-01",
+      "schema_version": 1
+    },
+    "base": {
+      "revision": 3,
+      "spec_digest_claim": null
+    },
+    "changes": [
+      {
+        "path": "/purpose",
+        "before": "UNKNOWN — enter a source-backed purpose",
+        "after": "Candidate: document missing synthetic inventory observation"
+      }
+    ],
+    "reason": "Synthetic missing-observation coverage hypothesis; not a gameplay claim",
+    "feature_trace_refs": [
+      "trace:SYNTH-EDGE"
+    ],
+    "source_refs": [
+      "Src-SYNTH-DECLARED"
+    ],
+    "failure_evidence_refs": [
+      "run:SYNTH-NOT-RUN"
+    ],
+    "coverage_gap_refs": [
+      "gap:SYNTH-MISSING"
+    ],
+    "duplicate_scenario_ids": [],
+    "missing_observations": [
+      "synthetic_server_readback"
+    ],
+    "execution_dependencies": [
+      "permission:SYNTH-UNGRANTED"
+    ],
+    "expected_candidates": [
+      "UNKNOWN — no approved oracle"
+    ],
+    "approved_expected": false,
+    "execution_enabled": false
+  }
+}

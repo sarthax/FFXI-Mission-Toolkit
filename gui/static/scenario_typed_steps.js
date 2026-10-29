@@ -1,0 +1,636 @@
+/* Typed step builder (#1411): pick a reviewed template (#1409), fill typed parameters, get native Headless draft JSON.
+ * Validation is done by the server through the typed action library, the single source of truth; nothing is ported
+ * here. The editor saves the steps with the scenario draft through the bridge; nothing is sent to a game client, and no oracle or verdict is implied. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.ScenarioTypedSteps = api;
+})(typeof window !== 'undefined' ? window : this, function () {
+  'use strict';
+  const MAX_STEPS = 50; // the saved native_steps cap (validate_native_steps); import review accepts up to 100 to report on
+  // The editor talks to the builder only through this bridge (get/sync); the builder announces user edits with a
+  // 'sd-typed-change' document event. get() is null while the builder cannot show the draft's steps, so the editor
+  // leaves spec.native_steps untouched rather than overwriting steps it never displayed.
+  // Key order is not meaning: compare steps with object keys sorted, so a draft saved with another order is not "changed".
+  const canon = value => Array.isArray(value) ? value.map(canon)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canon(value[k])])) : value;
+  const sameSteps = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+  const bridge = {impl: null, pending: undefined, locked: false, apply: null, sameSteps,
+    setLocked(flag) { this.locked = !!flag; if (this.apply) this.apply(); },
+    get() { return this.impl ? this.impl.get() : null; },
+    sync(saved) { if (this.impl) return this.impl.sync(saved); this.pending = saved || null; return Promise.resolve(); }};
+  const NUMBER = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
+
+  // Text from an input becomes a number when it is one; anything else is passed on as text so the server rejects it
+  // with its own reason. Blank text is "no value" (undefined).
+  function parseNumberText(text) {
+    const t = String(text === undefined || text === null ? '' : text).trim();
+    if (t === '') return undefined;
+    if (!NUMBER.test(t)) return t;
+    if (/^[-+]?\d+$/.test(t)) { // integers are checked exactly so a too-large value is never rounded into range
+      const big = BigInt(t);
+      return big <= 2n ** 53n && big >= -(2n ** 53n) ? Number(big) : t;
+    }
+    const n = Number(t);
+    return Number.isFinite(n) ? n : t;
+  }
+
+  // Build the walk_to value from the coordinate fields: [x, z], [x, y, z], or {coords, timeout_ms, stall_ms}.
+  function composeWalkTarget(fields) {
+    const x = parseNumberText(fields.x), y = parseNumberText(fields.y), z = parseNumberText(fields.z);
+    if (x === undefined || z === undefined) return {error: 'x and z are required (y is optional)'};
+    const coords = y === undefined ? [x, z] : [x, y, z];
+    const timeout = parseNumberText(fields.timeout_ms), stall = parseNumberText(fields.stall_ms);
+    if (timeout === undefined && stall === undefined) return {value: coords};
+    const value = {coords};
+    if (timeout !== undefined) value.timeout_ms = timeout;
+    if (stall !== undefined) value.stall_ms = stall;
+    return {value};
+  }
+
+  function uniqueName(base, taken) {
+    const root = String(base || '').trim().slice(0, 100) || 'step';
+    if (!taken.includes(root)) return root;
+    let n = 2;
+    while (taken.includes(root + ' (' + n + ')')) n++;
+    return root + ' (' + n + ')';
+  }
+
+  const clone = value => JSON.parse(JSON.stringify(value));
+
+  // One native step in the shape the Headless scenario files use: a name plus do / expect maps.
+  // A step may have an action, a check, or both; a missing side is omitted, never written as an empty object.
+  function nativeScenario(entries) {
+    return entries.map(entry => {
+      const out = {name: entry.name};
+      if (entry.step.do) out.do = clone(entry.step.do);
+      if (entry.step.expect) out.expect = clone(entry.step.expect);
+      return out;
+    });
+  }
+  // The export form. XiHeadless' CheckStructure requires `expect` to be an object, so an action-only step is exported
+  // with an empty one (it means "no check"); the saved draft keeps the step one-sided (#1457). A check-only step is
+  // exported as is, and an empty `expect` is never written without an action.
+  function exportScenario(entries) {
+    return nativeScenario(entries).map(step => (step.do && !step.expect ? {...step, expect: {}} : step));
+  }
+  const nativeJson = entries => JSON.stringify(exportScenario(entries), null, 2);
+
+  // What was observed when each key was fed to XiHeadless' own loaders (registry `observed_paths`). Acceptance only:
+  // nothing here says the runner executes the step (#1459).
+  function observedPaths(step, partsByKey) {
+    const keys = [];
+    if (step.do) keys.push(Object.keys(step.do)[0]);
+    if (step.expect) keys.push(Object.keys(step.expect)[0]);
+    const paths = keys.map(key => partsByKey[key] && partsByKey[key].observed_paths).filter(Boolean);
+    if (!paths.length || paths.length !== keys.length) return null;
+    const rejected = paths.filter(p => p.mcp_task_start.status !== 'ACCEPTS');
+    return {
+      loader: paths.every(p => p.xiheadless_loader.status === 'ACCEPTS'),
+      mcp: rejected.length === 0,
+      mcpReasons: [...new Set(rejected.map(p => p.mcp_task_start.reason))],
+    };
+  }
+  function observedText(summary) {
+    if (!summary) return '';
+    return 'Observed: XiHeadless file loader ' + (summary.loader ? 'accepts' : 'rejects') + ' · MCP task start ' +
+      (summary.mcp ? 'accepts' : 'rejects (' + summary.mcpReasons.join(', ') + ')') +
+      ' — acceptance only, not proof the step runs.';
+  }
+
+  function describeAction(step) {
+    const parts = [];
+    if (step.do) { const key = Object.keys(step.do)[0]; parts.push(key + ' ' + JSON.stringify(step.do[key])); }
+    if (step.expect) {
+      const key = Object.keys(step.expect)[0];
+      parts.push((step.do ? 'then check ' : 'check ') + key + ' = ' + JSON.stringify(step.expect[key]));
+    }
+    return parts.join(', ');
+  }
+  // Given/When/Then reading of the saved steps. An action reads as When, a check as Then; a second action (or check)
+  // in a row reads as And. It is a rendering of the draft only: no verdict, no oracle, nothing executed.
+  // Given is not derived from the steps (it comes from the Preconditions field), so it is not invented here.
+  const words = key => key.replace(/_/g, ' ');
+  const valueText = value => typeof value === 'string' ? value : JSON.stringify(value);
+  function previewLines(entries) {
+    const lines = [];
+    let last = null;
+    for (const entry of entries) {
+      const sides = [['do', 'When'], ['expect', 'Then']];
+      for (const [side, keyword] of sides) {
+        const part = entry.step[side];
+        if (!part) continue;
+        const key = Object.keys(part)[0];
+        lines.push({keyword: last === keyword ? 'And' : keyword, step: entry.name,
+          text: side === 'do' ? words(key) + ' ' + valueText(part[key]) : words(key) + ' is ' + valueText(part[key])});
+        last = keyword;
+      }
+    }
+    return lines;
+  }
+  function describeStep(template, step) {
+    return template.label + ' — ' + describeAction(step);
+  }
+
+  function moveItem(list, index, delta) {
+    const target = index + delta;
+    if (index < 0 || index >= list.length || target < 0 || target >= list.length) return list.slice();
+    const next = list.slice();
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  }
+
+  // ---- catalog picker helpers (pure) --------------------------------------------------------------------------------
+  // Candidates come from the existing local DSP catalog search. They are *unreconciled source candidates*: a pick fills
+  // an ID field the author can still edit, and says where the value came from; it never proves the ID is right for a
+  // particular zone or client.
+  function catalogQueryProblem(query) {
+    const q = String(query === undefined || query === null ? '' : query).trim();
+    if (q === '') return 'Type part of a name to search.';
+    if (q.length > 64) return 'Search text can be at most 64 characters.';
+    return '';
+  }
+  function catalogUrl(kind, query, limit = 12) {
+    return '/scenario-developer/catalog/search?kind=' + encodeURIComponent(kind) + '&query=' +
+      encodeURIComponent(String(query).trim()) + '&limit=' + encodeURIComponent(limit);
+  }
+  // Only well-formed rows of the requested kind are ever offered; anything else from the server is ignored.
+  function usableCandidate(candidate, kind) {
+    return !!candidate && typeof candidate === 'object' && candidate.kind === kind &&
+      Number.isSafeInteger(candidate.id) && candidate.id >= 0 &&
+      typeof candidate.name === 'string' && candidate.name.trim() !== '' && typeof candidate.source_path === 'string';
+  }
+  function describeCandidate(candidate) {
+    return candidate.name.trim().slice(0, 120) + ' (id ' + candidate.id + ')' +
+      (candidate.duplicate_id_in_results ? ' — AMBIGUOUS: this ID appears more than once' : '');
+  }
+  function provenanceNote(candidate, parameter) {
+    return parameter + ' = ' + candidate.id + ' (' + candidate.name.trim().slice(0, 120) + ') — unreconciled DSP source ' +
+      'candidate from ' + candidate.source_path + '; not verified for this zone or client';
+  }
+
+  // ---- native import helpers (pure) -----------------------------------------------------------------------------------
+  const MAX_IMPORT_CHARS = 30000; // the local route refuses larger bodies
+  function parseNativeText(text) {
+    const raw = String(text === undefined || text === null ? '' : text).trim();
+    if (raw === '') return {error: 'Paste native scenario JSON to review.'};
+    if (raw.length > MAX_IMPORT_CHARS) return {error: 'That is too large to review here (limit ' + MAX_IMPORT_CHARS + ' characters).'};
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (error) { return {error: 'That is not valid JSON: ' + error.message}; }
+    if (!Array.isArray(parsed)) return {error: 'A native scenario is an array of steps. Wrap a single step in [ ].'};
+    if (parsed.length < 1 || parsed.length > 100) return {error: 'A native scenario must have 1 to 100 steps.'};
+    return {steps: parsed};
+  }
+  function reviewRowText(row) {
+    const label = (typeof row.name === 'string' && row.name ? row.name : '(unnamed)').slice(0, 100);
+    return '#' + (row.index + 1) + ' ' + label + ' — ' + row.status +
+      (row.reasons && row.reasons.length ? ': ' + row.reasons.join('; ') : '');
+  }
+  function importProvenance(row) {
+    return 'Imported from pasted native JSON (step ' + (row.index + 1) + ', "' + String(row.name).slice(0, 100) +
+      '") — unreviewed source; shape-checked only; accepted by a human reviewer';
+  }
+
+  // ---- browser UI -------------------------------------------------------------------------------------------------
+  const defaultIo = {
+    async getLibrary() {
+      const response = await fetch('/scenario-developer/typed-library');
+      if (!response.ok) throw Error('The typed action library is unavailable (' + response.status + ')');
+      return response.json();
+    },
+    async searchCatalog(kind, query) {
+      const response = await fetch(catalogUrl(kind, query), {headers: {'x-requested-with': 'toolkit-ui'}});
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return {ok: true, choices: Array.isArray(body.choices) ? body.choices : []};
+      const detail = body && body.detail;
+      return {ok: false, message: (typeof detail === 'string' ? detail : 'Catalog search rejected (' + response.status + ')') +
+        ' You can still enter an ID by hand.'};
+    },
+    async reviewImport(steps) {
+      const response = await fetch('/scenario-developer/typed-import', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({steps})});
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return {ok: true, review: body};
+      const detail = body && body.detail;
+      return {ok: false, message: (detail && detail.message) || (typeof detail === 'string' ? detail : 'Review rejected (' + response.status + ')')};
+    },
+    async buildStep(payload) {
+      const response = await fetch('/scenario-developer/typed-step', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) return {ok: true, step: body};
+      const detail = body && body.detail;
+      return {ok: false, message: (detail && detail.message) || 'Rejected (' + response.status + ')',
+        part: detail && detail.part};
+    },
+  };
+
+  function mount(container, io = defaultIo, doc = document) {
+    const el = (tag, cls, text) => {
+      const node = doc.createElement(tag);
+      if (cls) node.className = cls;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    };
+    const field = (label, control) => {
+      const wrap = el('label', 'sd-field');
+      wrap.append(doc.createTextNode(label), control);
+      return wrap;
+    };
+    const state = {templates: [], entries: [], built: null, request: 0, timer: null, picked: {action: null, expect: null}, review: null, shown: true, load: 0, libraryVersion: 1, singles: [], parts: {}};
+    const inputs = {action: {}, expect: null};
+    container.replaceChildren();
+    const lockNote = el('p', 'sd-warning', 'Read-only while Advanced JSON is open. Switch to Guided to edit steps.');
+    lockNote.id = 'sd-typed-locked'; lockNote.hidden = true;
+
+    container.append(lockNote, el('p', 'sd-warning',
+      'Draft native Headless steps. They are saved with the scenario draft (design only, not published); nothing is sent to a game ' +
+      'client, and no oracle or verdict is implied: every step stays UNAPPROVED / UNKNOWN until something ' +
+      'independent establishes the outcome.'));
+    const select = el('select');
+    select.id = 'sd-typed-template';
+    const limits = el('p', 'sd-muted');
+    const actionBox = el('div'), expectBox = el('div');
+    const name = el('input');
+    name.id = 'sd-typed-name'; name.type = 'text'; name.maxLength = 100;
+    const status = el('p', 'sd-muted', 'Choose a step type.');
+    status.id = 'sd-typed-status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+    const add = el('button', '', 'Add step');
+    add.type = 'button'; add.id = 'sd-typed-add'; add.disabled = true;
+    const list = el('ol'); list.id = 'sd-typed-steps-list';
+    const output = el('pre'); output.id = 'sd-typed-json'; output.tabIndex = 0;
+    const preview = el('div'); preview.id = 'sd-typed-preview';
+    const copy = el('button', '', 'Copy JSON'), download = el('a', '', 'Download JSON');
+    copy.type = 'button'; copy.id = 'sd-typed-copy'; download.id = 'sd-typed-download';
+    const notSteps = el('details'); notSteps.id = 'sd-typed-unsupported'; notSteps.append(el('summary', '', 'Not available as steps'));
+
+    // A choice is a reviewed pair (a library template) or one side alone: 'do:<action>' / 'expect:<check>'.
+    const selected = () => state.templates.find(t => t.id === select.value) || state.singles.find(t => t.id === select.value);
+
+    function numberInput(param, group, key) {
+      const input = el('input');
+      input.type = param.type === 'finite_number' ? 'text' : 'number';
+      if (input.type === 'number') { input.step = '1'; if (param.type === 'int_range') { input.min = param.min; input.max = param.max; } }
+      else input.inputMode = 'decimal';
+      input.id = 'sd-typed-' + group + '-' + key;
+      input.addEventListener('input', schedule);
+      return input;
+    }
+
+    function pickerBox(param, group, input) {
+      const kindLabel = param.picker === 'zone' ? 'zone' : 'NPC';
+      const box = el('div', 'sd-muted');
+      const query = el('input'); query.type = 'text'; query.maxLength = 64; query.id = 'sd-typed-' + group + '-search';
+      const go = el('button', '', 'Search'); go.type = 'button'; go.id = 'sd-typed-' + group + '-search-go';
+      const note = el('p', 'sd-muted'); note.setAttribute('role', 'status'); note.id = 'sd-typed-' + group + '-search-note';
+      const results = el('ul'); results.id = 'sd-typed-' + group + '-results';
+      let sequence = 0;
+      async function search() {
+        const text = String(query.value).trim(), problem = catalogQueryProblem(text);
+        results.replaceChildren();
+        if (problem) { note.textContent = problem; return; }
+        const mine = ++sequence;
+        note.textContent = 'Searching the configured DSP source…';
+        let reply;
+        try { reply = await io.searchCatalog(param.picker, text); }
+        catch (error) { reply = {ok: false, message: 'Catalog search failed: ' + error.message + ' You can still enter an ID by hand.'}; }
+        if (mine !== sequence) return; // a newer search superseded this answer
+        if (!reply.ok) { note.textContent = reply.message; return; }
+        const rows = (reply.choices || []).filter(c => usableCandidate(c, param.picker)).slice(0, 20);
+        note.textContent = rows.length
+          ? rows.length + ' unverified source candidate' + (rows.length === 1 ? '' : 's') + ' (a bounded search, not a full list). ' +
+            'Pick one to fill the ID, or type your own.'
+          : 'No match in the configured DSP source. That is not proof the ' + kindLabel + ' does not exist; you can still enter an ID by hand.';
+        for (const candidate of rows) {
+          const item = el('li'), choice = el('button', '', describeCandidate(candidate));
+          choice.type = 'button'; choice.setAttribute('aria-label', 'Use ' + describeCandidate(candidate));
+          choice.addEventListener('click', () => {
+            input.value = String(candidate.id);
+            state.picked[group] = candidate;
+            note.textContent = 'Filled from the catalog: ' + provenanceNote(candidate, param.name);
+            schedule();
+          });
+          item.append(choice, el('small', 'sd-muted', ' ' + candidate.source_path));
+          results.append(item);
+        }
+      }
+      go.addEventListener('click', search);
+      query.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); search(); } });
+      box.append(field('Find a ' + kindLabel + ' in the DSP catalog (optional)', query), go, note, results);
+      return box;
+    }
+
+    function paramControls(param, group) {
+      const holder = el('div', 'sd-grid');
+      const read = {};
+      if (param.type === 'walk_target') {
+        for (const key of ['x', 'y', 'z', 'timeout_ms', 'stall_ms']) {
+          const input = numberInput({type: 'finite_number'}, group, key);
+          holder.append(field(key + (key === 'y' || key.endsWith('_ms') ? ' (optional)' : ''), input));
+          read[key] = input;
+        }
+        return {holder, value: () => composeWalkTarget(Object.fromEntries(Object.entries(read).map(([k, i]) => [k, i.value])))};
+      }
+      let input;
+      if (param.type === 'bool') {
+        input = el('select');
+        for (const [value, text] of [['', 'choose…'], ['true', 'true'], ['false', 'false']]) {
+          const option = el('option', '', text); option.value = value; input.append(option);
+        }
+        input.id = 'sd-typed-' + group + '-value';
+        input.addEventListener('input', schedule);
+      } else input = numberInput(param, group, 'value');
+      holder.append(field(param.name + ' — ' + param.constraint, input));
+      if (param.picker && io.searchCatalog) holder.append(pickerBox(param, group, input));
+      return {holder, input, value: () => {
+        if (param.type === 'bool') return input.value === '' ? {error: param.name + ' is required'} : {value: input.value === 'true'};
+        const parsed = parseNumberText(input.value);
+        return parsed === undefined ? {error: param.name + ' is required'} : {value: parsed};
+      }};
+    }
+
+    function renderTemplate() {
+      const template = selected();
+      state.built = null; add.disabled = true; state.picked = {action: null, expect: null};
+      actionBox.replaceChildren(); expectBox.replaceChildren();
+      if (!template) { limits.textContent = ''; return; }
+      limits.textContent = (template.single ? 'One side only: the saved step has no ' + (template.action ? 'check' : 'action') +
+        ', so nothing is verified by it alone (runner handling of one-sided steps is unconfirmed). ' : '') +
+        'Tier ' + template.support_tier + ' — shape checked against the pinned native schema; ' +
+        'it does not prove the runner dispatches it. Limit: ' + template.limitations;
+      {
+        const sides = {do: template.action && {[template.action.native_key]: 0}, expect: template.expectation && {[template.expectation.native_key]: 0}};
+        const summary = observedText(observedPaths({do: sides.do || undefined, expect: sides.expect || undefined}, state.parts));
+        if (summary) limits.textContent += ' ' + summary;
+      }
+      inputs.action = template.action ? paramControls(template.action.param, 'action') : null;
+      inputs.expect = template.expectation ? paramControls(template.expectation.param, 'expect') : null;
+      if (inputs.action) actionBox.append(el('h4', '', 'Action: ' + template.action.native_key), inputs.action.holder);
+      if (inputs.expect) expectBox.append(el('h4', '', 'Check: ' + template.expectation.native_key), inputs.expect.holder);
+      name.value = uniqueName(template.label, state.entries.map(e => e.name));
+      validate();
+    }
+
+    function schedule() {
+      state.built = null; add.disabled = true;
+      clearTimeout(state.timer);
+      state.timer = setTimeout(validate, 150);
+    }
+
+    // One-sided steps are validated by the same server review as pasted JSON, so the rules stay in one place.
+    async function buildSingle(template, action, expectation) {
+      const part = template.action ? {do: {[template.action.native_key]: action.value}}
+        : {expect: {[template.expectation.native_key]: expectation.value}};
+      const reviewed = await io.reviewImport([{name: 'step', ...part}]);
+      if (!reviewed.ok) return reviewed;
+      const row = reviewed.review.steps[0];
+      if (row.status !== 'SUPPORTED') return {ok: false, message: (row.reasons || []).join('; ') || 'Rejected'};
+      return {ok: true, step: row.step};
+    }
+
+    async function validate() {
+      const template = selected();
+      if (!template) return;
+      const mine = ++state.request;
+      const action = inputs.action ? inputs.action.value() : {}, expectation = inputs.expect ? inputs.expect.value() : {};
+      const problem = action.error || expectation.error;
+      if (problem) { status.textContent = problem; return; }
+      let result;
+      try {
+        result = template.single
+          ? await buildSingle(template, action, expectation)
+          : await io.buildStep({template_id: template.id, action_value: action.value, expectation_value: expectation.value});
+      } catch (error) { result = {ok: false, message: 'Validation unavailable: ' + error.message}; }
+      if (mine !== state.request) return; // a newer edit superseded this answer
+      if (result.ok) {
+        state.built = result.step;
+        status.textContent = 'Valid native draft step (' + result.step.support_tier + '; oracle ' + result.step.oracle_status + ').';
+        add.disabled = locked() || !state.shown || state.entries.length >= MAX_STEPS;
+      } else status.textContent = result.message;
+    }
+
+    function renderSteps() {
+      list.replaceChildren();
+      state.entries.forEach((entry, index) => {
+        const item = el('li');
+        item.append(el('strong', '', entry.name), doc.createTextNode(' — ' +
+          (!entry.template || entry.name === entry.template.label ? describeAction(entry.step) : describeStep(entry.template, entry.step))));
+        item.append(el('small', 'sd-muted', ' [' + entry.step.support_tier + ' · oracle ' + entry.step.oracle_status +
+          ' · verdict ' + entry.step.verdict + ']'));
+        for (const note of entry.provenance || []) item.append(el('div', 'sd-muted', 'Source: ' + note));
+        const observed = observedText(observedPaths(entry.step, state.parts));
+        if (observed) item.append(el('div', 'sd-muted', observed));
+        const controls = el('span', 'sd-controls');
+        for (const [label, act] of [['Up', () => move(index, -1)], ['Down', () => move(index, 1)], ['Remove', () => remove(index)]]) {
+          const button = el('button', '', label); button.type = 'button';
+          button.setAttribute('aria-label', label + ' ' + entry.name);
+          button.addEventListener('click', act); controls.append(button);
+        }
+        item.append(controls); list.append(item);
+      });
+      const text = state.entries.length ? nativeJson(state.entries) : 'No steps yet.';
+      output.textContent = text;
+      preview.replaceChildren();
+      for (const line of previewLines(state.entries)) {
+        const row = el('p', 'sd-preview-line');
+        row.append(el('strong', '', line.keyword), doc.createTextNode(' ' + line.text + ' '), el('small', 'sd-muted', '(' + line.step + ')'));
+        preview.append(row);
+      }
+      if (state.entries.length) preview.append(el('p', 'sd-muted',
+        'Preview of the draft only: Given comes from the Preconditions field, and no result or verdict is implied.'));
+      copy.disabled = !state.entries.length;
+      download.hidden = !state.entries.length;
+      if (state.entries.length) {
+        if (download.href && download.href.startsWith('blob:')) URL.revokeObjectURL(download.href);
+        download.href = URL.createObjectURL(new Blob([text + '\n'], {type: 'application/json'}));
+        download.download = 'native-scenario-draft.json';
+      }
+    }
+    // While Advanced JSON is the document the builder is read-only: handlers ignore edits (not only the browser's
+    // inert), so a scripted click cannot change steps the Advanced text does not know about (#1458).
+    const locked = () => bridge.locked;
+    const changed = () => { if (doc.dispatchEvent && typeof CustomEvent !== 'undefined') doc.dispatchEvent(new CustomEvent('sd-typed-change')); };
+    const move = (index, delta) => { if (locked()) return; state.entries = moveItem(state.entries, index, delta); renderSteps(); changed(); };
+    const remove = index => { if (locked()) return; state.entries = state.entries.filter((_, i) => i !== index); renderSteps(); validate(); changed(); };
+
+    add.addEventListener('click', () => {
+      const template = selected();
+      if (locked() || !template || !state.built || !state.shown || state.entries.length >= MAX_STEPS) return;
+      const stepName = uniqueName(name.value, state.entries.map(e => e.name));
+      const provenance = [];
+      for (const [group, part] of [['action', 'action'], ['expect', 'expectation']]) {
+        const picked = state.picked[group], control = inputs[group];
+        if (picked && control && template[part] && control.input && parseNumberText(control.input.value) === picked.id)
+          provenance.push(provenanceNote(picked, template[part].param.name));
+      }
+      state.entries = state.entries.concat([{name: stepName, template: template.single ? null : template, step: clone(state.built), provenance}]);
+      renderSteps(); changed();
+      name.value = uniqueName(template.label, state.entries.map(e => e.name));
+      status.textContent = 'Added "' + stepName + '". Edit the values to add another.';
+    });
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(output.textContent); status.textContent = 'Copied the native JSON.'; }
+      catch (_error) { status.textContent = 'Copy is unavailable here; select the JSON text and copy it.'; }
+    });
+    select.addEventListener('change', renderTemplate);
+
+    // ---- import: pasted native JSON is reviewed, and only steps a person accepts join the list
+    const importBox = el('details'); importBox.id = 'sd-typed-import';
+    importBox.append(el('summary', '', 'Import native JSON for review (for example from an agent or a scenario file)'));
+    const importText = el('textarea'); importText.id = 'sd-typed-import-text'; importText.rows = 8;
+    importText.setAttribute('aria-label', 'Native scenario JSON');
+    const importGo = el('button', '', 'Review import'); importGo.type = 'button'; importGo.id = 'sd-typed-import-go';
+    const importNote = el('p', 'sd-muted'); importNote.id = 'sd-typed-import-note'; importNote.setAttribute('role', 'status');
+    const reviewList = el('ul'); reviewList.id = 'sd-typed-import-review';
+    const acceptAll = el('button', '', 'Select all supported'); acceptAll.type = 'button'; acceptAll.id = 'sd-typed-import-all';
+    const importAdd = el('button', '', 'Add accepted steps'); importAdd.type = 'button'; importAdd.id = 'sd-typed-import-add';
+    importAdd.disabled = true; acceptAll.disabled = true;
+    const importControls = el('div', 'sd-controls'); importControls.append(acceptAll, importAdd);
+    importBox.append(el('p', 'sd-muted', 'Imported steps come from an unreviewed source. A passing check only means the step has a reviewed ' +
+      'shape; it does not make the step correct or establish any outcome. Nothing is added until you accept it.'),
+      importText, importGo, importNote, reviewList, importControls);
+    const accepts = [];
+    function syncImportButtons() { importAdd.disabled = !accepts.some(a => a.checkbox.checked); }
+    function clearReview() {
+      state.review = null; accepts.length = 0; reviewList.replaceChildren();
+      acceptAll.disabled = true; importAdd.disabled = true;
+    }
+    importText.addEventListener('input', () => { if (state.review) { clearReview(); importNote.textContent = 'The text changed. Review it again.'; } });
+    importGo.addEventListener('click', async () => {
+      clearReview();
+      const parsed = parseNativeText(importText.value);
+      if (parsed.error) { importNote.textContent = parsed.error; return; }
+      importNote.textContent = 'Reviewing…';
+      let result;
+      try { result = await io.reviewImport(parsed.steps); }
+      catch (error) { result = {ok: false, message: 'Review unavailable: ' + error.message}; }
+      if (!result.ok) { importNote.textContent = result.message; return; }
+      state.review = result.review;
+      const counts = result.review.counts;
+      importNote.textContent = counts.SUPPORTED + ' supported, ' + counts.UNSUPPORTED + ' unsupported, ' + counts.INVALID +
+        ' invalid. Tick the steps you accept; none are accepted automatically.';
+      for (const row of result.review.steps) {
+        const item = el('li');
+        if (row.status === 'SUPPORTED') {
+          const checkbox = el('input'); checkbox.type = 'checkbox';
+          checkbox.setAttribute('aria-label', 'Accept ' + row.name);
+          checkbox.addEventListener('change', syncImportButtons);
+          item.append(checkbox, doc.createTextNode(' '));
+          accepts.push({checkbox, row});
+        }
+        item.append(el('strong', '', reviewRowText(row)));
+        if (row.status === 'SUPPORTED') item.append(el('div', 'sd-muted', describeAction(row.step)));
+        reviewList.append(item);
+      }
+      acceptAll.disabled = !accepts.length;
+    });
+    acceptAll.addEventListener('click', () => { for (const a of accepts) a.checkbox.checked = true; syncImportButtons(); });
+    importAdd.addEventListener('click', () => {
+      const chosen = accepts.filter(a => a.checkbox.checked).map(a => a.row);
+      if (locked() || !chosen.length || !state.shown) return;
+      let added = 0;
+      for (const row of chosen) {
+        if (state.entries.length >= MAX_STEPS) break;
+        // Reviewed pairs have a template; action-only, check-only and other combinations have none.
+        const template = row.template_id ? state.templates.find(t => t.id === row.template_id) || null : null;
+        state.entries = state.entries.concat([{name: uniqueName(row.name, state.entries.map(e => e.name)), template,
+          step: clone(row.step), provenance: [importProvenance(row)]}]);
+        added++;
+      }
+      renderSteps(); changed(); clearReview(); importText.value = '';
+      importNote.textContent = 'Added ' + added + ' of ' + chosen.length + ' accepted step' + (chosen.length === 1 ? '' : 's') +
+        '. They are unapproved drafts; review each one.';
+    });
+
+    const exportRow = el('div', 'sd-controls');
+    exportRow.append(copy, download);
+    container.append(field('Step type', select), limits, actionBox, expectBox, field('Step name', name), status, add,
+      el('h3', '', 'Steps'), list, el('h3', '', 'Scenario preview (When / Then)'), preview, el('h3', '', 'Native Headless JSON (draft)'), el('p', 'sd-muted', 'Action-only steps are exported with "expect": {} because XiHeadless requires an expect object; the saved draft keeps them one-sided.'), output, exportRow, importBox, notSteps);
+
+    // Load the draft's saved steps through the same server review used for pasted JSON, so a saved step shows
+    // exactly as an imported one would. Anything that cannot be shown leaves the saved steps untouched.
+    const stored = entries => ({library_version: state.libraryVersion, steps: nativeScenario(entries)});
+    const sameNative = native => sameSteps(nativeScenario(state.entries), native);
+    const impl = {
+      // {native} where native is the stored {library_version, steps} object, or null when there are no steps;
+      // a bare null means the builder is not showing the draft's steps.
+      get: () => (state.shown ? {native: state.entries.length ? stored(state.entries) : null} : null),
+      async sync(saved) {
+        const native = saved && Array.isArray(saved.steps) ? saved.steps : [];
+        if (saved && !Array.isArray(saved.steps)) { // not our shape: keep it exactly as saved, and say so
+          state.shown = false; add.disabled = true; ++state.load; state.entries = []; renderSteps();
+          status.textContent = 'This draft has native steps the builder cannot show. They are kept as saved; edit them in Advanced JSON.';
+          return;
+        }
+        if (state.shown && sameNative(native)) return;
+        const mine = ++state.load;
+        if (!native.length) { state.entries = []; state.shown = true; renderSteps(); validate(); return; }
+        state.shown = false; add.disabled = true;
+        let result;
+        try { result = await io.reviewImport(native); }
+        catch (error) { result = {ok: false, message: error.message}; }
+        if (mine !== state.load) return; // a newer draft replaced this one
+        const rows = result.ok ? result.review.steps : [];
+        if (!result.ok || rows.length !== native.length || rows.some(row => row.status !== 'SUPPORTED')) {
+          state.entries = []; renderSteps();
+          status.textContent = 'This draft has native steps the builder cannot show' + (result.ok ? '' : ' (' + result.message + ')') +
+            '. They are kept as saved; edit them in Advanced JSON.';
+          return;
+        }
+        state.entries = rows.map(row => ({name: row.name,
+          template: row.template_id ? state.templates.find(t => t.id === row.template_id) || null : null,
+          step: clone(row.step), provenance: []}));
+        state.shown = true; renderSteps(); validate();
+      },
+    };
+    return io.getLibrary().then(registry => {
+      state.libraryVersion = registry.library_version;
+      for (const part of [...(registry.actions || []), ...(registry.checks || [])]) state.parts[part.native_key] = part;
+      state.templates = registry.templates.filter(t => t.kind === 'action_expectation');
+      const group = label => { const g = el('optgroup'); g.label = label; select.append(g); return g; };
+      const pairs = group('Action and check');
+      for (const template of state.templates) {
+        const option = el('option', '', template.label); option.value = template.id; pairs.append(option);
+      }
+      const only = {do: group('Add Action Step (action only)'), expect: group('Add Check Step (check only)')};
+      for (const action of registry.actions || []) {
+        state.singles.push({id: 'do:' + action.native_key, single: true, label: action.native_key.replace(/_/g, ' '),
+          action, expectation: null, support_tier: action.support_tier, limitations: action.limitations});
+      }
+      for (const check of registry.checks || []) {
+        state.singles.push({id: 'expect:' + check.native_key, single: true, label: check.label,
+          action: null, expectation: check, support_tier: check.support_tier,
+          limitations: 'A check alone observes state; it does not cause anything.'});
+      }
+      for (const single of state.singles) {
+        const option = el('option', '', single.label); option.value = single.id;
+        only[single.action ? 'do' : 'expect'].append(option);
+      }
+      const readbacks = registry.templates.filter(t => t.kind === 'observation');
+      const unsupported = el('ul');
+      for (const template of readbacks) {
+        unsupported.append(el('li', '', template.label + ' — a Toolkit readback (' + template.readback.route +
+          '), not a Headless step; it has no native action or check. ' + template.limitations));
+      }
+      notSteps.append(unsupported);
+      renderSteps(); renderTemplate();
+      bridge.apply = () => {
+        lockNote.hidden = !locked(); container.classList.toggle('sd-typed-locked', locked());
+        if (locked()) add.disabled = true; else validate();
+      };
+      bridge.apply();
+      bridge.impl = impl;
+      if (bridge.pending !== undefined) { const pending = bridge.pending; bridge.pending = undefined; impl.sync(pending); }
+      return state;
+    }).catch(error => { status.textContent = 'Typed step builder unavailable: ' + error.message; });
+  }
+
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('sd-typed-root');
+      if (container) mount(container);
+    });
+  }
+  return {parseNumberText, composeWalkTarget, uniqueName, nativeScenario, nativeJson, describeStep, describeAction, previewLines, exportScenario, observedPaths, observedText, moveItem, parseNativeText, reviewRowText, importProvenance,
+    catalogQueryProblem, catalogUrl, usableCandidate, describeCandidate, provenanceNote, mount, bridge, sameSteps};
+});

@@ -1,0 +1,1717 @@
+{
+  "artifact_type": "R5_voidwatch_domain_staging_not_canonical",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "source_revision": {
+    "dsp_commit": "86d4467d446569c741d76d296e640c3b844ad844",
+    "dsp_branch": "main",
+    "deployed": "UNKNOWN"
+  },
+  "source_safety_note": "Captured observations, source-based expectations, and unsourced hypotheses are distinct. Existing Toolkit validation records are not new runner results.",
+  "cases": [
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-01",
+      "kind": "observation",
+      "name": "Officer stock and timestamp baseline",
+      "purpose": "Officer stock and timestamp baseline",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "observe-now",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Read-only inspect the character's existing VWO_STOCK and VWO_STOCK_TS, with stratum and voidstone KIs"
+        ],
+        "then": [
+          "Existing vars may be zero; record exact snapshot, not presumed initial stock"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-01-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-01-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-01-S02",
+          "title": "Read-only observation (future)",
+          "action": "Read-only inspect the character's existing VWO_STOCK and VWO_STOCK_TS, with stratum and voidstone KIs",
+          "expected": "Existing vars may be zero; record exact snapshot, not presumed initial stock",
+          "assertion_ids": [
+            "VOID-01-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-01-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-01-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-01-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Existing vars may be zero; record exact snapshot, not presumed initial stock",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 53,
+            "line_end": 97,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 14,
+            "line_end": 76,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_vars: VWO_STOCK,VWO_STOCK_TS (authorized test-character-vars)",
+          "chars.keyitems: stratum and VOIDSTONE1..6 (authorized keyitems readback)"
+        ],
+        "existing_endpoints": [
+          "test-character-vars",
+          "test-character-keyitems"
+        ],
+        "missing": []
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Resolve actual character/endpoint coverage; reading variables does not prove officer time progression"
+      ],
+      "estimated_effort": "small",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 53,
+          "line_end": 97,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 14,
+          "line_end": 76,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-02",
+      "kind": "observation",
+      "name": "Tier kill-bit and held abyssite baseline",
+      "purpose": "Tier kill-bit and held abyssite baseline",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "observe-now",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Read current VWO_TIERS/VWO_TIERS2 and stratum KI state without fighting a NM"
+        ],
+        "then": [
+          "Only bits and held KIs explicitly present in the snapshot may be asserted; no tier-upgrade inferred"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-02-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-02-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 115,
+              "line_end": 126,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-02-S02",
+          "title": "Read-only observation (future)",
+          "action": "Read current VWO_TIERS/VWO_TIERS2 and stratum KI state without fighting a NM",
+          "expected": "Only bits and held KIs explicitly present in the snapshot may be asserted; no tier-upgrade inferred",
+          "assertion_ids": [
+            "VOID-02-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 115,
+              "line_end": 126,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-02-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 115,
+              "line_end": 126,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-02-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-02-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 14,
+              "line_end": 76,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 115,
+              "line_end": 126,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Only bits and held KIs explicitly present in the snapshot may be asserted; no tier-upgrade inferred",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 14,
+            "line_end": 76,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 115,
+            "line_end": 126,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_vars: VWO_TIERS,VWO_TIERS2",
+          "chars.keyitems: path stratum abyssites"
+        ],
+        "existing_endpoints": [
+          "test-character-vars",
+          "test-character-keyitems"
+        ],
+        "missing": []
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Read only; an existing completion bit is not proof of kill attribution"
+      ],
+      "estimated_effort": "small",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 14,
+          "line_end": 76,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L14-L76"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 115,
+          "line_end": 126,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L115-L126"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-03",
+      "kind": "positive",
+      "name": "Voidstone refill from officer stock",
+      "purpose": "Voidstone refill from officer stock",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "After approved preparation, use normal officer menu to request stones"
+        ],
+        "then": [
+          "Formula is min(stock,carry-held); encoded VOIDSTONE1..6 KI replaces prior level, stock decreases by granted amount; real client event option and deployment must be checked"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-03-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-03-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 202,
+              "line_end": 223,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-03-S02",
+          "title": "Operator-gated player action (future)",
+          "action": "After approved preparation, use normal officer menu to request stones",
+          "expected": "Formula is min(stock,carry-held); encoded VOIDSTONE1..6 KI replaces prior level, stock decreases by granted amount; real client event option and deployment must be checked",
+          "assertion_ids": [
+            "VOID-03-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 202,
+              "line_end": 223,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-03-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-03-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 202,
+              "line_end": 223,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-03-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-03-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 202,
+              "line_end": 223,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 53,
+              "line_end": 97,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Formula is min(stock,carry-held); encoded VOIDSTONE1..6 KI replaces prior level, stock decreases by granted amount; real client event option and deployment must be checked",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 202,
+            "line_end": 223,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 53,
+            "line_end": 97,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "char_vars: VWO_STOCK,VWO_STOCK_TS",
+          "chars.keyitems: VOIDSTONE1..6",
+          "client event/update/finish trace for officer"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "client event/update/finish trace for officer"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Stock accrual depends on clock and periapt; repeatable transaction needs isolated fixture",
+        "Client menu option mapping must be captured and independently bound"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 202,
+          "line_end": 223,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L202-L223"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 53,
+          "line_end": 97,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L53-L97"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-04",
+      "kind": "negative",
+      "name": "Insufficient cruor rejects exchange",
+      "purpose": "Insufficient cruor rejects exchange",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Use reviewed officer exchange attempt at below-source-priced cruor balance, never GM grant as proof"
+        ],
+        "then": [
+          "Implementation returns without cost, KI or item grant if available cruor is below price; require independent before/after balance and item/KI counts"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-04-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-04-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 149,
+              "line_end": 199,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-04-S02",
+          "title": "Operator-gated player action (future)",
+          "action": "Use reviewed officer exchange attempt at below-source-priced cruor balance, never GM grant as proof",
+          "expected": "Implementation returns without cost, KI or item grant if available cruor is below price; require independent before/after balance and item/KI counts",
+          "assertion_ids": [
+            "VOID-04-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 149,
+              "line_end": 199,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-04-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-04-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 149,
+              "line_end": 199,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-04-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-04-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch_officer.lua",
+              "line_start": 149,
+              "line_end": 199,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Implementation returns without cost, KI or item grant if available cruor is below price; require independent before/after balance and item/KI counts",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch_officer.lua",
+            "line_start": 149,
+            "line_end": 199,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "authoritative cruor balance before/after",
+          "full item/KI state including duplicate and inventory-full check",
+          "officer event choice and option bits"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "authoritative cruor balance before/after",
+          "full item/KI state including duplicate and inventory-full check",
+          "officer event choice and option bits"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "No current bounded cruor readback; do not infer unchanged from a client message"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 149,
+          "line_end": 199,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch_officer.lua#L149-L199"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-05",
+      "kind": "positive",
+      "name": "Voidwatch rift spawn and claim",
+      "purpose": "Voidwatch rift spawn and claim",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Approved party initiates normal rift action, observes spawn/claim"
+        ],
+        "then": [
+          "Source schedules a 3-second timer and records VW_RIFT/VW_SPAWNER; actual timely spawn or claim requires entity observations; no fixed network timing assertion"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-05-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-05-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 219,
+              "line_end": 251,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-05-S02",
+          "title": "Operator-gated player action (future)",
+          "action": "Approved party initiates normal rift action, observes spawn/claim",
+          "expected": "Source schedules a 3-second timer and records VW_RIFT/VW_SPAWNER; actual timely spawn or claim requires entity observations; no fixed network timing assertion",
+          "assertion_ids": [
+            "VOID-05-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 219,
+              "line_end": 251,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-05-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-05-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 219,
+              "line_end": 251,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-05-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-05-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 219,
+              "line_end": 251,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Source schedules a 3-second timer and records VW_RIFT/VW_SPAWNER; actual timely spawn or claim requires entity observations; no fixed network timing assertion",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 219,
+            "line_end": 251,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 303,
+            "line_end": 325,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "live rift and mob status/entity IDs; VW_RIFT,VW_SPAWNER localvars",
+          "claim owner, party/zone and action/event capture"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "live rift and mob status/entity IDs; VW_RIFT,VW_SPAWNER localvars",
+          "claim owner, party/zone and action/event capture"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Missing mob-localvar and claim readback; ensure no other group owns rift"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 219,
+          "line_end": 251,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L219-L251"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 303,
+          "line_end": 325,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-06",
+      "kind": "positive",
+      "name": "Pyxis slot claim and inventory delta",
+      "purpose": "Pyxis slot claim and inventory delta",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Following owner-approved NM completion, take one independently observed nonempty Pyxis item slot"
+        ],
+        "then": [
+          "On successful addItem, ITEM slot becomes zero; on insufficient capacity branch leaves slot intact; random item type UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-06-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-06-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 95,
+              "line_end": 162,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-06-S02",
+          "title": "Operator-gated player action (future)",
+          "action": "Following owner-approved NM completion, take one independently observed nonempty Pyxis item slot",
+          "expected": "On successful addItem, ITEM slot becomes zero; on insufficient capacity branch leaves slot intact; random item type UNKNOWN",
+          "assertion_ids": [
+            "VOID-06-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 95,
+              "line_end": 162,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-06-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-06-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 95,
+              "line_end": 162,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-06-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-06-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 95,
+              "line_end": 162,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "On successful addItem, ITEM slot becomes zero; on insufficient capacity branch leaves slot intact; random item type UNKNOWN",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 272,
+            "line_end": 301,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+          },
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 95,
+            "line_end": 162,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "Pyxis ITEM1..ITEM8,TAKEN<playerid>,ELIG<playerid> localvars",
+          "complete inventory before/after and addItem outcome"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "Pyxis ITEM1..ITEM8,TAKEN<playerid>,ELIG<playerid> localvars",
+          "complete inventory before/after and addItem outcome"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Missing pyxis localvar readback; drop pools random and some values design placeholders"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 272,
+          "line_end": 301,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 95,
+          "line_end": 162,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L95-L162"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-07",
+      "kind": "negative",
+      "name": "Repeat take does not duplicate emptied Pyxis slot",
+      "purpose": "Repeat take does not duplicate emptied Pyxis slot",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Attempt second selection only after approved first successful claim and complete inventory evidence"
+        ],
+        "then": [
+          "ITEM slot already 0 is not added by vwPyxisTake; require zero item delta, not repeated menu acknowledgment"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-07-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-07-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-07-S02",
+          "title": "Operator-gated player action (future)",
+          "action": "Attempt second selection only after approved first successful claim and complete inventory evidence",
+          "expected": "ITEM slot already 0 is not added by vwPyxisTake; require zero item delta, not repeated menu acknowledgment",
+          "assertion_ids": [
+            "VOID-07-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-07-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-07-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-07-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-07-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 272,
+              "line_end": 301,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "ITEM slot already 0 is not added by vwPyxisTake; require zero item delta, not repeated menu acknowledgment",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 272,
+            "line_end": 301,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "pyxis ITEM slot before/after",
+          "complete char_inventory count and container coverage"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "pyxis ITEM slot before/after",
+          "complete char_inventory count and container coverage"
+        ]
+      },
+      "mutation": "client",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Rift/Pyxis token and eligibility readback absent; rollback requires quarantined fixture"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 272,
+          "line_end": 301,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L272-L301"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    },
+    {
+      "feature_id": "voidwatch",
+      "case_id": "VOID-08",
+      "kind": "observation",
+      "name": "Voidwatch clearance and post-fight teardown",
+      "purpose": "Voidwatch clearance and post-fight teardown",
+      "rationale": "Distinguish implementation-defined predicates from actual deployed gameplay and client evidence",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "execution_authorized": false,
+      "lane": "needs-readback",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Owner-approved disposable character with documented baseline",
+          "Source SHA and deployed SHA independently checked; deployed=UNKNOWN until confirmed",
+          "No live command authorized by this draft"
+        ],
+        "when": [
+          "Observe already active character status and mob clearance associations, with no mutation"
+        ],
+        "then": [
+          "Code clears VOIDWATCHER from characters recorded by VW_CLR during vwEndOperation; client status alone cannot prove cleanup callback occurred"
+        ]
+      },
+      "preconditions": [
+        "Offline draft only; no automatic runtime dispatch",
+        "No destructive fixture preparation without operator authorization"
+      ],
+      "steps": [
+        {
+          "id": "VOID-08-S01",
+          "title": "Capture immutable baseline",
+          "action": "Record permitted pre-state and source/deployment fingerprint",
+          "expected": "Exact values from authorized observation, otherwise UNKNOWN",
+          "assertion_ids": [
+            "VOID-08-baseline"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-08-S02",
+          "title": "Read-only observation (future)",
+          "action": "Observe already active character status and mob clearance associations, with no mutation",
+          "expected": "Code clears VOIDWATCHER from characters recorded by VW_CLR during vwEndOperation; client status alone cannot prove cleanup callback occurred",
+          "assertion_ids": [
+            "VOID-08-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-08-S03",
+          "title": "Independent oracle comparison",
+          "action": "Compare complete client and authoritative readbacks against cited Lua branches; do not treat dispatch as success",
+          "expected": "UNKNOWN until source predicate, deployed revision and evidence completeness independently verified",
+          "assertion_ids": [
+            "VOID-08-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "VOID-08-S04",
+          "title": "Teardown and evidence preservation",
+          "action": "Record unchanged state for observation or owner-approved cleanup, claims, KIs, inventory and rift reset",
+          "expected": "Cleanup confirmation or quarantine; missing observations remain UNKNOWN",
+          "assertion_ids": [
+            "VOID-08-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+              "path": "scripts/globals/voidwatch.lua",
+              "line_start": 303,
+              "line_end": 325,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+            }
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "oracle": {
+        "expectation": "Code clears VOIDWATCHER from characters recorded by VW_CLR during vwEndOperation; client status alone cannot prove cleanup callback occurred",
+        "source_refs": [
+          {
+            "repository": "sarthax/darkstar-to-valhalla",
+            "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+            "path": "scripts/globals/voidwatch.lua",
+            "line_start": 303,
+            "line_end": 325,
+            "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+          }
+        ],
+        "confidence": "SOURCE_PREDICATE_ONLY_RUNTIME_UNKNOWN",
+        "independent_observation_required": true
+      },
+      "readback": {
+        "required": [
+          "status effect 475 before/after",
+          "mob VW_CLR<playerid> and VW_RIFT vars",
+          "rift status and expiry"
+        ],
+        "existing_endpoints": [],
+        "missing": [
+          "status effect 475 before/after",
+          "mob VW_CLR<playerid> and VW_RIFT vars",
+          "rift status and expiry"
+        ]
+      },
+      "mutation": "none",
+      "run_mode": "design_only",
+      "xiheadless_candidates": [
+        {
+          "name": "inventory",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "keyitems",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "vars",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "npc_interact",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "wait_for_event",
+          "availability": "UNVERIFIED"
+        },
+        {
+          "name": "snapshot",
+          "availability": "UNVERIFIED"
+        }
+      ],
+      "blocking_gaps": [
+        "Need authorized fixed-query mob localvars and status readback",
+        "Unverified duration and behavior explicitly marked [D] by source"
+      ],
+      "estimated_effort": "high",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 303,
+          "line_end": 325,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/86d4467d446569c741d76d296e640c3b844ad844/scripts/globals/voidwatch.lua#L303-L325"
+        }
+      ],
+      "deployed_revision": "UNKNOWN"
+    }
+  ]
+}

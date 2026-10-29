@@ -2,8 +2,11 @@ name: Scenario Authoring Catalog (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "src/workbench/server_admin/scenario_authoring/**"
+      - "gui/static/scenario_developer.js"
+      - "gui/static/scenario_guided_model.js"
       - "test_fixtures/test_scenario_authoring_catalog.py"
       - ".github/workflows/scenario-authoring-catalog.yml"
   workflow_dispatch:
@@ -11,8 +14,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   synthetic-readonly-catalog:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

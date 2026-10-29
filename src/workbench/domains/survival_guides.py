@@ -1,4 +1,4 @@
-"""Survival Guides domain: one row per guide in dsp-branches sql/survival_guides_apply.sql, joined with the DAT-verified id list
+"""Survival Guides domain: one row per guide in <DSP checkout> sql/survival_guides_apply.sql, joined with the DAT-verified id list
 (data/survival_guides/dat_verified.json), the live DB (dspdb_fresh, best effort) and the user's validation marks (validation.json)."""
 from __future__ import annotations
 
@@ -7,13 +7,17 @@ import json
 import re
 import sqlite3
 
+from workbench.runtime.local_roots import dsp_root
 from workbench.runtime.paths import REPO_ROOT
 
 DIR = REPO_ROOT / "data" / "survival_guides"
 VALID = DIR / "validation.json"
 VERIFIED = DIR / "dat_verified.json"
-SQLF = r"D:\Claude\dsp-branches\sql\survival_guides_apply.sql"
-CONF = r"D:\Claude\dsp-branches\conf\map_darkstar.conf"
+def _dsp_file(*parts):
+    root = dsp_root()
+    return str(root.joinpath(*parts)) if root else "<dsp-root-not-configured>"
+
+
 STATES = ("ok", "warn", "bad", "idle")
 ROW = re.compile(r"VALUES \((\d+),'Survival_Guide','Survival Guide',(\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+).*?--\s*zone (\d+)(?: pos:(\w+))?")
 
@@ -28,7 +32,7 @@ def _load(p):
 def _live_ids() -> set | None:
     try:
         import mysql.connector
-        cf = open(CONF, encoding="utf8").read()
+        cf = open(_dsp_file("conf", "map_darkstar.conf"), encoding="utf8").read()
         g = lambda k: re.search(r"^%s:\s*(\S+)" % k, cf, re.M).group(1)
         c = mysql.connector.connect(host=g("mysql_host"), port=int(g("mysql_port")), user=g("mysql_login"), password=g("mysql_password"),
                                     database=g("mysql_database"), connection_timeout=3)
@@ -48,7 +52,7 @@ def overview() -> dict:
     except Exception:
         pass
     rows = []
-    for line in open(SQLF, encoding="utf8", errors="replace"):
+    for line in open(_dsp_file("sql", "survival_guides_apply.sql"), encoding="utf8", errors="replace"):
         m = ROW.search(line)
         if not m:
             continue

@@ -1,0 +1,29 @@
+name: R7 Bounded Progression Offline
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "src/workbench/server_admin/feature_testing/**"
+      - "test_fixtures/test_bounded_progression_r7.py"
+      - ".github/workflows/r7-bounded-progression.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-progression:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Execute focused negative and positive endpoint fixtures
+        env:
+          PYTHONPATH: "src:."
+        run: python -m pytest -q test_fixtures/test_bounded_progression_r7.py

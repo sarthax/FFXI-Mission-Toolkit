@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from workbench.server_admin.wscalc import gear  # noqa: E402
 
 LSB_GEO_RUN = {21: (4, 3, 6, 4, 4, 5, 2, 2, 5), 22: (2, 6, 3, 4, 5, 2, 4, 4, 6)}
-DSP_GRADES = Path(os.environ.get("DSP_GRADES_CPP", r"D:\Claude\dsp-branches\src\map\grades.cpp"))
+DSP_GRADES = Path(os.environ.get("DSP_GRADES_CPP", r"<local>/<DSP checkout>\src\map\grades.cpp"))
 
 
 def test_all_22_jobs_have_nine_grades():

@@ -1,0 +1,50 @@
+name: Supervisor Baseline Fixture Regression
+
+on:
+  pull_request:
+    paths:
+      - "test_fixtures/test_local_test_supervisor.py"
+      - ".github/workflows/supervisor-baseline-fixtures-1375.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supervisor-baseline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  supervisor-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+      - name: Configure Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Prove three corrected baseline fixtures independently
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_local_test_supervisor.py::test_isolated_openapi_contains_only_read_only_supervisor_tools \
+            test_fixtures/test_local_test_supervisor.py::test_supervisor_log_errors_redacts_credentials \
+            test_fixtures/test_local_test_supervisor.py::test_supervisor_source_search_scoped_and_authenticated
+      - name: Run broader offline supervisor, inventory and progression regressions
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_local_test_supervisor.py \
+            test_fixtures/test_supervisor_failure_diagnostics.py \
+            test_fixtures/test_supervisor_investigation_dossier.py \
+            test_fixtures/test_supervisor_keyitems_charvars.py \
+            test_fixtures/test_supervisor_launcher_contract.py \
+            test_fixtures/test_supervisor_trace_ranking.py \
+            test_fixtures/test_bounded_inventory_r7.py \
+            test_fixtures/test_bounded_progression_r7.py

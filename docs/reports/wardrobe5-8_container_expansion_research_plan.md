@@ -58,3 +58,9 @@ Recommended order: confirm target client version -> capture 0x1C -> server-side 
 * PE relocations cover only .data/.rdata, so code xrefs were validated by function-start alignment (16-byte, after 0x90/0xCC) plus linear Capstone decode.
 * Capstone 5.0.7 under system `py -3.11` with `PYTHONPATH=".;src"`; the `.venv` has no Capstone (pip SSL failure, not bypassed).
 * Toolkit services used: `workbench.client.pol1_unpack`, `binary_index.PEImage`, `cli/pol1_report.py`. No Toolkit source changed.
+
+## 6. Client patch feasibility audit (2026-10-21)
+
+A separate [read-only FFXI Client Patch Feasibility Audit](ffxi_client_patch_feasibility_audit_2026-10-21.md) now records the verified PE/POL1/tooling baseline, unresolved signing/loader/launcher questions, hazards, and gated local test checklist.
+
+**Current decision:** NO-GO for deployed or retail-code binary edits, runtime injection, or an old-client Wardrobe 5–8 backport. GO for read-only exact-build inspection, synthetic PE patch/rollback experiments, synthetic POL1 encode/decode research, and isolated untouched-client baseline testing. Successful POL1 decode does not establish safe repacking or a working client patch. The modern-client server-compatibility path remains a separate workstream.

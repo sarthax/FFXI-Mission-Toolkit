@@ -5,10 +5,11 @@ Needs an elevated shell. The addon's markers.log tags each opened DAT with the a
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
-TOOLS = Path("D:/Claude/FFXI-Tools")
+TOOLS = Path(os.environ.get("FFXI_TOOLS_DIR", "FFXI-Tools"))  # set FFXI_TOOLS_DIR to your local FFXI-Tools checkout
 SCRIPT = TOOLS / "run_anim_capture.ps1"
 CONFIG = TOOLS / "tools" / "procmon" / "ffxi_dat.pmc"
 MARKERS = Path("C:/ValhallaXI/Ashitav4-Beta/addons/animprobe/markers.log")

@@ -1,0 +1,16 @@
+[
+ {
+  "id": "540ec235a4cc49fb91fb28ce97d7cdf4",
+  "created_at": "2026-10-21T02:53:26.065328+00:00",
+  "updated_at": "2026-10-21T03:03:04.994391+00:00",
+  "case_id": "MOG-09",
+  "status": "COMPLETED",
+  "account": "<test-account>",
+  "charid": 21833,
+  "run_id": "obs-20261021T025326Z",
+  "verdict": "FAIL",
+  "error": null,
+  "phase": "evidence_imported",
+  "phase_updated_at": "2026-10-21T03:03:04.988892+00:00"
+ }
+]

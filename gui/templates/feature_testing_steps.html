@@ -9,7 +9,14 @@
 <details class="ft-big"><summary>{% if v is mapping %}{{ v|length }} fields{% elif v is sequence and v is not string %}{{ v|length }} items{% else %}large value{% endif %}</summary><button type="button" class="ft-copy">Copy</button><pre class="ft-scroll">{{ v|tojson(indent=2) }}</pre></details>
 {%- endif -%}
 {%- endmacro %}
+{% macro sz(v) -%}
+{%- if v is mapping -%}{{ v|length }} fields
+{%- elif v is string -%}{{ v|length }} characters
+{%- elif v is sequence -%}{% if v|length == 0 %}empty (0 rows){% elif v[0] is sequence and v[0] is not string %}{{ v|length }} rows{% else %}{{ v|length }} items{% endif %}
+{%- else -%}{{ v|tojson }}{%- endif -%}
+{%- endmacro %}
 {% if scenario_view and scenario_view.available %}
+{% set story_section_prefix = story_anchor_prefix|default('ft-') %}
 <style>
 .ft-story .ft-nav{position:sticky;top:0;z-index:2;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;padding:.4rem .6rem;background:var(--bg,Canvas);border-bottom:1px solid var(--border,#aaa)}
 .ft-story .ft-summary{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
@@ -35,15 +42,18 @@
 .ft-story .ft-lifecycle{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0;padding:0;list-style:none}
 .ft-story .ft-lifecycle li{border:1px solid var(--border,#aaa);border-radius:6px;padding:.3rem .6rem;flex:1 1 11rem;min-width:0;overflow-wrap:anywhere}
 .ft-story .ft-lifecycle b{display:block}
+.ft-story .ft-compared{margin:.5rem 0;overflow-x:auto}
+.ft-story .ft-compared-table td,.ft-story .ft-compared-table th{padding:.15rem .8rem .15rem 0}
 .ft-story .ft-warning{border-left:3px solid currentColor;padding-left:.8rem}
 .ft-story .ft-meta{overflow-wrap:anywhere}
+.ft-story .ft-provenance{overflow-x:auto}
 .ft-story .ft-provenance pre{max-height:18rem;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
 .ft-story table{width:100%}
 .ft-story th,.ft-story td{text-align:left;vertical-align:top;overflow-wrap:anywhere}
 </style>
 <section class="ft-story" aria-label="Readable scenario and evidence">
-<nav class="ft-nav" aria-label="Sections"><a href="#ft-summary">Summary</a><a href="#ft-behavior">Behavior</a><a href="#ft-steps">Steps</a><a href="#ft-evidence">Evidence &amp; provenance</a></nav>
-<h2 id="ft-summary">Scenario purpose and evidence</h2>
+<nav class="ft-nav" aria-label="Sections"><a href="#{{ story_section_prefix }}summary">Summary</a><a href="#{{ story_section_prefix }}behavior">Behavior</a><a href="#{{ story_section_prefix }}steps">Steps</a><a href="#{{ story_section_prefix }}evidence">Evidence &amp; provenance</a></nav>
+<h2 id="{{ story_section_prefix }}summary">Scenario purpose and evidence</h2>
 <div class="ft-summary">
 {%- set ns = namespace(passed=0) -%}{%- for st in scenario_view.steps %}{% if st.status == 'PASS' %}{% set ns.passed = ns.passed + 1 %}{% endif %}{% endfor %}
 <span class="ft-badge">Recorded: {{ scenario_view.recorded_verdict or 'UNKNOWN' }}</span>
@@ -71,7 +81,7 @@
 <p><strong>Recorded verdict:</strong> UNKNOWN · <strong>Recalculated verdict:</strong> UNKNOWN (no imported run selected)</p>
 {% endif %}
 
-<h3 id="ft-behavior">Given / When / Then</h3>
+<h3 id="{{ story_section_prefix }}behavior">Given / When / Then</h3>
 {% if scenario_view.legacy %}
 <p class="ft-warning">Legacy assertion-only specification: authored Given/When/Then and stable scenario-step metadata have not been supplied. The rows below are assertions, not an inferred sequence of gameplay actions.</p>
 <p><strong>Existing preconditions (not an authored Given):</strong></p>
@@ -86,19 +96,19 @@
 {% endfor %}
 {% endif %}
 
-<h3 id="ft-steps">Ordered steps and expected vs observed</h3>
+<h3 id="{{ story_section_prefix }}steps">Ordered steps and expected vs observed</h3>
 <div class="ft-tools"><button type="button" class="ft-expand-all">Expand all</button><button type="button" class="ft-collapse-all">Collapse all</button></div>
 <p>Step statuses are <strong>recalculated from imported observations</strong> when an imported record is selected. Otherwise they are UNKNOWN. These are assertion outcomes, not independent verification.</p>
 <ol class="ft-steps">
 {% for step in scenario_view.steps %}
-<li><details class="ft-step"{% if step.status != 'PASS' %} open{% endif %}>
+<li><details class="ft-step"{% if scenario_view.recorded_verdict or step.status != 'PASS' %} open{% endif %}>
 <summary class="ft-step-line"><strong>{{ step.number }}. {{ step.title }}</strong><span class="ft-signal">{{ step.status if step.status != 'PASS' else 'PASS (recalculated only)' }}</span>
 {% if step.confidence_note %}<span class="ft-chip" title="{{ step.confidence_note }}">⚠ limitation</span>{% endif %}
 {% if step.has_failed_assertion %}<span class="ft-kind ft-kind-failed" title="A supported observation was present and the assertion evaluated FAIL.">Assertion FAILED</span>{% endif %}
 {% if step.has_missing_observation %}<span class="ft-kind" title="No normalized observation was imported, so this is unknown, not failed.">Observation missing (not failed)</span>{% endif %}
 {% for kind in step.source_kinds %}<span class="ft-kind" title="Derived from the observation field name; runner-reported, not independently verified.">{{ kind }}</span>{% endfor %}
-<span class="ft-brief">{% for assertion in step.assertions %}{% if assertion.observed_available %}{{ assertion.id }} = {% set js = assertion.observed|tojson %}{{ js if js|length <= 40 else '(large value)' }}{% else %}{{ assertion.id }}: UNKNOWN{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</span></summary>
-<p class="ft-meta"><code>{{ step.id }}</code> · {{ step.intent }}</p>
+<span class="ft-brief">{{ step.intent }}</span></summary>
+<details class="ft-tech"><summary>Technical step ID</summary><p class="ft-meta"><code>{{ step.id }}</code></p></details>
 {% if step.confidence_note %}<p class="ft-warning"><strong>Evidence limitation:</strong> {{ step.confidence_note }}</p>{% endif %}
 <div class="ft-pair">
 <div class="ft-cell"><strong>Expected outcome</strong>
@@ -113,6 +123,19 @@
 {% else %}<p>UNKNOWN — no assertion mapping supplied.</p>{% endif %}
 </div>
 </div>
+{% if step.provenance|length > 1 %}
+<div class="ft-compared" role="group" aria-label="Values compared in step {{ step.number }}">
+<strong>Values compared</strong>
+<table class="ft-compared-table"><thead><tr><th>Source</th><th>Field</th><th>Value</th></tr></thead><tbody>
+{% for field in step.provenance %}<tr>
+<td>{% if field.source_kind == 'Server database' %}Server database (persisted){% elif field.source_kind %}{{ field.source_kind }}{% else %}Source not classified{% endif %}</td>
+<td><code>{{ field.field }}</code></td>
+<td>{% if field.available %}{{ cv(field.value) }}{% if field.value is sequence and field.value is not string and field.value|length == 0 %} <small>(empty — no rows)</small>{% endif %}{% else %}Not supplied in the imported report (UNKNOWN){% endif %}</td>
+</tr>{% endfor %}
+</tbody></table>
+<small>Both sides come from one runner report; the persisted side is as the runner read it, not independently read.</small>
+</div>
+{% endif %}
 <details class="ft-provenance"><summary>Assertion contracts and provenance for step {{ step.number }}</summary>
 <table><thead><tr><th>Assertion ID</th><th>Comparison</th><th>Expected contract / evaluated value</th><th>Observed field</th><th>Outcome</th></tr></thead>
 <tbody>{% for assertion in step.assertions %}<tr>
@@ -133,7 +156,7 @@
 </li>
 {% else %}<li>UNKNOWN — no canonical assertions or authored steps supplied.</li>{% endfor %}
 </ol>
-<details class="ft-evidence-group" id="ft-evidence" open><summary><strong>Evidence &amp; provenance</strong> — limitations, uncertainties, cleanup</summary>
+<details class="ft-evidence-group" id="{{ story_section_prefix }}evidence" open><summary><strong>Evidence &amp; provenance</strong> — limitations, uncertainties, cleanup</summary>
 {% if scenario_view.blocking_gaps %}
 <h3>Unverified or blocking claims</h3>
 <ul>{% for gap in scenario_view.blocking_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>

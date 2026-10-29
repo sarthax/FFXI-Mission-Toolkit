@@ -1,0 +1,47 @@
+name: R8 Read-Only Catalog Preflight (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "src/workbench/server_admin/feature_testing/r8_catalog_preflight.py"
+      - "src/workbench/server_admin/feature_testing/router.py"
+      - "src/workbench/server_admin/feature_testing/test_specifications.py"
+      - "src/workbench/server_admin/feature_testing/scenario_contract_v2.py"
+      - "data/testing/test_specifications.json"
+      - "data/testing/feature_test_readiness.json"
+      - "test_fixtures/test_r8_catalog_preflight.py"
+      - "test_fixtures/r8_catalog_preflight_cases_synthetic.json"
+      - "docs/workbench/R8_READONLY_CATALOG_PREFLIGHT_1200.md"
+      - ".github/workflows/r8-readonly-catalog-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  readonly-catalog-preflight:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Verify advisory catalog and legacy compatibility
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_r8_catalog_preflight.py \
+            test_fixtures/test_feature_testing_specifications.py \
+            test_fixtures/test_feature_testing_execution.py \
+            test_fixtures/test_scenario_contract_v2_source_associations.py \
+            test_fixtures/test_r8_execution_boundary.py

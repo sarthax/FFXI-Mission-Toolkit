@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "feature_id": "synthetic_contract_domain",
+  "case_id": "SYNTH-R7-ASSOC-VALID",
+  "name": "SYNTHETIC unverified binding and capability proposal",
+  "runner": "unassigned",
+  "execution_status": "design_only",
+  "preconditions": [
+    "SYNTHETIC fixture only; no live character or DSP server"
+  ],
+  "observations": [
+    "session"
+  ],
+  "assertions": [
+    {
+      "id": "synthetic_observation",
+      "operation": "equals",
+      "observed": "session",
+      "expected": "UNKNOWN"
+    }
+  ],
+  "cleanup": [
+    "No state mutation is authorized by this fixture"
+  ],
+  "steps": [
+    {
+      "id": "SYNTH-V2-S01",
+      "title": "Review a proposed identity and an unverified interaction",
+      "intent": "manual_checkpoint",
+      "expected": "UNKNOWN - source oracle and runtime state missing",
+      "assertion_ids": [
+        "synthetic_observation"
+      ],
+      "evidence_refs": [
+        "session"
+      ]
+    }
+  ],
+  "contract_v2": {
+    "contract_version": 2,
+    "sources": [
+      {
+        "ref": "synthetic-source-1",
+        "repository": "synthetic/example-repository",
+        "path": "scripts/zones/Synthetic_Zone/npcs/Example.lua",
+        "line_start": 10,
+        "line_end": 14,
+        "revision": null,
+        "classification": "dsp_source",
+        "sha256": null
+      }
+    ],
+    "parameters": [
+      {
+        "name": "proposed_npc",
+        "kind": "npc",
+        "identity": null,
+        "namespace": null,
+        "zone_id": null,
+        "binding_state": "ambiguous",
+        "source_refs": [
+          "synthetic-source-1"
+        ]
+      }
+    ],
+    "oracles": [
+      {
+        "assertion_id": "synthetic_observation",
+        "oracle_type": "unknown",
+        "source_refs": [],
+        "confidence": "unknown"
+      }
+    ],
+    "step_requirements": [
+      {
+        "step_id": "SYNTH-V2-S01",
+        "capability": "client_action_candidate",
+        "operation_class": "mutating",
+        "required_permissions": [
+          "operator_approval",
+          "disposable_character",
+          "cleanup_verification"
+        ],
+        "required_readbacks": [
+          "synthetic_authoritative_state_unavailable"
+        ],
+        "approval_required": true,
+        "execution_gate": "blocked"
+      }
+    ],
+    "fingerprints": {
+      "base_spec_sha256": null,
+      "dsp_commit": null,
+      "headless_commit": null,
+      "toolkit_commit": null
+    },
+    "source_associations": [
+      {
+        "scope": "case",
+        "target_id": null,
+        "source_refs": [
+          "synthetic-source-1"
+        ]
+      },
+      {
+        "scope": "step",
+        "target_id": "SYNTH-V2-S01",
+        "source_refs": [
+          "synthetic-source-1"
+        ]
+      }
+    ]
+  }
+}

@@ -32,7 +32,10 @@
       "help": "/help#help-feature-trace",
       "purpose": "Inspect Lua-backed behavior, guards, callbacks and source evidence.",
       "how_to_use": "Select a Lua-backed behavior, inspect its guard conditions, callbacks, and linked source references; follow unresolved paths back to source.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/behavior_visualizer.html"
+      ]
     },
     {
       "id": "feature-checker",
@@ -45,7 +48,10 @@
       "help": "/help#help-research-checker",
       "purpose": "Check evidence coverage and required capabilities.",
       "how_to_use": "Choose a feature or capability, inspect its required evidence and coverage gaps, and record remaining validation needs.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/feature_checker.html"
+      ]
     },
     {
       "id": "capture-browser",
@@ -154,6 +160,50 @@
       "caveat": "Unrun tests are unknown, not failed; distinguish automated checks from live acceptance."
     },
     {
+      "id": "scenario-developer-design-only",
+      "module": "Validation",
+      "name": "Scenario Developer (design-only)",
+      "summary": "Edit and validate draft specifications, including typed native Headless steps saved with the draft; no publish-to-test-catalog or scenario RUN workflow.",
+      "route": "/scenario-developer",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help#help-feature-testing",
+      "purpose": "Inspect and edit non-executable canonical scenario drafts without treating them as runnable tests.",
+      "how_to_use": "Open Guided or Advanced, review field warnings, validate the canonical draft and save with a synthetic design-only operator token; review expected revision/CAS conflicts. Use the typed step builder for actions and checks (see Typed native steps). Add a saved draft to the Test catalog as a DRAFT revision with the Add to catalog control; browse saved revisions read-only in the Test catalog tab. Browse existing published definitions separately at /feature-testing?tab=catalog and prior evidence at /validation/runs.",
+      "caveat": "PRODUCT NOT ACCEPTED (#1406). No draft publish, arbitrary RUN, Headless launch/status/cancel or result import; The #1403 missing-steps and malformed-cleanup crashes are fixed. Previous browser-control PASS is not end-to-end acceptance.",
+      "source_refs": [
+        "gui/static/scenario_developer.js",
+        "gui/templates/scenario_developer.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_help_catalog_1405.cjs"
+      ]
+    },
+    {
+      "id": "scenario-developer-typed-steps",
+      "parent_id": "scenario-developer-design-only",
+      "module": "Validation",
+      "name": "Typed native steps",
+      "summary": "Build, import-review, save with the draft and preview native Headless steps from reviewed actions and checks.",
+      "route": "/scenario-developer",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help#help-feature-testing",
+      "purpose": "Author action and check steps for a design-only draft without hand-writing native JSON.",
+      "how_to_use": "In Scenario Developer, use the typed step builder: add a reviewed action and check pair, an action alone or a check alone, use the NPC and zone pickers, or paste native JSON to review before accepting steps. Steps are saved with the draft as native_steps (1 to 50) and shown as a When / Then preview.",
+      "caveat": "Design-only. The server-side review checks step shape against a pinned XiHeadless schema; it does not prove the runner executes a step. Each step lists what XiHeadless loaders accepted when the key was tried (acceptance only; the MCP task path accepted only wait_ms at the recorded commit). Export writes an empty expect for action-only steps because XiHeadless requires it. Picker IDs come from a local DSP source and are not verified for a zone or client. Provenance notes are not saved. The builder is read-only while Advanced JSON is open.",
+      "source_refs": [
+        "gui/static/scenario_typed_steps.js",
+        "src/workbench/server_admin/feature_testing/typed_action_library.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_typed_action_library_1409.py",
+        "test_fixtures/test_native_steps_schema_1411.py",
+        "test_fixtures/test_scenario_typed_steps_1411.py",
+        "test_fixtures/test_scenario_typed_steps.cjs"
+      ]
+    },
+    {
       "id": "research",
       "module": "Research & Evidence",
       "name": "Research Sessions",
@@ -244,7 +294,10 @@
       "help": "/help#help-migration-packages",
       "purpose": "Inspect migration packages and source evidence.",
       "how_to_use": "Select an existing migration package and review its sources, scope, and validation evidence before any application.",
-      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance."
+      "caveat": "Review source, permissions, and target profile before any write; catalog presence does not prove live acceptance.",
+      "source_refs": [
+        "gui/templates/packages_library.html"
+      ]
     },
     {
       "id": "wiki",
@@ -710,7 +763,10 @@
       "help": "/help#help-research-gaps",
       "purpose": "Review missing or unresolved client research evidence.",
       "how_to_use": "Filter unresolved research questions by domain, follow evidence links, and record what still needs verification.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/research_gaps.html"
+      ]
     },
     {
       "id": "dialog-browser",
@@ -788,7 +844,10 @@
       "parent_id": "capture-browser",
       "purpose": "Run structured queries against the indexed capture store.",
       "how_to_use": "Choose available capture fields and predicates, run the query and inspect matches with their capture IDs, timestamps and raw source observations. Confirm field decoding before using a result as proof of behavior.",
-      "caveat": "Only captured and indexed fields can be queried reliably."
+      "caveat": "Only captured and indexed fields can be queried reliably.",
+      "source_refs": [
+        "gui/templates/capture_query.html"
+      ]
     },
     {
       "id": "validation-runs",
@@ -932,7 +991,13 @@
       "parent_id": "capture-browser",
       "purpose": "Understand which logger and packet export formats the importer recognizes.",
       "how_to_use": "Consult Capture Format Support to confirm the accepted package structure, required metadata and parser expectations before importing. Keep unrecognized formats separate until the parser can report reliable diagnostics.",
-      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid."
+      "caveat": "Parsing support varies by source; unsupported records must not be silently treated as valid.",
+      "source_refs": [
+        "gui/templates/capture_help.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_capture_help_support_matrix.py"
+      ]
     },
     {
       "id": "capture-paths",
@@ -946,7 +1011,10 @@
       "parent_id": "capture-browser",
       "purpose": "Visualize player movement and other spatial paths recorded in captures.",
       "how_to_use": "Select a capture and zone, then inspect plotted points in time/order sequence. Check coordinate provenance and gaps before inferring a continuous route or comparing points to static zone entities.",
-      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions."
+      "caveat": "Sparse updates and zoning can create apparent jumps; these are observations, not navigation instructions.",
+      "source_refs": [
+        "gui/templates/path_plot.html"
+      ]
     },
     {
       "id": "capture-import",
@@ -960,7 +1028,10 @@
       "parent_id": "capture-browser",
       "purpose": "Ingest a recorded gameplay package into the Toolkit's research index.",
       "how_to_use": "Select the supported input capture, inspect the preview and parser diagnostics, then import only after confirming its origin. Review rejected or undecoded records afterward; a successful import does not imply full protocol decoding.",
-      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted."
+      "caveat": "Import success does not guarantee every field was decoded or semantically interpreted.",
+      "source_refs": [
+        "gui/templates/capture_new.html"
+      ]
     },
     {
       "id": "item-health",
@@ -1032,7 +1103,10 @@
       "help": "/help#help-video-ocr",
       "purpose": "Inspect video-derived text research.",
       "how_to_use": "Select a video-derived text capture, inspect extracted text alongside source context, and confirm uncertain readings manually.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/ocr.html"
+      ]
     },
     {
       "id": "llm-research",
@@ -1045,7 +1119,10 @@
       "help": "/help#help-research-checker",
       "purpose": "Explore local LLM-assisted research with source evidence safeguards.",
       "how_to_use": "Provide a focused research question, review model-assisted findings with linked sources, and independently verify claims.",
-      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior."
+      "caveat": "Research output depends on the available indexed sources; absence of evidence is not proof of absent behavior.",
+      "source_refs": [
+        "gui/templates/llm.html"
+      ]
     },
     {
       "id": "capture-all-paths",
@@ -1059,7 +1136,10 @@
       "parent_id": "capture-browser",
       "purpose": "Compare recorded routes across multiple capture sessions.",
       "how_to_use": "Choose a zone and the relevant capture sessions, compare their spatial overlays and identify differences in timing, sampling or coordinate frame before inferring repeated player routes.",
-      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes."
+      "caveat": "Session coordinates and zone identity need reconciliation before comparing routes.",
+      "source_refs": [
+        "gui/templates/path_plot_all.html"
+      ]
     },
     {
       "id": "capture-bulk-ingest",
@@ -1073,7 +1153,10 @@
       "parent_id": "capture-browser",
       "purpose": "Process multiple capture sources in one bounded import workflow.",
       "how_to_use": "Review the source set and bulk-ingest plan before starting a batch. After processing, inspect per-file outcomes and skipped/failed entries; preserve original capture provenance and avoid retrying blindly.",
-      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage."
+      "caveat": "Large imports can contain mixed formats; review error summaries rather than assuming complete coverage.",
+      "source_refs": [
+        "gui/templates/capture_bulk_ingest.html"
+      ]
     },
     {
       "id": "capture-metadata-import",
@@ -1087,7 +1170,10 @@
       "parent_id": "capture-browser",
       "purpose": "Associate supplementary metadata with already captured evidence.",
       "how_to_use": "Choose metadata for the exact capture identity, inspect the join keys and import preview, then verify the resulting associations. Do not attach unmatched metadata to a similarly named recording.",
-      "caveat": "Metadata alone does not prove its corresponding packet/event occurred."
+      "caveat": "Metadata alone does not prove its corresponding packet/event occurred.",
+      "source_refs": [
+        "gui/templates/capture_metadata_import.html"
+      ]
     },
     {
       "id": "capture-review",
@@ -1269,13 +1355,37 @@
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Prepare test specifications and inspect run results without granting unapproved execution.",
-      "how_to_use": "Open Feature Testing, choose a readiness case, build a scenario and review preflight, observed results and assertion differences.",
+      "how_to_use": "Open Feature Testing, choose a readiness case, build a scenario and review preflight, observed results and assertion differences. Open a run from Run history for a plain-language summary and the compared values; use Compare with another run to see two recorded runs side by side.",
       "caveat": "Design-only plans are not executable tests; execution support and live result evidence must be verified separately.",
       "source_refs": [
         "src/workbench/server_admin/feature_testing/router.py"
       ],
       "test_refs": [
         "test_fixtures/test_feature_testing_builder.py"
+      ]
+    },
+    {
+      "id": "testing-run-results",
+      "parent_id": "feature-testing",
+      "module": "Validation",
+      "name": "Run results and Compare runs",
+      "summary": "Read an imported run in plain language and compare two recorded runs without running anything.",
+      "route": "/feature-testing",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help#help-feature-testing",
+      "purpose": "Let a person explain what a recorded run does and does not show, and whether two runs can be compared.",
+      "how_to_use": "Open Run history, open a run for the What happened summary and the compared values for each step, then use Compare with another run to pick an earlier and a later run.",
+      "caveat": "Read-only and based on imported reports, which are not independently authenticated. A verdict is what the report recorded. Compare runs reports whether a pair is comparable and why not; a comparable pair is only a candidate regression or fix and never shows a cause. Most real pairs are not comparable until the runner records environment and fixtures; rows imported before the importer recorded a definition fingerprint cannot be compared.",
+      "source_refs": [
+        "src/workbench/server_admin/feature_testing/run_outcome.py",
+        "src/workbench/server_admin/feature_testing/stored_run_comparison.py",
+        "gui/templates/feature_testing_compare.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_run_outcome_1408.py",
+        "test_fixtures/test_stored_run_comparison_1408.py",
+        "test_fixtures/test_compare_page_1408.py"
       ]
     },
     {

@@ -1,0 +1,26 @@
+name: Scenario Native Draft Import 1410
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "tools/scenario_native_draft_import_1410.py"
+      - "test_fixtures/test_scenario_native_draft_import_1410.py"
+      - "docs/workbench/SCENARIO_NATIVE_DRAFT_IMPORT_1410.md"
+      - ".github/workflows/scenario-native-draft-import-1410.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python test_fixtures/test_scenario_native_draft_import_1410.py

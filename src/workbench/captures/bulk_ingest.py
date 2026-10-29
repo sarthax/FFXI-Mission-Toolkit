@@ -20,12 +20,14 @@ import time
 import uuid
 from pathlib import Path
 
+from workbench.runtime.paths import REPO_ROOT
+
 MAX_PCT = float(os.environ.get("BULK_INGEST_MAX_DRIVE_PCT", "90"))
 DB_GROWTH_FACTOR = 1.0            # estimated DB growth per byte of uncompressed capture (conservative guess)
 INGESTABLE_ARCHIVES = {".zip", ".7z"}
 UNSUPPORTED_ARCHIVES = {".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz"}
 ARCHIVE_EXTS = INGESTABLE_ARCHIVES | UNSUPPORTED_ARCHIVES
-JOB_DIR = Path(os.environ.get("BULK_INGEST_JOB_DIR", "D:/Claude/mission_toolkit/bulk_ingest_jobs"))
+JOB_DIR = Path(os.environ.get("BULK_INGEST_JOB_DIR", str(REPO_ROOT / "bulk_ingest_jobs")))
 
 _lock = threading.Lock()          # held for the whole of a running job
 _jobs = {}                        # job_id -> job dict

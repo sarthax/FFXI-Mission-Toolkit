@@ -1,139 +1,369 @@
 #!/usr/bin/env python3
-"""Synthetic-only exact-2019 wardrobe layout and fingerprint checks."""
+"""Synthetic-only tests for exact-build 2019 Wardrobe read-only evidence gates."""
 import hashlib
+import io
+import json
 import struct
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from workbench.client.pol1_unpack import Pol1Error
 from workbench.client.wardrobe_2019_audit import (
-    CODE_WINDOWS,
-    PACKET_HANDLERS,
-    _verify_packet_registration,
-    LEGACY_TEXT_RVA,
-    _extract_commands,
-    _verify_code_windows,
-    audit_2019_wardrobe,
-    inspect_2019_wardrobe,
-    legacy_layout_risk,
+    ANCHORS, EXPECTED_COMMAND_IDS, FIRST_WARDROBE_COMMAND_RVA,
+    RECORD_BYTES, audit_2019_wardrobe, inspect_command_table, inspect_decoded_sites,
+    bounded_2019_record_offset, inspect_2019_item_packet_location,
+    PACKET_LOCATION_FIELDS, ITEM_STORE_OFFSET, ITEM_RECORD_BYTES, SLOTS_PER_CONTAINER,
+    inspect_2019_store_layout, ORIGINAL_ITEM_ARRAY_END, PROJECTED_18_CONTAINER_END,
+    inspect_2019_container_ui_bounds,
+    inspect_2019_store_lifecycle, PER_STORE_CLEAR_DWORDS,
+    inspect_fixed_transfer_data_strings, inspect_2019_fixed_transfer_calls,
+    FIXED_TRANSFER_DATA_STRINGS, READ_LIKE_RVA, WRITE_LIKE_RVA,
+    MANAGER_SLOT_COUNT_FIELD_OFFSET, INVENTORY_CURSOR_COUNT_OFFSET,
+    INVENTORY_CURSOR_POINTER_OFFSET, INVENTORY_CURSOR_MAX_SLOTS,
 )
 
 
-def synthetic_command_pe() -> bytes:
-    """Clearly synthetic PE section with table-shaped rows, not client data."""
-    image = bytearray(0x800)
-    image[:2] = b"MZ"
-    struct.pack_into("<I", image, 0x3C, 0x80)
-    image[0x80:0x84] = b"PE\0\0"
-    struct.pack_into("<H", image, 0x80 + 6, 1)
-    struct.pack_into("<H", image, 0x80 + 20, 0xE0)
-    section = 0x80 + 24 + 0xE0
-    image[section:section+8] = b".data\0\0\0"
-    struct.pack_into("<IIII", image, section + 8,
-                     0x600, 0x34B000, 0x600, 0x200)
-    names = [
-        ("/wardrobe", 111), ("/wardrobe2", 112),
-        ("/wardrobe3", 113), ("/wardrobe4", 114),
-        ("/bank2", 115), ("/mailbox", 116),
-        ("/deliverybox", 116), ("/sendpost", 118),
-        ("/layout", 119), ("/remodel", 120),
-    ]
-    for index, (name, number) in enumerate(names):
-        at = 0x200 + 0x1B0 + index * 24
-        image[at:at+16] = name.encode("ascii").ljust(16, b"\0")
-        struct.pack_into("<H", image, at + 20, number)
-    return bytes(image)
+def synthetic_commands():
+    data_rva = FIRST_WARDROBE_COMMAND_RVA - 0x80
+    data = bytearray(b"\x00" * 512)
+    for i, (name, command_id) in enumerate(EXPECTED_COMMAND_IDS.items()):
+        at = 0x80 + i * RECORD_BYTES
+        data[at:at + 16] = name.encode("ascii").ljust(16, b"\x00")
+        struct.pack_into("<H", data, at + 0x14, command_id)
+    return data, data_rva
 
 
-class TestLegacyWardrobeAudit(unittest.TestCase):
-    def test_hypothetical_new_container_collides_with_existing_state(self):
-        facts = legacy_layout_risk()
-        self.assertEqual(facts["record_stride_bytes"], 3564)
-        self.assertEqual(facts["hypothetical_container_13_start"], 0x14D5C)
-        self.assertEqual(facts["hypothetical_container_13_end_exclusive"], 0x15B48)
-        self.assertTrue(facts["overlaps_observed_other_state"])
-        self.assertTrue(facts["overlaps_capacity8"])
-        self.assertTrue(facts["overlaps_capacity16"])
-        self.assertEqual(facts["capacity16_end_exclusive"], 0x15314)
-        self.assertEqual(facts["interpretation"], "INFERRED_OVERLAP_NOT_A_VALID_ALLOCATION")
+class Wardrobe2019AuditTests(unittest.TestCase):
+    def test_command_table_exact_ids_and_absent_new_names_are_not_absence_proof(self):
+        data, rva = synthetic_commands()
+        result = inspect_command_table(bytes(data), rva)
+        self.assertTrue(result["legacy_commands_verified"])
+        self.assertEqual([x["observed_id"] for x in result["entries"]], [111, 112, 113, 114])
+        self.assertTrue(all(not v for v in result["additional_command_records_found"].values()))
+        self.assertIn("UNKNOWN", result["caution"])
+        self.assertEqual(result["record_size_bytes"], 24)
 
-    def test_command_rows_and_original_id_collisions(self):
-        image = synthetic_command_pe()
-        result = _extract_commands(image)
-        self.assertEqual([v["command_id"] for v in result],
-                         [111, 112, 113, 114, 118, 119, 120])
-        self.assertEqual(result[0]["name"], "/wardrobe")
-        self.assertEqual(result[-1]["name"], "/remodel")
+    def test_command_table_displacement_and_wrong_id_fail_closed(self):
+        data, rva = synthetic_commands()
+        data[0x80 + RECORD_BYTES + 0x14] = 0
+        self.assertFalse(inspect_command_table(bytes(data), rva)["legacy_commands_verified"])
+        data, rva = synthetic_commands()
+        self.assertFalse(inspect_command_table(bytes(data), rva + 24)["legacy_commands_verified"])
+        self.assertFalse(inspect_command_table(b"", rva)["legacy_commands_verified"])
 
-        altered = bytearray(image)
-        altered[0x200 + 0x1B0] = ord("X")
-        with self.assertRaisesRegex(Pol1Error, "unexpected row"):
-            _extract_commands(bytes(altered))
-
-    def test_code_window_probes_are_metadata_only_and_fail_closed(self):
-        size = max(rva + width - LEGACY_TEXT_RVA for _, rva, width, _, _ in CODE_WINDOWS)
-        decoded = bytearray(size + 1)
-        for _, rva, width, offsets, motifs in CODE_WINDOWS:
-            at = rva - LEGACY_TEXT_RVA
-            cursor = 0
-            for offset in offsets:
-                decoded[at + cursor:at + cursor + 4] = struct.pack("<I", offset)
-                cursor += 4
-            for motif in motifs:
-                decoded[at + cursor:at + cursor + len(motif)] = motif
-                cursor += len(motif)
-            self.assertLessEqual(cursor, width)
-        result = _verify_code_windows(bytes(decoded))
-        self.assertEqual(len(result), len(CODE_WINDOWS))
-        self.assertTrue(all(entry["status"] == "VERIFIED_BYTES" for entry in result))
-        self.assertNotIn("bytes", str(result).lower().replace("verified_bytes", ""))
-
-        first_rva = CODE_WINDOWS[0][1]
-        decoded[first_rva - LEGACY_TEXT_RVA] = 255
-        with self.assertRaisesRegex(Pol1Error, "capacity_u8_reader"):
-            _verify_code_windows(bytes(decoded))
-
-
-    def test_exact_packet_registration_pairs_and_negative_case(self):
-        blob = bytearray(0xE8650 - LEGACY_TEXT_RVA)
-        at = 0xE85D0 - LEGACY_TEXT_RVA
-        for packet, handler_rva in PACKET_HANDLERS:
-            motif = bytes((0x68,)) + struct.pack(
-                "<I", handler_rva + 0x10000000
-            ) + bytes((0x6A, packet))
-            blob[at:at + len(motif)] = motif
-            at += len(motif) + 1
-        evidence = _verify_packet_registration(bytes(blob))
-        self.assertEqual(len(evidence), 6)
-        self.assertEqual(
-            [(x["packet_id"], x["handler_rva"]) for x in evidence],
-            [("0x1C", "0xE97C0"), ("0x1E", "0xE9800"),
-             ("0x1F", "0xE9860"), ("0x20", "0xE9940"),
-             ("0x1D", "0xE99D0"), ("0x26", "0xE9A10")]
+    def test_static_opcode_anchor_comparison_never_exposes_code(self):
+        # Include every anchor, including the later fixed-buffer initializer.
+        max_end = max(
+            rva - 0x1000 + len(bytes.fromhex(pattern))
+            for rva, pattern in ANCHORS.values()
         )
-        self.assertTrue(all(x["status"] == "VERIFIED_STATIC_REGISTRATION"
-                            for x in evidence))
-        blob[0xE85D0 - LEGACY_TEXT_RVA] = 0x00
-        with self.assertRaisesRegex(Pol1Error, "registration changed for 0x1C"):
-            _verify_packet_registration(bytes(blob))
+        decoded = bytearray(max_end + 16)
+        for addr, hexbytes in ANCHORS.values():
+            off = addr - 0x1000
+            raw = bytes.fromhex(hexbytes)
+            decoded[off:off + len(raw)] = raw
+        observed = inspect_decoded_sites(bytes(decoded))
+        self.assertTrue(observed["all_static_anchors_match"])
+        self.assertEqual(len(observed["anchors"]), len(ANCHORS))
+        self.assertTrue(all(
+            set(item) == {"rva", "matches_expected_bytes"}
+            for item in observed["anchors"].values()
+        ))
+        site = 0xE97CD - 0x1000
+        decoded[site] ^= 0x01
+        self.assertFalse(inspect_decoded_sites(bytes(decoded))["all_static_anchors_match"])
+        self.assertFalse(inspect_decoded_sites(b"")["all_static_anchors_match"])
 
-    def test_original_file_hash_guard_and_no_io(self):
-        with self.assertRaisesRegex(Pol1Error, "exact-size"):
-            audit_2019_wardrobe(b"")
-        with self.assertRaisesRegex(Pol1Error, "exact 2019 original SHA"):
-            audit_2019_wardrobe(b"\0" * 2_870_352)
+    def test_incorrect_source_hash_blocks_any_build_specific_claims(self):
+        image = b"MZ" + bytes(2048)
+        actual = hashlib.sha256(image).hexdigest()
+        with patch("workbench.client.wardrobe_2019_audit.unpack_pol1") as decode:
+            report = audit_2019_wardrobe(image)
+            decode.assert_not_called()
+        self.assertEqual(report["status"], "UNKNOWN_BUILD_FINGERPRINT")
+        self.assertEqual(report["source_sha256"], actual)
+        self.assertTrue(report["do_not_apply_2019_assumptions"])
+        self.assertNotIn("safety_decision", report)
+        for invalid in ("file", b"", bytearray(image)):
+            with self.assertRaises(Pol1Error):
+                audit_2019_wardrobe(invalid)
 
-    def test_read_only_file_wrapper_rejects_wrong_size(self):
-        import tempfile
+    def test_cli_is_read_only_on_unknown_build(self):
+        from workbench.client.cli.wardrobe_2019_report import main
+        original = b"MZ" + bytes(1024)
         with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / "not-a-client.dll"
-            path.write_bytes(b"TEST")
-            with self.assertRaisesRegex(Pol1Error, "unexpected source size"):
-                inspect_2019_wardrobe(path)
-            self.assertEqual(path.read_bytes(), b"TEST")
+            path = Path(folder) / "synthetic.dll"
+            path.write_bytes(original)
+            with patch("sys.argv", ["wardrobe-2019-report", str(path)]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(main(), 0)
+            report = json.loads(output.getvalue())
+            self.assertEqual(report["status"], "UNKNOWN_BUILD_FINGERPRINT")
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual([x.name for x in Path(folder).iterdir()], ["synthetic.dll"])
+
+
+    def test_legacy_2019_address_guard_boundary_values(self):
+        self.assertEqual(bounded_2019_record_offset(0, 0), ITEM_STORE_OFFSET)
+        self.assertEqual(bounded_2019_record_offset(12, 80),
+                         ITEM_STORE_OFFSET + (12 * 81 + 80) * ITEM_RECORD_BYTES)
+        self.assertEqual(bounded_2019_record_offset(12, 0),
+                         ITEM_STORE_OFFSET + 12 * SLOTS_PER_CONTAINER * ITEM_RECORD_BYTES)
+        for cid in (-1, 13, 14, 15, 16, 255, True, 1.0):
+            with self.subTest(container=cid):
+                self.assertIsNone(bounded_2019_record_offset(cid, 0))
+        for slot in (-1, 81, 255, True, 2.0):
+            with self.subTest(slot=slot):
+                self.assertIsNone(bounded_2019_record_offset(12, slot))
+
+    def test_legacy_packet_location_guard_all_observed_packet_types(self):
+        for packet_id, (cid_at, slot_at) in PACKET_LOCATION_FIELDS.items():
+            with self.subTest(packet=packet_id):
+                for cid, slot, accepted in (
+                    (0, 0, True), (12, 80, True), (13, 0, False),
+                    (14, 5, False), (15, 5, False), (16, 5, False),
+                    (255, 0, False), (12, 81, False), (12, 255, False),
+                ):
+                    payload = bytearray(max(cid_at, slot_at) + 1)
+                    payload[cid_at], payload[slot_at] = cid, slot
+                    report = inspect_2019_item_packet_location(packet_id, bytes(payload))
+                    self.assertEqual(report["status"] == "LEGACY_BOUNDS_OK", accepted)
+                    self.assertEqual(report["safe_record_offset"] is not None, accepted)
+                self.assertEqual(
+                    inspect_2019_item_packet_location(packet_id, bytes(slot_at))["status"],
+                    "TRUNCATED_PACKET"
+                )
+
+    def test_legacy_packet_location_guard_denies_unknown_and_invalid_input(self):
+        self.assertEqual(
+            inspect_2019_item_packet_location(0x29, bytes(64))["status"],
+            "UNKNOWN_PACKET_NO_ADDRESS"
+        )
+        self.assertEqual(
+            inspect_2019_item_packet_location(True, bytes(64))["status"],
+            "UNKNOWN_PACKET_NO_ADDRESS"
+        )
+        self.assertEqual(
+            inspect_2019_item_packet_location(0x1E, bytearray(64))["status"],
+            "INVALID_PACKET_BUFFER"
+        )
+
+    def test_in_place_expansion_overlaps_existing_client_fields(self):
+        mapped = inspect_2019_store_layout(True)
+        self.assertEqual(mapped["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(mapped["fixed_global_base_va"], "0x1096DB60")
+        self.assertEqual(mapped["global_zero_init_bytes"], 0x3EDF4)
+        self.assertEqual(mapped["active_store_offset_from_global_base"], 4)
+        self.assertEqual(mapped["active_store_pointer_global_va"], "0x104CDA08")
+        self.assertEqual(
+            mapped["observed_runtime_store_reassignment_rvas"],
+            ["0xF7116", "0xF7295", "0xF9B3C"]
+        )
+        self.assertFalse(mapped["store_lifetime_mapped_completely"])
+        self.assertEqual(mapped["legacy_item_array_exclusive_end_offset"], 0x14D5C)
+        self.assertEqual(mapped["observed_following_scalar_field_offset"], 0x14D5C)
+        self.assertEqual(mapped["observed_following_pointer_field_offset"], 0x14D60)
+        self.assertEqual(mapped["projected_18_container_array_exclusive_end_offset"], 0x192F8)
+        self.assertEqual(mapped["extra_bytes_for_five_containers"], 5 * 81 * 44)
+        self.assertEqual(mapped["extra_bytes_for_five_containers"], 17820)
+        self.assertTrue(mapped["proposed_in_place_growth_overlaps_observed_fields"])
+        self.assertEqual(mapped["safety_decision"], "NO_GO_IN_PLACE_ARRAY_GROWTH")
+        self.assertEqual(ORIGINAL_ITEM_ARRAY_END, 0x14D5C)
+        self.assertEqual(PROJECTED_18_CONTAINER_END, 0x192F8)
+
+    def test_missing_static_anchor_never_claims_verified_overlap(self):
+        unknown = inspect_2019_store_layout(False)
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertIsNone(unknown["proposed_in_place_growth_overlaps_observed_fields"])
+        self.assertEqual(unknown["safety_decision"], "NO_GO_IN_PLACE_ARRAY_GROWTH")
+
+
+    def test_manager_lifecycle_selected_static_boundaries(self):
+        observed = inspect_2019_store_lifecycle(True)
+        self.assertEqual(observed["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(PER_STORE_CLEAR_DWORDS, 0xEC20)
+        self.assertEqual(observed["per_store_zero_clear_bytes"], 0x3B080)
+        self.assertEqual(observed["fixed_size_transfer_value_bytes"], 0x3B080)
+        self.assertEqual(len(observed["fixed_size_transfer_immediate_rvas"]), 11)
+        self.assertFalse(observed["fixed_size_transfer_semantics_confirmed"])
+        self.assertEqual(observed["read_like_stream_callee_rva"], "0x307CFF")
+        self.assertEqual(observed["write_like_stream_callee_rva"], "0x307E16")
+        self.assertEqual(len(observed["read_like_fixed_transfer_immediate_rvas"]), 6)
+        self.assertEqual(len(observed["write_like_fixed_transfer_immediate_rvas"]), 5)
+        self.assertFalse(observed["persistent_file_format_and_schema_confirmed"])
+        pointers = observed["fixed_transfer_source_observations"]
+        self.assertEqual(pointers["direct_active_store"], ["0x3FA1", "0x4818"])
+        self.assertEqual(len(pointers["stack_local_buffer"]), 5)
+        self.assertEqual(len(pointers["caller_supplied_first_argument_pointer"]), 4)
+        self.assertFalse(pointers["caller_supplied_pointer_contents_and_aliases_known"])
+        self.assertEqual(
+            sorted(pointers["direct_active_store"] +
+                   pointers["stack_local_buffer"] +
+                   pointers["caller_supplied_first_argument_pointer"]),
+            sorted(observed["fixed_size_transfer_immediate_rvas"]),
+        )
+        self.assertIsNone(observed["all_transfer_pointers_alias_active_store"])
+        evb = observed["direct_active_store_evb_path_evidence"]
+        self.assertEqual(evb["observed_shared_filename"], "ZSU.evb")
+        self.assertEqual(evb["read_side_filename_push_rva"], "0x3EE4")
+        self.assertEqual(evb["read_side_mode_push_rva"], "0x3F8A")
+        self.assertEqual(evb["read_side_transfer_push_rva"], "0x3FA1")
+        self.assertEqual(evb["write_side_filename_push_rva"], "0x47E3")
+        self.assertEqual(evb["write_side_mode_push_rva"], "0x47FC")
+        self.assertEqual(evb["write_side_transfer_push_rva"], "0x4818")
+        self.assertFalse(evb["full_runtime_file_name_proved"])
+        self.assertIsNone(evb["is_character_inventory_persistence"])
+        self.assertEqual(
+            evb["caller_supplied_evb_files"],
+            [
+                {"site_rva": "0x45B0", "filename": "RCN%04d[%d].evb"},
+                {"site_rva": "0x464D", "filename": "REC.evb"},
+                {"site_rva": "0x46ED", "filename": "RECN.evb"},
+                {"site_rva": "0x478D", "filename": "RECS.evb"},
+            ],
+        )
+        self.assertFalse(evb["caller_supplied_buffer_content_known"])
+        self.assertEqual(observed["linear_disassembly_candidate_reference_count"], 1045)
+        self.assertEqual(observed["observed_direct_global_writer_instruction_count"], 15)
+        self.assertFalse(observed["global_writer_sites_independently_cfg_confirmed"])
+        self.assertIn("0x3FA7", observed["active_store_pointer_set_rvas"])
+        self.assertIn("0xF8A55", observed["active_store_pointer_set_rvas"])
+        self.assertEqual(observed["manager_slot_count_field_offset"], 0x3B088)
+        self.assertEqual(MANAGER_SLOT_COUNT_FIELD_OFFSET, 0x3B088)
+        self.assertEqual(observed["manager_default_slot_count"], 1)
+        self.assertEqual(observed["separate_manager_index_validation_rva"], "0xF6EE0")
+        self.assertTrue(observed["manager_index_truncated_to_16_bits"])
+        self.assertTrue(observed["manager_index_guarded_by_slot_count"])
+        self.assertFalse(observed["manager_guard_proves_inventory_container_safety"])
+        self.assertEqual(observed["manager_slot_selection_rvas"],
+                         ["0xF710A", "0xF7009"])
+        self.assertEqual(observed["manager_cleanup_call_rva"], "0xF700D")
+        self.assertEqual(observed["active_store_pointer_clear_rvas"],
+                         ["0xF70D6", "0xF6FE2"])
+        self.assertIn("0xF73E1", observed["active_store_pointer_set_rvas"])
+        self.assertIn("0xF740E", observed["active_store_pointer_set_rvas"])
+        self.assertFalse(observed["complete_pointer_writer_inventory"])
+        self.assertFalse(observed["store_object_allocation_size_proved_for_all_instances"])
+        self.assertFalse(observed["store_object_lifetime_proved"])
+        self.assertEqual(observed["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
+
+    def test_inventory_cursor_fields_preserved_after_legacy_array(self):
+        observed = inspect_2019_store_lifecycle(True)
+        cursor = observed["post_inventory_cursor"]
+        self.assertEqual(cursor["count_offset"], INVENTORY_CURSOR_COUNT_OFFSET)
+        self.assertEqual(cursor["pointer_offset"], INVENTORY_CURSOR_POINTER_OFFSET)
+        self.assertEqual(cursor["count_offset"], ORIGINAL_ITEM_ARRAY_END)
+        self.assertEqual(cursor["pointer_offset"], ORIGINAL_ITEM_ARRAY_END + 4)
+        self.assertEqual(cursor["maximum_slots"], INVENTORY_CURSOR_MAX_SLOTS)
+        self.assertEqual(cursor["maximum_slots"], SLOTS_PER_CONTAINER)
+        self.assertEqual(cursor["cursor_pointer_clear_rva"], "0xE88CC")
+        self.assertTrue(observed["cursor_uses_existing_inventory_records"])
+        unknown = inspect_2019_store_lifecycle(False)
+        self.assertIsNone(unknown["cursor_uses_existing_inventory_records"])
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertEqual(unknown["safety_decision"], "NO_GO_MOVE_OR_EXTEND_EXISTING_ARRAY")
+        self.assertIsNone(unknown["manager_index_guarded_by_slot_count"])
+
+    def test_static_io_size_candidates_have_exact_count_and_no_false_semantics(self):
+        report = inspect_2019_store_lifecycle(True)
+        sizes = report["fixed_size_transfer_immediate_rvas"]
+        self.assertEqual(len(sizes), len(set(sizes)))
+        self.assertEqual(
+            sorted(sizes),
+            sorted(report["read_like_fixed_transfer_immediate_rvas"] +
+                   report["write_like_fixed_transfer_immediate_rvas"])
+        )
+        self.assertFalse(report["persistent_file_format_and_schema_confirmed"])
+        self.assertEqual(sizes[0], "0x3FA1")
+        self.assertEqual(sizes[-1], "0x4818")
+        self.assertEqual(report["fixed_size_transfer_value_bytes"],
+                         report["per_store_zero_clear_bytes"])
+        self.assertFalse(report["fixed_size_transfer_semantics_confirmed"])
+        self.assertFalse(report["complete_pointer_writer_inventory"])
+
+
+    def test_2019_transfer_mode_literals_are_exact_rva_gated(self):
+        data_rva = 0x344000
+        synthetic = bytearray(0x800)
+        for rva, value in FIXED_TRANSFER_DATA_STRINGS.values():
+            at = rva - data_rva
+            synthetic[at:at+len(value)] = value
+        exact = inspect_fixed_transfer_data_strings(bytes(synthetic), data_rva)
+        self.assertTrue(exact["all_expected_strings_match"])
+        self.assertFalse(exact["evb_file_purpose_confirmed"])
+        for name, (rva, value) in FIXED_TRANSFER_DATA_STRINGS.items():
+            off = rva - data_rva
+            edited = bytearray(synthetic)
+            edited[off] ^= 1
+            observed = inspect_fixed_transfer_data_strings(bytes(edited), data_rva)
+            self.assertFalse(observed["all_expected_strings_match"], name)
+            self.assertFalse(observed["anchors"][name]["exact_match"])
+        with self.assertRaises(Pol1Error):
+            inspect_fixed_transfer_data_strings(b"", True)
+
+    def test_transfer_call_scanner_classifies_synthetic_relative_calls(self):
+        decoded_rva = 0x1000
+        source = bytearray(256)
+        sites = ((0x20, READ_LIKE_RVA), (0x60, WRITE_LIKE_RVA))
+        for off, target in sites:
+            source[off:off+5] = bytes.fromhex("6880b00300")
+            call_at = off + 5
+            struct.pack_into("<Bi", source, call_at, 0xE8,
+                             target - (decoded_rva + call_at + 5))
+        observed = inspect_2019_fixed_transfer_calls(bytes(source), decoded_rva)
+        self.assertEqual(observed["total_fixed_size_immediate_occurrences"], 2)
+        self.assertEqual(observed["read_like_count"], 1)
+        self.assertEqual(observed["write_like_count"], 1)
+        self.assertFalse(observed["all_2019_expected_sites_match"])
+        self.assertIsNone(observed["transfer_is_inventory_save_format"])
+        self.assertTrue(all(
+            set(site) == {"rva", "target", "call_rva"}
+            for site in observed["sites"]
+        ))
+        source[0xA0:0xA5] = bytes.fromhex("6880b00300")
+        unmatched = inspect_2019_fixed_transfer_calls(bytes(source), decoded_rva)
+        self.assertEqual(unmatched["total_fixed_size_immediate_occurrences"], 3)
+        self.assertEqual(unmatched["sites"][-1]["target"], "UNCONFIRMED")
+        self.assertFalse(unmatched["all_2019_expected_sites_match"])
+
+    def test_transfer_call_scan_input_rejects_bad_types_and_overflow(self):
+        for value in (bytearray(16), None):
+            with self.assertRaises(Pol1Error):
+                inspect_2019_fixed_transfer_calls(value)
+        with self.assertRaises(Pol1Error):
+            inspect_2019_fixed_transfer_calls(bytes(8 * 1024 * 1024 + 1))
+        with self.assertRaises(Pol1Error):
+            inspect_2019_fixed_transfer_calls(b"abc", decoded_rva=True)
+
+
+    def test_three_ui_container_bounds_reject_id_13_in_inspected_paths(self):
+        bounds = inspect_2019_container_ui_bounds(True)
+        self.assertEqual(bounds["evidence_status"], "VERIFIED_STATIC_ANCHORS")
+        self.assertEqual(bounds["selected_ui_container_guard_rvas"],
+                         ["0x1E7FAC", "0x1E830B", "0x1E847E"])
+        self.assertEqual(bounds["selected_ui_legacy_capacity_calls"],
+                         ["0x1E7FDE", "0x1E8343", "0x1E8498", "0x1E91C5"])
+        self.assertEqual(bounds["observed_selected_ui_container_exclusive_bound"], 13)
+        self.assertFalse(bounds["new_containers_13_16_work_with_selected_unmodified_paths"])
+        self.assertFalse(bounds["ui_dispatch_mode_mapping_verified_for_2019"])
+        self.assertFalse(bounds["all_menu_callers_or_inlined_bounds_recovered"])
+        self.assertFalse(bounds["ui_wardrobe_5_8_path_implemented"])
+        self.assertEqual(bounds["safety_decision"],
+                         "NO_GO_ASSUME_SIDECAR_ENABLES_LEGACY_UI")
+
+    def test_unverified_ui_anchors_do_not_claim_specific_supported_ids(self):
+        unknown = inspect_2019_container_ui_bounds(False)
+        self.assertEqual(unknown["evidence_status"], "UNVERIFIED_STATIC_ANCHORS")
+        self.assertIsNone(unknown["observed_selected_ui_container_exclusive_bound"])
+        self.assertIsNone(unknown["new_containers_13_16_work_with_selected_unmodified_paths"])
+        self.assertFalse(unknown["ui_wardrobe_5_8_path_implemented"])
 
 
 if __name__ == "__main__":

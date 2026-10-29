@@ -1,0 +1,43 @@
+name: Capture Evidence Readiness (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "src/workbench/captures/scenario_identity_readiness.py"
+      - "src/workbench/captures/scenario_readiness_summary.py"
+      - "src/workbench/captures/scenario_review_offline.py"
+      - "src/workbench/captures/scenario_handoff.py"
+      - "src/workbench/captures/scenario_review_workflow.py"
+      - "test_fixtures/test_capture_identity_oracle_readiness.py"
+      - "test_fixtures/test_capture_readiness_summary.py"
+      - "test_fixtures/test_capture_reviewer_workflow.py"
+      - "test_fixtures/test_evidence_to_scenario_handoff.py"
+      - ".github/workflows/capture-evidence-readiness-offline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capture-evidence-readiness-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-capture-review:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing project and pytest
+        run: python -m pip install --disable-pip-version-check -e . pytest
+      - name: Source-index, identity, reviewer-export and readiness regressions
+        env:
+          PYTHONPATH: "src:test_fixtures:."
+        run: |
+          set -euo pipefail
+          python -m pytest -q             test_fixtures/test_capture_reverse_scenario_draft.py             test_fixtures/test_evidence_to_scenario_handoff.py             test_fixtures/test_capture_reviewer_workflow.py             test_fixtures/test_capture_identity_oracle_readiness.py             test_fixtures/test_capture_readiness_summary.py

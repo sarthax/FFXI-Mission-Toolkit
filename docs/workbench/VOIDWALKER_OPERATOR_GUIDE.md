@@ -15,7 +15,7 @@ The Voidwalker page now shows aggregate **untested** and **recorded issue** coun
 
 ## Important status boundaries
 - Domain metadata dated October 16 describes the Voidwalker implementation on a **separate DSP feature branch**, not a verified merge into the DSP server's mainline. Toolkit UI completion does not establish server deployment.
-- The source parser currently has a Windows-specific fallback root (`D:\\Claude\\dsp-branches`); missing local sources may cause incomplete views. Confirm which root the running workbench uses.
+- The source parser currently has a Windows-specific fallback root (`<local DSP checkout>`); missing local sources may cause incomplete views. Confirm which root the running workbench uses.
 - Colored abyssite IDs, NM skills and paths must be checked against the actual DSP checkout and client build. Source/SQL existence is not runtime proof.
 - An overworld live test does not validate every zone, NM or the Abyssea branch. Distinguish untested from confirmed failures.
 

@@ -17,7 +17,7 @@ function strip(){
  var K=[['zone','Zones'],['track','Salvage I / II tracks'],['system','Systems'],['npc','NPCs']],h='';
  K.forEach(function(k){var s=D.summary[k[0]];h+='<div class="cpcard"><b>'+k[1]+'</b> <span class="muted">'+s.total+'</span>'+(s.total?bar(s.status,SC)+'<div class="muted">build status</div>'+bar(s.validation,VC)+'<div class="muted">validation</div>':'<div class="muted">none recorded</div>')+'</div>';});
  $('sv-strip').innerHTML=h;
- $('sv-sum').innerHTML='Scanned live Topaz, the DSP target (dsp-branches) and the LandSandBoat reference. Captures tagged to Remnants/Salvage: '+D.captures.length+'.';
+ $('sv-sum').innerHTML='Scanned live Topaz, the DSP target (<DSP checkout>) and the LandSandBoat reference. Captures tagged to Remnants/Salvage: '+D.captures.length+'.';
 }
 function nodeBy(kind,id){var rows={zone:D.zones,track:D.tracks,system:D.systems,npc:D.npcs}[kind]||[];for(var i=0;i<rows.length;i++)if(String(rows[i].id)===String(id))return rows[i];}
 function graph(){

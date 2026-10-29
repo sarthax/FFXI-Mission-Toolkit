@@ -1,6 +1,6 @@
 # Kuluu architecture (source-level audit)
 
-Source: `https://github.com/jondwillis/kuluu-ffxi`, shallow clone at `D:\Claude\research\kuluu\kuluu-ffxi`, HEAD `a7752b3` (merge of PR #1025). Kept **outside** the Mission Toolkit tree. Submodules `vendor/server` (LandSandBoat) and `vendor/POLUtils` initialised for the build only.
+Source: `https://github.com/jondwillis/kuluu-ffxi`, shallow clone at `<local>/research\kuluu\kuluu-ffxi`, HEAD `a7752b3` (merge of PR #1025). Kept **outside** the Mission Toolkit tree. Submodules `vendor/server` (LandSandBoat) and `vendor/POLUtils` initialised for the build only.
 
 **Licence: GPL-3.0-or-later** (`LICENSE`, `LEGAL.md`). The README states the code is largely AI-generated and "audited against upstream LSB source by review agents", with no warranty. Process-boundary implications are in `INTEGRATION_OPTIONS.md`.
 

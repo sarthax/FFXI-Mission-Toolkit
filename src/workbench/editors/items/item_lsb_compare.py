@@ -8,7 +8,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-LSB_ROOT = Path(os.environ.get("LSB_REFERENCE_ROOT", r"D:\Claude\landsandboat-reference"))
+LSB_ROOT = Path(os.environ.get("LSB_REFERENCE_ROOT", "landsandboat-reference"))
 # Same concept spelled differently in the two enums (verified by reading both enums).
 ALIASES = {"SNAP_SHOT": "SNAPSHOT", "WALTZ_POTENTCY": "WALTZ_POTENCY",
            "ITEM_ADDEFFECT_TYPE": "ADDITIONAL_EFFECT"}  # 431: LSB proc type vs DSP script flag (same slot)

@@ -1,0 +1,1999 @@
+{
+  "artifact_type": "R5_assault_nyzul_domain_staging_not_canonical",
+  "schema_version": 1,
+  "execution_enabled": false,
+  "source_revision": {
+    "dsp_commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+    "dsp_branch": "feature/assault-gm-debug-tools",
+    "deployed": "UNKNOWN"
+  },
+  "integration_status": "BLOCKED_SCHEMA_OWNER_REVIEW",
+  "canonical_target": "data/testing/test_specifications.json",
+  "canonical_compatibility": "Needs reviewed typed instance readback and source-bound UNKNOWN oracle fields before canonical import",
+  "cases": [
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "ASLT-01",
+      "name": "Enter eligible instance and complete objective",
+      "kind": "positive",
+      "purpose": "Verify enter eligible instance and complete objective using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "Normal Assault entry, objective/reward oracle and client packet evidence not pinned",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "Player uses normal entrance requirements; completes reviewed naturally bounded objective"
+        ],
+        "then": [
+          "UNKNOWN — GM warpassault bypasses standard eligibility and cannot validate gameplay progression"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "ASLT-01-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "ASLT-01-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-01-S02",
+          "title": "Execute only when approved",
+          "action": "Player uses normal entrance requirements; completes reviewed naturally bounded objective",
+          "expected": "UNKNOWN — GM warpassault bypasses standard eligibility and cannot validate gameplay progression",
+          "assertion_ids": [
+            "ASLT-01-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-01-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "ASLT-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-01-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "ASLT-01-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "ASLT-01-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-01-transition",
+          "expected": "UNKNOWN — GM warpassault bypasses standard eligibility and cannot validate gameplay progression",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-01-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-01-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 193,
+          "line_end": 259,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "Normal Assault entry, objective/reward oracle and client packet evidence not pinned",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    },
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "ASLT-02",
+      "name": "Missing permit or eligibility rejects entry",
+      "kind": "negative",
+      "purpose": "Verify missing permit or eligibility rejects entry using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "Exact permit source and entry guard not verified; GM warpassault cannot be used",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "Attempt normal entrance without one independently documented prerequisite"
+        ],
+        "then": [
+          "UNKNOWN — blocked normal entry and invariant no live instance/reward"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "ASLT-02-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "ASLT-02-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-02-S02",
+          "title": "Execute only when approved",
+          "action": "Attempt normal entrance without one independently documented prerequisite",
+          "expected": "UNKNOWN — blocked normal entry and invariant no live instance/reward",
+          "assertion_ids": [
+            "ASLT-02-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-02-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "ASLT-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-02-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "ASLT-02-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "ASLT-02-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-02-transition",
+          "expected": "UNKNOWN — blocked normal entry and invariant no live instance/reward",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-02-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-02-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 31,
+          "line_end": 112,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+          "line_start": 1,
+          "line_end": 19,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "Exact permit source and entry guard not verified; GM warpassault cannot be used",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    },
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "ASLT-03",
+      "name": "Expired timer fails without reward",
+      "kind": "negative",
+      "purpose": "Verify expired timer fails without reward using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "Timer-expiry and cleanup authoritative queries absent; GM leave forcibly fails not equivalent to natural expiry",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "Run an owner-approved isolated instance until independently confirmed expiry"
+        ],
+        "then": [
+          "UNKNOWN — timer/failure callback and non-reward persistence not independently pinned"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "ASLT-03-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "ASLT-03-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-03-S02",
+          "title": "Execute only when approved",
+          "action": "Run an owner-approved isolated instance until independently confirmed expiry",
+          "expected": "UNKNOWN — timer/failure callback and non-reward persistence not independently pinned",
+          "assertion_ids": [
+            "ASLT-03-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-03-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "ASLT-03-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-03-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "ASLT-03-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "ASLT-03-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-03-transition",
+          "expected": "UNKNOWN — timer/failure callback and non-reward persistence not independently pinned",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-03-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-03-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 134,
+          "line_end": 190,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "Timer-expiry and cleanup authoritative queries absent; GM leave forcibly fails not equivalent to natural expiry",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    },
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "ASLT-04",
+      "name": "Repeat completion cannot duplicate rewards",
+      "kind": "negative",
+      "purpose": "Verify repeat completion cannot duplicate rewards using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "Reward choice script and duplicate-claim predicate not source-pinned",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "After verified natural completion attempt same claim/turn-in again on disposable profile"
+        ],
+        "then": [
+          "UNKNOWN — reward duplication prevention requires per-instance source and full count readback"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "ASLT-04-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "ASLT-04-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-04-S02",
+          "title": "Execute only when approved",
+          "action": "After verified natural completion attempt same claim/turn-in again on disposable profile",
+          "expected": "UNKNOWN — reward duplication prevention requires per-instance source and full count readback",
+          "assertion_ids": [
+            "ASLT-04-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-04-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "ASLT-04-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "ASLT-04-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "ASLT-04-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "ASLT-04-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-04-transition",
+          "expected": "UNKNOWN — reward duplication prevention requires per-instance source and full count readback",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-04-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+              "line_start": 1,
+              "line_end": 25,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 193,
+              "line_end": 259,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+            }
+          ]
+        },
+        {
+          "id": "ASLT-04-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua#L1-L25"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 193,
+          "line_end": 259,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L193-L259"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "Reward choice script and duplicate-claim predicate not source-pinned",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    },
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "NYZ-01",
+      "name": "Floor layout and objective completion",
+      "kind": "positive",
+      "purpose": "Verify floor layout and objective completion using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "Normal objective branch, instance state, selection/layout readback and accepted Rune events missing",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "With approved live Nyzul instance, play natural objective and use Rune transfer"
+        ],
+        "then": [
+          "UNKNOWN — local debug complete forces progress=15 and is not natural proof; layout random unless approved pin"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "NYZ-01-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "NYZ-01-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-01-S02",
+          "title": "Execute only when approved",
+          "action": "With approved live Nyzul instance, play natural objective and use Rune transfer",
+          "expected": "UNKNOWN — local debug complete forces progress=15 and is not natural proof; layout random unless approved pin",
+          "assertion_ids": [
+            "NYZ-01-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 50,
+              "line_end": 121,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L50-L121"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/globals/nyzul.lua",
+              "line_start": 53,
+              "line_end": 88,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/globals/nyzul.lua#L53-L88"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-01-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "NYZ-01-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 50,
+              "line_end": 121,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L50-L121"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/globals/nyzul.lua",
+              "line_start": 53,
+              "line_end": 88,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/globals/nyzul.lua#L53-L88"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-01-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "NYZ-01-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "NYZ-01-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-01-transition",
+          "expected": "UNKNOWN — local debug complete forces progress=15 and is not natural proof; layout random unless approved pin",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 50,
+              "line_end": 121,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L50-L121"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/globals/nyzul.lua",
+              "line_start": 53,
+              "line_end": 88,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/globals/nyzul.lua#L53-L88"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-01-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 50,
+              "line_end": 121,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L50-L121"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/globals/nyzul.lua",
+              "line_start": 53,
+              "line_end": 88,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/globals/nyzul.lua#L53-L88"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-01-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/nyzuldebug.lua",
+          "line_start": 50,
+          "line_end": 121,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L50-L121"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/globals/nyzul.lua",
+          "line_start": 53,
+          "line_end": 88,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/globals/nyzul.lua#L53-L88"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+          "line_start": 14,
+          "line_end": 32,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "Normal objective branch, instance state, selection/layout readback and accepted Rune events missing",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    },
+    {
+      "feature_id": "assault_nyzul",
+      "case_id": "NYZ-02",
+      "name": "Invalid floor transitions rejected",
+      "kind": "negative",
+      "purpose": "Verify invalid floor transitions rejected using source-backed normal gameplay semantics, not GM setup acknowledgements.",
+      "rationale": "No trusted instance local-vars readback; source diagnostic rejection != normal game event result",
+      "schema_version": 1,
+      "runner": "unassigned",
+      "execution_status": "design_only",
+      "lane": "needs-mutation",
+      "verdict": "NOT_RUN",
+      "behavior": {
+        "given": [
+          "Approved disposable character and controlled instance profile",
+          "Exact permit/floor/objective fixture source and server revision pinned or UNKNOWN",
+          "Before-state includes actual instance and per-character rewards"
+        ],
+        "when": [
+          "Evaluate invalid debug floor command only as manual diagnostic design; separate normal Rune invalid choice test"
+        ],
+        "then": [
+          "Source debug floor arguments outside 1..100 rejected before mutation; gameplay Rune transition rejection UNKNOWN"
+        ]
+      },
+      "preconditions": [
+        "Owner authorization required",
+        "No mutating GM command executed by this plan",
+        "Complete authoritative instance and reward baseline or mark UNKNOWN"
+      ],
+      "steps": [
+        {
+          "id": "NYZ-02-S01",
+          "title": "Authorize and snapshot",
+          "action": "Check disposable character, configured server SHA and detailed instance state",
+          "expected": "Complete before-state with exact instance/zone/permit/reward; UNKNOWN if missing",
+          "assertion_ids": [
+            "NYZ-02-pre_state"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-02-S02",
+          "title": "Execute only when approved",
+          "action": "Evaluate invalid debug floor command only as manual diagnostic design; separate normal Rune invalid choice test",
+          "expected": "Source debug floor arguments outside 1..100 rejected before mutation; gameplay Rune transition rejection UNKNOWN",
+          "assertion_ids": [
+            "NYZ-02-transition"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 72,
+              "line_end": 95,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L72-L95"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-02-S03",
+          "title": "Independent outcome comparison",
+          "action": "Compare actual client event, instance local vars, time and full reward mutations",
+          "expected": "PASS only after independent oracle and full state; otherwise UNKNOWN",
+          "assertion_ids": [
+            "NYZ-02-oracle"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 72,
+              "line_end": 95,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L72-L95"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        },
+        {
+          "id": "NYZ-02-S04",
+          "title": "Remove debug pins and verify cleanup",
+          "action": "Use operator-approved isolation/teardown, clear any layout/leader pins and verify no stale instance",
+          "expected": "Restored profile and confirmed instance removal or quarantine as BLOCKED",
+          "assertion_ids": [
+            "NYZ-02-cleanup"
+          ],
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ],
+          "client_observations": [
+            "Client event/rune/action timeline, zone and inventory"
+          ],
+          "server_observations": [
+            "Authoritative instance ID, status, timer, objective/progress and local vars",
+            "Reward/point inventory deltas before and after"
+          ],
+          "execution_authorized": false
+        }
+      ],
+      "assertions": [
+        {
+          "id": "NYZ-02-pre_state",
+          "expected": "Complete authorized instance baseline or UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 31,
+              "line_end": 112,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L31-L112"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+              "line_start": 1,
+              "line_end": 19,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua#L1-L19"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-02-transition",
+          "expected": "Source debug floor arguments outside 1..100 rejected before mutation; gameplay Rune transition rejection UNKNOWN",
+          "oracle_status": "SOURCE_CONDITIONAL_OR_UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 72,
+              "line_end": 95,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L72-L95"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-02-oracle",
+          "expected": "Independent complete server/reward/evidence match, otherwise UNKNOWN",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 72,
+              "line_end": 95,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L72-L95"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+              "line_start": 14,
+              "line_end": 32,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+            }
+          ]
+        },
+        {
+          "id": "NYZ-02-cleanup",
+          "expected": "No stale instance, debug pins cleared, approved fixture recovery",
+          "oracle_status": "UNKNOWN",
+          "source_refs": [
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/nyzuldebug.lua",
+              "line_start": 95,
+              "line_end": 120,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L95-L120"
+            },
+            {
+              "repository": "sarthax/darkstar-to-valhalla",
+              "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+              "path": "scripts/commands/warpassault.lua",
+              "line_start": 134,
+              "line_end": 190,
+              "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/warpassault.lua#L134-L190"
+            }
+          ]
+        }
+      ],
+      "oracle_sources": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/commands/nyzuldebug.lua",
+          "line_start": 72,
+          "line_end": 95,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/commands/nyzuldebug.lua#L72-L95"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73",
+          "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+          "line_start": 14,
+          "line_end": 32,
+          "url": "https://github.com/sarthax/darkstar-to-valhalla/blob/2b71b4425d20ce47941c140b57fac886f28bea73/scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua#L14-L32"
+        }
+      ],
+      "required_readback": {
+        "existing": [
+          "Supervisor char_inventory / keyitems / named char_vars read-only, not instance state"
+        ],
+        "missing": [
+          "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+          "Approved per-character reward/assault points baseline and change",
+          "Per-instance entity and Rune client event binding/decoder"
+        ],
+        "tables": "Instance state is runtime, not safely inferable from char_vars; reward points persistence source UNKNOWN"
+      },
+      "xiheadless": {
+        "candidate": [
+          "move_to",
+          "engage",
+          "party",
+          "zone_to",
+          "wait_for_event",
+          "snapshot",
+          "inventory"
+        ],
+        "acceptance": "Not verified per active revision",
+        "missing": [
+          "Normal instance entry eligibility/Rune interaction",
+          "Objective/event and reward provenance",
+          "Instance lifecycle/cleanup authoritative readback"
+        ]
+      },
+      "mutation": {
+        "enabled": false,
+        "scope": "client gameplay / optional GM diagnostic in isolated instance with explicit approval",
+        "guard": "Debug complete/floor/warpassault are fixture/bypass, not oracle",
+        "cleanup": "Exit/expire, clear Nyzul_Debug_ForceLayout and Nyzul_Debug_ForceLeader if ever set, verify no stale instance"
+      },
+      "blocking_gaps": [
+        "No trusted instance local-vars readback; source diagnostic rejection != normal game event result",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ]
+    }
+  ]
+}

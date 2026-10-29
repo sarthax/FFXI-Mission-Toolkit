@@ -32,13 +32,14 @@ fn run() -> Result<(), String> {
     let list = args.iter().any(|x| x == "--list");
     let history = args.iter().any(|x| x == "--history");
     let plan = args.iter().any(|x| x == "--plan");
-    if [history, list, plan].iter().filter(|&&enabled| enabled).count() > 1 {
-        return Err("choose only one of --list, --history, or --plan".into());
+    let export = args.iter().any(|x| x == "--export-history-json");
+    if [history, list, plan, export].iter().filter(|&&enabled| enabled).count() > 1 {
+        return Err("choose only one of --list, --history, --plan, or --export-history-json".into());
     }
     if (history || plan) && file.is_none() {
         return Err("--history and --plan require --file MANIFEST_PATH".into());
     }
-    if !list && file.is_none() {
+    if !list && !export && file.is_none() {
         return Err("usage: --list [--file SUBSTRING] OR --file MANIFEST_PATH --output DIRECTORY [--version EXACT_STAMP]".into());
     }
     let server = Server::for_title(TITLE_FFXI);
@@ -46,6 +47,23 @@ fn run() -> Result<(), String> {
     let manifest_bytes = session.manifest()?;
     let manifest_text = String::from_utf8(manifest_bytes).map_err(|e| e.to_string())?;
     let manifest = manifest::parse(&manifest_text)?;
+    if export {
+        // Complete observation of the server's currently advertised history.
+        // The caller is responsible for immutable snapshot storage and provenance.
+        println!("{{\n  \"schema\": 1,\n  \"source\": \"playonline-patch-manifest:ffxi\",\n  \"files\": [");
+        for (i, entry) in manifest.files.iter().enumerate() {
+            if i > 0 { println!(","); }
+            print!("    {{\"file\": \"{}\", \"versions\": [", json_escape(&entry.path));
+            for (j, v) in entry.versions.iter().enumerate() {
+                if j > 0 { print!(","); }
+                print!("{{\"stamp\":\"{}\",\"decoded_bytes\":{},\"transfer_bytes\":{},\"server_path\":\"{}\"}}",
+                    json_escape(&v.stamp), v.sig.len, v.direct_len, json_escape(&v.direct));
+            }
+            print!("]}}");
+        }
+        println!("\n  ]\n}}");
+        return Ok(());
+    }
     if list {
         let filter = file.unwrap_or_default().to_lowercase();
         for entry in &manifest.files {

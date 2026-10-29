@@ -2,9 +2,9 @@
 
 The Feature Catalog is the structured inventory of **what the Toolkit exposes**. It is deliberately distinct from the Roadmap (remaining development and validation) and Help (usage instructions).
 
-## Current catalog snapshot (October 19, 2026)
+## Current catalog snapshot (October 27, 2026)
 
-The current curated inventory contains **96 capabilities**, including **48 child capabilities**, across modules. Of these, **74** are labelled implemented and **22** partial. Validation is **95 unverified**, **1 operator-reported**, and **0 tested**. All 96 have either a contextual Help section or a module-specific Help link; **31** have implementation references and **17** have named automated-test references. These are catalog counts, not assertions of comprehensive coverage or live runtime acceptance. Recalculate from `feature_catalog/features.json` rather than treating this paragraph as an evergreen dashboard.
+The current curated inventory contains **97 capabilities**, including **49 child capabilities**, across modules. Of these, **75** are labelled implemented and **22** partial. Validation is **96 unverified**, **1 operator-reported**, and **0 tested**. All 97 have either a contextual Help section or a module-specific Help link; **45** have implementation references and **19** have named automated-test references. These are catalog counts, not assertions of comprehensive coverage or live runtime acceptance. Recalculate from `feature_catalog/features.json` rather than treating this paragraph as an evergreen dashboard.
 
 ## How operators should read each entry
 

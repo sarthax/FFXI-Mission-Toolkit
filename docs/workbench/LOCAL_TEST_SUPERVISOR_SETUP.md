@@ -119,7 +119,7 @@ checkout of that branch must be selected.
 From an operator-owned PowerShell session, with the Toolkit Python venv active:
 
 ```powershell
-$env:MISSION_TOOLKIT_TEST_HEADLESS_ROOT = "D:\\Claude\\xiheadless-dsp"
+$env:MISSION_TOOLKIT_TEST_HEADLESS_ROOT = "<local>/xiheadless-dsp"
 $env:MISSION_TOOLKIT_TEST_RESULTS_DB = "D:\\MissionToolkitData\\test_results.sqlite"
 $env:MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS = "21836"
 # MISSION_TOOLKIT_SUPERVISOR_TOKEN must already be configured securely.

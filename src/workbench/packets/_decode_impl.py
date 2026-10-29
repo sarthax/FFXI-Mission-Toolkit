@@ -3,7 +3,7 @@
 packet_decode.py -- Mission Toolkit GUI, packet decoding.
 
 Not a new decoder -- a thin wrapper around Packetlyzer's own real, working
-analyzer.decoder/analyzer.packet_db modules (D:\\Claude\\FFXI-Tools\\Packetlyzer), which already
+analyzer.decoder/analyzer.packet_db modules (<local>/FFXI-Tools\\Packetlyzer), which already
 parse a real VieweD-compatible packet definition DB (318 real opcodes, packetlyzer_db.xml) with
 real field types, offsets, and lookup-table resolution (npc names, models, etc.). Reuses it
 directly rather than re-deriving field offsets by hand the way this session did for the real

@@ -7,11 +7,15 @@ import os
 import re
 
 
+class DisallowedTestCharacter(ValueError):
+    """Only an invalid caller-supplied character scope merits HTTP 400."""
+
+
 def _approved_connection(charid: int):
     """Validate the approved-character allowlist and DB settings; return (conn, cursor) or None if unconfigured."""
     allowed = {int(s.strip()) for s in os.environ.get("MISSION_TOOLKIT_SUPERVISOR_TEST_CHARIDS", "").split(",") if s.strip().isdigit()}
     if not isinstance(charid, int) or charid <= 0 or charid not in allowed:
-        raise ValueError("character not approved for supervisor diagnostics")
+        raise DisallowedTestCharacter("character not approved for supervisor diagnostics")
     user = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_USER")
     password = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_PASSWORD")
     database = os.environ.get("MISSION_TOOLKIT_SUPERVISOR_DB_NAME")
@@ -21,8 +25,19 @@ def _approved_connection(charid: int):
     if not 1 <= port <= 65535:
         raise ValueError("invalid database port")
     conn, cursor = _open(user, password, database, port)
-    cursor.execute("SET TRANSACTION READ ONLY")
-    cursor.execute("START TRANSACTION")
+    try:
+        cursor.execute("SET TRANSACTION READ ONLY")
+        cursor.execute("START TRANSACTION")
+    except Exception:
+        # Setup can fail after opening the socket: never leak a cursor or
+        # connection, and preserve the original database error for the
+        # caller to classify or sanitize.
+        for cleanup in (conn.rollback, cursor.close, conn.close):
+            try:
+                cleanup()
+            except Exception:
+                pass
+        raise
     return conn, cursor
 
 
@@ -117,11 +132,25 @@ def _open(user, password, database, port):
                                database=database, connect_timeout=2, read_timeout=2,
                                write_timeout=2, autocommit=False,
                                cursorclass=pymysql.cursors.DictCursor)
-        return conn, conn.cursor()
+        try:
+            return conn, conn.cursor()
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            raise
     try:
         import mysql.connector
     except ImportError as exc:
         raise RuntimeError("no MySQL driver installed (PyMySQL or mysql-connector-python)") from exc
     conn = mysql.connector.connect(host="127.0.0.1", port=port, user=user, password=password,
                                    database=database, connection_timeout=2, autocommit=False)
-    return conn, conn.cursor(dictionary=True)
+    try:
+        return conn, conn.cursor(dictionary=True)
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        raise

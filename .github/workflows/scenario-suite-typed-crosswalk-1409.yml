@@ -1,0 +1,40 @@
+name: R4 Typed Library Crosswalk Offline
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "docs/workbench/SCENARIO_SUITE_TYPED_LIBRARY_1409.md"
+      - "test_fixtures/scenario_suite_typed_registry_1409.json"
+      - ".github/workflows/scenario-suite-typed-crosswalk-1409.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate proposal-only fixture
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("test_fixtures/scenario_suite_typed_registry_1409.json")
+          d=json.loads(p.read_text())
+          assert d["schema"]=="toolkit-synthetic-typed-crosswalk/1"
+          assert d["status"]=="PROPOSAL_ONLY" and d["headless_wire_contract_approved"] is False
+          rows=d["entries"]
+          assert 10<=len(rows)<=15 and len({r["id"] for r in rows})==len(rows)
+          for r in rows:
+              assert r["execution_enabled"] is False
+              assert r["verdict"]=="UNKNOWN" and r["oracle_status"]=="UNAPPROVED"
+              assert r["support_tier"] in {"HEADLESS_SCHEMA_ONLY","TOOLKIT_READBACK_ONLY"}
+              assert r["source_ref"] and r["limitations"]
+              if r["kind"]=="observation": assert r["native_action"]=="NONE"
+          print("typed crosswalk:",len(rows),"synthetic entries validated")
+          PY

@@ -1,0 +1,5153 @@
+{
+  "artifact_type": "R5_domain_readiness_audit_not_canonical",
+  "audit_date": "2026-10-21",
+  "source": {
+    "toolkit_main_commit": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+    "canonical_v1_only_runnable": [
+      "MOG-09"
+    ],
+    "proposal_pr": 1285,
+    "domain_pr_head_snapshot": [
+      {
+        "domain": "gardening",
+        "pr": 1277,
+        "head_sha": "9f1167ecd5e0345812bd5f0f06e725da2d372d7f",
+        "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "execution_enabled": false,
+        "case_count": 9,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "voidwalker",
+        "pr": 1279,
+        "head_sha": "f6e4bdff28716eb92a8cbdd0220223015237843d",
+        "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+        "execution_enabled": false,
+        "case_count": 7,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "assault_nyzul",
+        "pr": 1280,
+        "head_sha": "ab493a477bbead43fc0867ea0e846a9c518c6812",
+        "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+        "execution_enabled": false,
+        "case_count": 6,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "missions_quests",
+        "pr": 1281,
+        "head_sha": "8777e3e657184e3de1ddf6c7c78b8fea84c86385",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 5,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "moghancement",
+        "pr": 1282,
+        "head_sha": "90439727b6fe29cfdc0e34aac19897a31d8faf6a",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 14,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "voidwatch",
+        "pr": 1286,
+        "head_sha": "b2bc14454d596f286010618b70fc931d06f8e9d1",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 8,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "salvage",
+        "pr": 1289,
+        "head_sha": "61db5730bbf6c773e25f1e2fa16c03baaf7fc62c",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 7,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "run_geo_unlock",
+        "pr": 1290,
+        "head_sha": "a96cce28df365e8c89fb4b1dfbc70c8f92064f64",
+        "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+        "execution_enabled": false,
+        "case_count": 8,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      },
+      {
+        "domain": "chocobo_raising",
+        "pr": 1291,
+        "head_sha": "053c274a171a63f74a8b229ce5703e2ed4c2f6a0",
+        "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+        "execution_enabled": false,
+        "case_count": 9,
+        "git_reconciliation": {
+          "status": "ordinary_merge_with_main",
+          "main_parent": "e9ae790d0d8259a508ec767c71f06fdf49a893e5",
+          "behind_main": 0,
+          "source_file_modifications": "none",
+          "runtime_deployment": "UNKNOWN"
+        }
+      }
+    ],
+    "principal_readiness_pr": 1292,
+    "companion_capability_pr": 1293,
+    "shared_validation_pr": 1294,
+    "matrix_status": "proposed_primary_source_of_truth_subject_to_A_C_independent_review",
+    "head_snapshot_semantics": "Re-evaluate all nine branch refs/heads on updates. Matrix head pins source staging content, not DSP commit hash, authentic source bytes or deployed runtime.",
+    "known_source_drift": [
+      {
+        "domain": "gardening",
+        "source": "gardenutils.cpp",
+        "pinned_sha": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+        "note": "save pot / dual-safe loops shift by 1 on current main; numeric slot selector remains unsafe"
+      },
+      {
+        "domain": "assault_nyzul",
+        "source": "nyzuldebug.lua",
+        "pinned_sha": "2b71b4425d20ce47941c140b57fac886f28bea73",
+        "note": "pin accepts instance 51, current main 51/52; not natural objective proof"
+      }
+    ],
+    "existing_backlog_reuse": [
+      "sarthax/FFXI-Mission-Toolkit#1295",
+      "#1296",
+      "#1297",
+      "#1298",
+      "#1299",
+      "#1300",
+      "#1198",
+      "#1202",
+      "#1259",
+      "sarthax/darkstar-to-valhalla#56",
+      "#59",
+      "sarthax/xiheadless-dsp#105",
+      "#107",
+      "sarthax/darkstar-to-valhalla#60",
+      "sarthax/darkstar-to-valhalla#55"
+    ],
+    "reconciliation_note": "All nine staging branches reconciled sequentially to Toolkit main e9ae790d with two-parent merges on disjoint file sets and non-force branch-ref updates; latest PR head APIs may lag branch refs; use refs/heads as current SHA."
+  },
+  "execution_enabled": false,
+  "import_allowed": false,
+  "evidence_scope": "GitHub source and staged proposal only; no live configured tool, database or DSP process inspected",
+  "counts": {
+    "domains": 9,
+    "cases": 73,
+    "lanes": {
+      "needs-mutation": 57,
+      "observe-now": 5,
+      "needs-readback": 2,
+      "needs-deploy": 9
+    },
+    "read_only_candidates": [
+      "RG-01",
+      "RG-06",
+      "VOID-01",
+      "VOID-02",
+      "MOG-09"
+    ]
+  },
+  "issues": [
+    {
+      "id": "GAP-01",
+      "priority": "P0",
+      "owner": "Toolkit",
+      "title": "Complete persisted inventory readback",
+      "scope": "Bounded charid+container snapshot covering both Mog Safes, bag, slots, itemId, quantity, item `extra` raw digest + decoded installed/pot metadata, total_rows/truncated/save_boundary. Query only authorized character; no free SQL.",
+      "related_cases": "GARD-01..09, MOG-01..14; additionally CHO-04 after deployed",
+      "safety": "Do not extend /test-character-inventory LIMIT 100 silently; synthetic >100-row fixture fails closed",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1295"
+      ]
+    },
+    {
+      "id": "GAP-02",
+      "priority": "P0",
+      "owner": "Toolkit + XIHeadless",
+      "title": "Mog Safe pot / installed-layout oracle",
+      "scope": "Independent installed-furnishing flag/slot/ordering, pot extra decode by (charid,location,slot), GM active KI/eight aura comparison, no assumption of empty layout.",
+      "related_cases": "GARD-01..09, MOG-09 plus furnishing cases",
+      "safety": "No GM set/recalc as proof; preserve MOG-09 historical result as narrower observation",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1295"
+      ]
+    },
+    {
+      "id": "GAP-03",
+      "priority": "P0",
+      "owner": "DSP + Toolkit",
+      "title": "Bounded active mob/claim and Pyxis state",
+      "scope": "Read-only zone+instance+entity scoped status, owner/claim, SpawnMob identity and POPPED_BY/WITH/AT; separate Pyxis ITEM1..8 TOKEN ELIG/TAKEN variables and rift association. Use fixed allowlisted query/diagnostic, not generic memory introspection.",
+      "related_cases": "VWK-01..07; VOID-05..08",
+      "safety": "Character char_vars are NOT mob localvars. Unauthorized entities/players must remain excluded",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1298",
+        "sarthax/FFXI-Mission-Toolkit#1299"
+      ]
+    },
+    {
+      "id": "GAP-04",
+      "priority": "P0",
+      "owner": "Toolkit",
+      "title": "Named quest/job, currency and char_vars readback",
+      "scope": "Extend read-only allowlisted per-character quest/mission status, job-unlock flag, fame/gil/cruor, bounded source-defined variables; include source timestamp, transaction/save boundary and missing-vs-zero distinction.",
+      "related_cases": "RG-01..08; VOID-01..04; MQ-01..05",
+      "safety": "Reuse existing exact-name `/test-character-vars`, keyitem endpoints; no free-form SQL",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1296"
+      ]
+    },
+    {
+      "id": "GAP-05",
+      "priority": "P1",
+      "owner": "XIHeadless + DSP",
+      "title": "Event/identity and rest-heal oracle bindings",
+      "scope": "Catalog-backed verified NPC/mob client identity and zone mapping, event start/update/finish packet trace/option binding, /heal/voidwalker hint and claim evidence; distinguish action sent/accepted/completed/observed.",
+      "related_cases": "VWK-01..07; VOID-03..08; RG-02..08",
+      "safety": "No invented CSIDs or raw packet injection through Toolkit; separate capture observation from expected outcome",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1298",
+        "sarthax/xiheadless-dsp#105"
+      ]
+    },
+    {
+      "id": "GAP-06",
+      "priority": "P1",
+      "owner": "DSP + Toolkit",
+      "title": "Read-only instance runtime snapshot",
+      "scope": "Authorized instance ID, stage, progress, timer/expiry, objective and instance-localvars, door unSealed/animation, temp inventory, owner-scoped reward/point deltas.",
+      "related_cases": "ASLT-01..04, NYZ-01..02, SAL-01..07",
+      "safety": "GM `warpassault` and `nyzuldebug complete/floor` are bypass/fixtures, not natural gameplay oracles",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1297",
+        "sarthax/FFXI-Mission-Toolkit#1300"
+      ]
+    },
+    {
+      "id": "GAP-07",
+      "priority": "P1",
+      "owner": "XIHeadless + Toolkit",
+      "title": "Read-only campaign orchestration and evidence receipts",
+      "scope": "Preflight per named capability and source fingerprint; approved bot/character, before-after snapshots, save/relog boundary, event/identity provenance and cleanup receipt. `accepted` never equals gameplay PASS.",
+      "related_cases": "Across mutation cases; MOG-09 comparability",
+      "safety": "Do not register staged cases as runner-supported; no new packet or GM auto-dispatch",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1198",
+        "sarthax/FFXI-Mission-Toolkit#1202",
+        "sarthax/xiheadless-dsp#107"
+      ]
+    },
+    {
+      "id": "GAP-08",
+      "priority": "P2 BLOCKED",
+      "owner": "DSP + owner/local agent",
+      "title": "Chocobo Phase 0 deployment/migration and later gameplay",
+      "scope": "Determine live DSP origin/HEAD; review staged diff, backup and migration dry-run, compile/tests; only after approval add approved per-char chocobo record/blob/egg exdata readbacks. Trainer, care plan and mount require separate implementation.",
+      "related_cases": "CHO-01..09",
+      "safety": "Keep primary `needs-deploy`, no down.sql against persistent DB; mount/property bit layouts unverified",
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#59",
+        "sarthax/darkstar-to-valhalla#55"
+      ]
+    },
+    {
+      "id": "GAP-09",
+      "priority": "P0 SAFETY",
+      "owner": "DSP + owner",
+      "title": "Guard numeric-slot collision for `!garden` debug",
+      "scope": "`DebugCommand` iterates Mog Safe and Safe 2 and matches slotID without container; prove command cannot mutate both pots when slot overlaps before any admin test.",
+      "related_cases": "GARD-09; all garden debug-assisted tests",
+      "safety": "No GM debug actions by this audit; separate reviewed server safety change",
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#60"
+      ]
+    },
+    {
+      "id": "GAP-10",
+      "priority": "P0 INTEGRATION",
+      "owner": "Agent C + Agent A",
+      "title": "Contract v2 domain staging adapter and fingerprint fail-closed checks",
+      "scope": "Review explicit v1 metadata mapping, SHA-256 per-source digest, typed identity/zone binding, permission classification, unknown oracles, and 32KiB v1 draft persistence bound; keep no-op against production catalog.",
+      "related_cases": "All 73",
+      "safety": "No bulk JSON import; preserve outer schema_version=1, no fabricated source hashes or v1 runner promotion",
+      "existing_issue_refs": [
+        "sarthax/FFXI-Mission-Toolkit#1259",
+        "sarthax/FFXI-Mission-Toolkit#1285"
+      ]
+    },
+    {
+      "id": "GAP-11",
+      "priority": "P1 REBASE",
+      "owner": "DSP source owner + domain reviewers",
+      "title": "Pinned source drift rebind",
+      "scope": "Gardening `gardenutils.cpp` differs at current main and line ranges shifted by 1; `nyzuldebug.lua` now accepts 51 or 52 instead of only 51, with leader table instance-specific. Re-source affected oracle cases explicitly.",
+      "related_cases": "GARD-01..09; NYZ-01..02",
+      "safety": "Never silently re-point old citations or assert deployed binary revision",
+      "existing_issue_refs": [
+        "sarthax/darkstar-to-valhalla#59"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "scenario_id": "GARD-01",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — player planting acceptance and seed decrement",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Client placement/plant packet, seed decrement and pot state not source-pinned"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.cpp",
+          "line_start": 112,
+          "line_end": 132,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-02",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — eligible stage, crystal consumption and server transition",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Normal client feeding handler and accepted server delta missing"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-03",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "SQL/C++ permitted outcome conditional on runtime configuration; exact item and quantity UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Runtime garden config, SQL ordering, client harvest and item deltas unverified"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 635,
+          "line_end": 660,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-04",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — disallowed-stage predicate and no-mutation result",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Invalid player feed condition not source-pinned"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 295,
+          "line_end": 337,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-05",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — rejection and no-mutation proof",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "No-pot/no-seed normal player handler and outcome unknown"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.h",
+          "line_start": 41,
+          "line_end": 80,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/items/item_flowerpot.cpp",
+          "line_start": 112,
+          "line_end": 132,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-06",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — handling when capacity is full; required no-loss invariant not proved",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Supervisor 100-row cap and full-capacity rejection oracle missing"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 126,
+          "line_end": 288,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-07",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "Source confirms pot extra SQL writes; relog durability UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Independent relog/save-boundary and decoded pot-extra readback unavailable"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 90,
+          "line_end": 125,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 750,
+          "line_end": 756,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-08",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "UNKNOWN — repeat-action behavior and no reward duplication",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "Repeat harvest handler and complete row count missing"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 126,
+          "line_end": 288,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/char_inventory.sql",
+          "line_start": 19,
+          "line_end": 29,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "GARD-09",
+      "domain": "gardening",
+      "domain_pr": 1277,
+      "domain_issue": 1249,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-09"
+      ],
+      "expected_behavior": "Source shows numeric-slot matching across BOTH safes; single-pot GM safety absent",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-inventory, four columns LIMIT 100"
+      ],
+      "readback_missing": [
+        "fixed-query SELECT-only char_inventory.extra for both safe containers",
+        "pot fields decoded per (charid, location, slot)",
+        "complete/untruncated inventory row count and save boundary"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "inventory",
+        "logout when relevant"
+      ],
+      "blocking_gaps": [
+        "Garden pot extra readback not available",
+        "DSP deployed revision and config UNKNOWN",
+        "Normal client pot actions not verified",
+        "GARD-GM-01 container-scoped command or verified unique-slot preflight is blocking"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "330ea8f854cff47aae570aa95d6474f3225f5d49",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/garden.lua",
+          "line_start": 24,
+          "line_end": 43,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 589,
+          "line_end": 608,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 612,
+          "line_end": 629,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/gardenutils.cpp",
+          "line_start": 635,
+          "line_end": 660,
+          "commit": "330ea8f854cff47aae570aa95d6474f3225f5d49"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-01",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source: eligible nearest mob within four yalms is made targetable; upgrade occurs only on RNG 1/10 branch, so observed upgrade is UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Keyitem readback exists but no fixed-query mob pop/owner state readback; /heal and combat capability not accepted",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 35,
+          "line_end": 65,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-02",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source uses zone-specific mob mapping; black/colored KI may be consumed on pop. Specific second-zone outcome UNKNOWN without deployed data/config",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Second-zone navmesh spots and tier readiness unverified, no automatic keyitem grant allowed",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 153,
+          "line_end": 177,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-03",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source: onHealing returns immediately when eligible abyssites array empty; no target NM may be attributed to this action",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Server mob readback absent; no-abyssite fixture and /heal action not accepted",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 35,
+          "line_end": 65,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-04",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source filters candidate mobs by zone and keyitem mapping; specific no-pop observed state UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Requires zone-specific authoritative mob/claim/visibility readback and verified mapping",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-05",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source skips candidates where POPPED_BY is nonzero; another candidate can still pop, so blanket no-NM or cooldown claims are UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "No local-var readback; no source-backed global cooldown guarantee",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 100,
+          "line_end": 130,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 292,
+          "line_end": 334,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 180,
+          "line_end": 192,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-06",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source explicitly resets mob local vars on disengage/despawn and may reposition on despawn; zoning cleanup remains UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Zoning cleanup and death path not equivalent to disengage; authoritative mob readback missing",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 238,
+          "line_end": 259,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 180,
+          "line_end": 192,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VWK-07",
+      "domain": "voidwalker",
+      "domain_pr": 1279,
+      "domain_issue": 1250,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-05"
+      ],
+      "expected_behavior": "UNKNOWN: generic mobskilldiag only exposes diagnostics; per-skill effects and rewards lack fully reviewed oracle",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "/api/supervisor/test-character-keyitems (persisted chars.keyitems; approved characters)",
+        "/api/supervisor/test-character-vars (named char_vars only, not mob local vars)"
+      ],
+      "readback_missing": [
+        "Fixed approved mob spawn/status/claim and three POPPED_* local-var readback",
+        "Client heal/hint, combat and drop event evidence with completeness",
+        "Zone-to-abyssite and client-ID crosswalk verification"
+      ],
+      "xiheadless_candidates": [
+        "snapshot",
+        "nearby_entities",
+        "move_to",
+        "engage",
+        "wait_for_event",
+        "inventory",
+        "key_items observation candidate"
+      ],
+      "blocking_gaps": [
+        "Backlog records unported/guessed skill effects and drops; do not promote prior manual OK statuses to verified oracle",
+        "Deployment revision and ENABLE_VOIDWALKER runtime setting UNKNOWN",
+        "Mob local-vars/claim authoritative readback not available"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "5fac778004364e2991df779845d7403e64a8dc23",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/mobskilldiag.lua",
+          "line_start": 8,
+          "line_end": 25,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker_data.lua",
+          "line_start": 1,
+          "line_end": 48,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwalker.lua",
+          "line_start": 261,
+          "line_end": 288,
+          "commit": "5fac778004364e2991df779845d7403e64a8dc23"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "ASLT-01",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "UNKNOWN — GM warpassault bypasses standard eligibility and cannot validate gameplay progression",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "Normal Assault entry, objective/reward oracle and client packet evidence not pinned",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 193,
+          "line_end": 259,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "ASLT-02",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "UNKNOWN — blocked normal entry and invariant no live instance/reward",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "Exact permit source and entry guard not verified; GM warpassault cannot be used",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 31,
+          "line_end": 112,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua",
+          "line_start": 1,
+          "line_end": 19,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "ASLT-03",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "UNKNOWN — timer/failure callback and non-reward persistence not independently pinned",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "Timer-expiry and cleanup authoritative queries absent; GM leave forcibly fails not equivalent to natural expiry",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 134,
+          "line_end": 190,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "ASLT-04",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "UNKNOWN — reward duplication prevention requires per-instance source and full count readback",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "Reward choice script and duplicate-claim predicate not source-pinned",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua",
+          "line_start": 1,
+          "line_end": 25,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/warpassault.lua",
+          "line_start": 193,
+          "line_end": 259,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "NYZ-01",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "UNKNOWN — local debug complete forces progress=15 and is not natural proof; layout random unless approved pin",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "Normal objective branch, instance state, selection/layout readback and accepted Rune events missing",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/nyzuldebug.lua",
+          "line_start": 50,
+          "line_end": 121,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/nyzul.lua",
+          "line_start": 53,
+          "line_end": 88,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+          "line_start": 14,
+          "line_end": 32,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "NYZ-02",
+      "domain": "assault_nyzul",
+      "domain_pr": 1280,
+      "domain_issue": 1251,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source debug floor arguments outside 1..100 rejected before mutation; gameplay Rune transition rejection UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Read-only instance ID,status,timeRemaining,objective/progress,localvar snapshot",
+        "Approved per-character reward/assault points baseline and change",
+        "Per-instance entity and Rune client event binding/decoder"
+      ],
+      "xiheadless_candidates": [
+        "move_to",
+        "engage",
+        "party",
+        "zone_to",
+        "wait_for_event",
+        "snapshot",
+        "inventory"
+      ],
+      "blocking_gaps": [
+        "No trusted instance local-vars readback; source diagnostic rejection != normal game event result",
+        "DSP feature branch deployed revision UNKNOWN",
+        "No authoritative instance local-variable and timer readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "2b71b4425d20ce47941c140b57fac886f28bea73",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/nyzuldebug.lua",
+          "line_start": 72,
+          "line_end": 95,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Nyzul_Isle/npcs/Rune_of_Transfer.lua",
+          "line_start": 14,
+          "line_end": 32,
+          "commit": "2b71b4425d20ce47941c140b57fac886f28bea73"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MQ-01",
+      "domain": "missions_quests",
+      "domain_pr": 1281,
+      "domain_issue": 1252,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Horatius script accepts quest after CSID 0x0064 option 0; one item 553 while quest no longer AVAILABLE triggers 0x0065 and completion, reward 400*GIL_RATE; runtime acceptance UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Guarded /api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars for approved exact names",
+        "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+      ],
+      "readback_missing": [
+        "Fixed read-only per-character quest and mission status endpoint",
+        "Read-only per-character Gil/quest fame and event option bindings",
+        "Complete untruncated inventory and save boundary, reward attribution"
+      ],
+      "xiheadless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Script guards and numeric reward source-pinned, but real client event, fame, Gil rate and server quest/inventory readbacks not yet verified",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 18,
+          "line_end": 31,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/quests.lua",
+          "line_start": 12,
+          "line_end": 27,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MQ-02",
+      "domain": "missions_quests",
+      "domain_pr": 1281,
+      "domain_issue": 1252,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Horatius onTrigger uses default CSID 0x006e rather than 0x0064 when fame below 2, assuming no Wildcat branch; no quest acceptance expected until event finished; runtime UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Guarded /api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars for approved exact names",
+        "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+      ],
+      "readback_missing": [
+        "Fixed read-only per-character quest and mission status endpoint",
+        "Read-only per-character Gil/quest fame and event option bindings",
+        "Complete untruncated inventory and save boundary, reward attribution"
+      ],
+      "xiheadless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Exact fame readback and WildcatBastok precedence required; normal client event handling UNKNOWN",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MQ-03",
+      "domain": "missions_quests",
+      "domain_pr": 1281,
+      "domain_issue": 1252,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Horatius onEventFinish adds quest only for CSID 0x0064 and option 0; other options have no addQuest branch in this handler; runtime delta UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Guarded /api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars for approved exact names",
+        "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+      ],
+      "readback_missing": [
+        "Fixed read-only per-character quest and mission status endpoint",
+        "Read-only per-character Gil/quest fame and event option bindings",
+        "Complete untruncated inventory and save boundary, reward attribution"
+      ],
+      "xiheadless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Source proves handler branch only; other hooks/side effects and event selection capabilities UNKNOWN",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 33,
+          "line_end": 46,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MQ-04",
+      "domain": "missions_quests",
+      "domain_pr": 1281,
+      "domain_issue": 1252,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source advances DistantLoyaltiesProgress 2->3 on CSID 0x013d and 3->4 plus MYTHRIL_HEARTS KI on 0x013e; relog durability UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Guarded /api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars for approved exact names",
+        "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+      ],
+      "readback_missing": [
+        "Fixed read-only per-character quest and mission status endpoint",
+        "Read-only per-character Gil/quest fame and event option bindings",
+        "Complete untruncated inventory and save boundary, reward attribution"
+      ],
+      "xiheadless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Michea branch includes zone dependency and GOLDSMITHING_ORDER; missing named exact charvar, persistent KI and client event readback",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+          "line_start": 12,
+          "line_end": 57,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Michea.lua",
+          "line_start": 104,
+          "line_end": 124,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/checkquest.lua",
+          "line_start": 8,
+          "line_end": 78,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MQ-05",
+      "domain": "missions_quests",
+      "domain_pr": 1281,
+      "domain_issue": 1252,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Horatius trade accepts item 553 whenever quest is not AVAILABLE, including completed; handler may grant GIL_RATE*400 on repeated CSID 0x0065. No no-duplicate invariant source-backed; treat as possible defect, NOT PASS",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Guarded /api/supervisor/test-character-keyitems",
+        "/api/supervisor/test-character-vars for approved exact names",
+        "/api/supervisor/test-character-inventory LIMIT 100 four cols"
+      ],
+      "readback_missing": [
+        "Fixed read-only per-character quest and mission status endpoint",
+        "Read-only per-character Gil/quest fame and event option bindings",
+        "Complete untruncated inventory and save boundary, reward attribution"
+      ],
+      "xiheadless_candidates": [
+        "talk_to_npc",
+        "event_select",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Repeat reward guard absent in this source; diagnostic might expose a duplicate-Gil vulnerability; reward balances and complete inventory before/after required",
+        "Deployed DSP main SHA/config and client source identity unverified",
+        "No fixed quest/mission/Gil authoritative readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 18,
+          "line_end": 31,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bastok_Markets/npcs/Horatius.lua",
+          "line_start": 54,
+          "line_end": 74,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/commands/checkquest.lua",
+          "line_start": 8,
+          "line_end": 78,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-01",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "DSP determines winning KI from installed item's item_furnishing SQL metadata, if it yields the unique dominant element; runtime UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Verified client install/exit not bound; installed layout readback absent",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/item_furnishing.sql",
+          "line_start": 25,
+          "line_end": 55,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-02",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "DSP selects the eligible item with maximum aura in dominant element; equal strengths obey first scan order; actual KI UNKNOWN until fixture",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Complete per-slot installed state and source-verified items missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-03",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "Unique greatest summed element wins; equal maxima produce 0 KI; exact selected KI conditional on eligible strongest item",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Full two-Safe manifest and element SQL consistency unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-04",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "DSP scans both safe containers in ascending slot order; dominant aura includes both; client-install across containers UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Exact installation flags for both safe locations, client container UI and save boundary unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-05",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "On KI change: remove old, grant new and remove/add respective modifiers; exact values depend on KI and nation",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Independent full held KI + modifier readback missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 661,
+          "line_end": 679,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-06",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "UpdateMoghancement recomputes from installed furniture; relog persisted KI/modifier state UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Reliable client uninstall, server save-boundary and reconnect evidence missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 545,
+          "line_end": 555,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-07",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "MoghancementDebug info prints active KI, eight aura totals, held furniture KI and nonzero mods; layout-to-aura agreement UNKNOWN without independent layout",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "No independent installed furniture manifest; GM diagnostic is same-server-derived evidence",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/item_furnishing.sql",
+          "line_start": 25,
+          "line_end": 55,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-08",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "When two dominant elements tie, new KI=0 and ChangeMoghancement removes prior active KI, assuming recompute occurs",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Need two-Safe installed manifest, typed compare and held KI readback",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-09",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "observe-now",
+      "audited_lane": "observe-now",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "Existing canonical MOG-09 asserts observed active KI=0, all aura 0 and inventory concordance; installed layout assumption remains unverified",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Canonical observed PASS is imported/limited; installed layout not independently observed",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Canonical MOG-09 is the sole verified narrow runner; historical imported evidence and assumed empty installed layout do not prove full mechanic"
+    },
+    {
+      "scenario_id": "MOG-10",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "No installed aura => new KI=0; old KI removal uses ChangeMoghancement, if previously active",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Need full both-Safe installed flag readback and cleanup",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 579,
+          "line_end": 595,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-11",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "ChangeMoghancement only changes if new KI differs; SetMoghancement explicitly subtracts old modifiers and adds new",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Independent per-modifier readback, exact baseline of other modifiers and permission",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 661,
+          "line_end": 679,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-12",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "MoghancementDebug rejects nonzero IDs outside isFurnitureKeyItem without changing KI; signed and numeric conversion edge-cases UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Mutation is GM and forbidden in this assignment; accepted invalid value partition/fixture and readback missing",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 470,
+          "line_end": 477,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 681,
+          "line_end": 769,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-13",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "Aura sums each installed duplicate; ChangeMoghancement owns one active KI identifier; independent duplicate-KI/stack effects UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Need complete container/slot identity, installed flags, held KI list and modifiers",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 632,
+          "line_end": 659,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "MOG-14",
+      "domain": "moghancement",
+      "domain_pr": 1282,
+      "domain_issue": 1253,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-01",
+        "GAP-02",
+        "GAP-07"
+      ],
+      "expected_behavior": "DSP uses strict greater-than aura comparison while scanning Mog Safe before Safe 2; first eligible tied strongest item wins",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "Canonical MOG-09 read-only gm_active_ki, gm_aura, bag/safe snapshots, imported provenance (scope limited)",
+        "Approved-character persisted KI bitsets"
+      ],
+      "readback_missing": [
+        "Fully decoded and independent two-Safe installed furniture flag/slot manifest",
+        "Client furnishing install/uninstall and menu-exit packet/event provenance",
+        "Independent current modifier/readback and complete unfettered inventory",
+        "Live DSP code and item_furnishing SQL revision/configuration"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "wait_for_event",
+        "logout"
+      ],
+      "blocking_gaps": [
+        "Full per-container ordered placement and C++ deployed source revision unverified",
+        "Runtime DSP commit, item_furnishing SQL and source oracle revision not independently matched"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 558,
+          "line_end": 577,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.cpp",
+          "line_start": 597,
+          "line_end": 629,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-01",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "observe-now",
+      "audited_lane": "observe-now",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Existing vars may be zero; record exact snapshot, not presumed initial stock",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "test-character-vars",
+        "test-character-keyitems"
+      ],
+      "readback_missing": [],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Resolve actual character/endpoint coverage; reading variables does not prove officer time progression"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 53,
+          "line_end": 97,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 14,
+          "line_end": 76,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Read-only persisted-variable/KI baseline ONLY after operator config and persisted-state freshness/completeness check"
+    },
+    {
+      "scenario_id": "VOID-02",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "observe-now",
+      "audited_lane": "observe-now",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Only bits and held KIs explicitly present in the snapshot may be asserted; no tier-upgrade inferred",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "test-character-vars",
+        "test-character-keyitems"
+      ],
+      "readback_missing": [],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Read only; an existing completion bit is not proof of kill attribution"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 14,
+          "line_end": 76,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 115,
+          "line_end": 126,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Read-only persisted-variable/KI baseline ONLY after operator config and persisted-state freshness/completeness check"
+    },
+    {
+      "scenario_id": "VOID-03",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Formula is min(stock,carry-held); encoded VOIDSTONE1..6 KI replaces prior level, stock decreases by granted amount; real client event option and deployment must be checked",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "client event/update/finish trace for officer"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Stock accrual depends on clock and periapt; repeatable transaction needs isolated fixture",
+        "Client menu option mapping must be captured and independently bound"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 202,
+          "line_end": 223,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 53,
+          "line_end": 97,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-04",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Implementation returns without cost, KI or item grant if available cruor is below price; require independent before/after balance and item/KI counts",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "authoritative cruor balance before/after",
+        "full item/KI state including duplicate and inventory-full check",
+        "officer event choice and option bits"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "No current bounded cruor readback; do not infer unchanged from a client message"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch_officer.lua",
+          "line_start": 149,
+          "line_end": 199,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-05",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Source schedules a 3-second timer and records VW_RIFT/VW_SPAWNER; actual timely spawn or claim requires entity observations; no fixed network timing assertion",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "live rift and mob status/entity IDs; VW_RIFT,VW_SPAWNER localvars",
+        "claim owner, party/zone and action/event capture"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Missing mob-localvar and claim readback; ensure no other group owns rift"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 219,
+          "line_end": 251,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 303,
+          "line_end": 325,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-06",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "On successful addItem, ITEM slot becomes zero; on insufficient capacity branch leaves slot intact; random item type UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "Pyxis ITEM1..ITEM8,TAKEN<playerid>,ELIG<playerid> localvars",
+        "complete inventory before/after and addItem outcome"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Missing pyxis localvar readback; drop pools random and some values design placeholders"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 272,
+          "line_end": 301,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 95,
+          "line_end": 162,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-07",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "ITEM slot already 0 is not added by vwPyxisTake; require zero item delta, not repeated menu acknowledgment",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "pyxis ITEM slot before/after",
+        "complete char_inventory count and container coverage"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Rift/Pyxis token and eligibility readback absent; rollback requires quarantined fixture"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 272,
+          "line_end": 301,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "VOID-08",
+      "domain": "voidwatch",
+      "domain_pr": 1286,
+      "domain_issue": 1254,
+      "declared_lane": "needs-readback",
+      "audited_lane": "needs-readback",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-03",
+        "GAP-04",
+        "GAP-05"
+      ],
+      "expected_behavior": "Code clears VOIDWATCHER from characters recorded by VW_CLR during vwEndOperation; client status alone cannot prove cleanup callback occurred",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "status effect 475 before/after",
+        "mob VW_CLR<playerid> and VW_RIFT vars",
+        "rift status and expiry"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "keyitems",
+        "vars",
+        "npc_interact",
+        "wait_for_event",
+        "snapshot"
+      ],
+      "blocking_gaps": [
+        "Need authorized fixed-query mob localvars and status readback",
+        "Unverified duration and behavior explicitly marked [D] by source"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/voidwatch.lua",
+          "line_start": 303,
+          "line_end": 325,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-01",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-readback",
+      "audited_lane": "needs-readback",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source describes 5 Pathos on entry; actual pre-existing effect masks/stage must be read, not fabricated",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "character status effects: power,timeRemaining",
+        "instance ID,stage,progress,expiry"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Fixed-query active status effects and instance readback absent",
+        "Live instance access requires owner approval even for observation"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 7,
+          "line_end": 36,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 22,
+          "line_end": 66,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-02",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "Five effects added with duration 6000 seconds and stage 1/progress 0 in Lua; client effect timing and persistence require verification",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "authoritative instance ID,stage,progress",
+        "effect IDs/power/duration from status-effect readback",
+        "equipment before/after"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Actual instance admission predicates not pinned; no GM warp as eligibility proof"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 7,
+          "line_end": 36,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-03",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "onCellItemCheck returns 55 outside zones 73–76; client refusal and unchanged item/status need readback",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "zone ID,inventory item count before/after",
+        "cell-use rejection and status mask"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Exact chosen cell item script must be independently cited before dispatch"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 43,
+          "line_end": 101,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-04",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "newpower = bit.band(oldpower,bit.bnot(value)); instance cellsUsed increments; pet mirroring only for 3 defined effects",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "status effect power before/after,pet effects",
+        "instance localvar cellsUsed",
+        "inventory consumption with full containers"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "No fixed-query status-bit/instance-var readback; select specific cell item from source before execution"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 43,
+          "line_end": 101,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-05",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "onDoorOpen returns false unless animation is closed and unSealed==1; actual per-door trigger must be bound first",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "door localvar unSealed,animation,target flags",
+        "instance stage/progress before/after",
+        "captured door event/csid"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Exact door/NPC and option not bound; stageComplete/exitPoint only meaningful when source matches"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bhaflau_Remnants/door_util.lua",
+          "line_start": 25,
+          "line_end": 56,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 90,
+          "line_end": 106,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-06",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "tempBoxPickCellItems initializes randomized but source-bounded item IDs; tempBoxFinish decrements when addTempItem accepted and player lacks the temp item",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "crate itemID_1..7,itemAmount_1..7,prePicked,itemsPicked",
+        "character LOC_TEMPITEMS before/after",
+        "event option/slot correlation"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Random pool means no fixed outcome ID/quantity pre-roll; NPC ID must come from IDs.lua",
+        "Temp inventory readback is not normal char_inventory endpoint"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bhaflau_Remnants/npcs/Armoury_Crate.lua",
+          "line_start": 17,
+          "line_end": 29,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/salvage.lua",
+          "line_start": 285,
+          "line_end": 363,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "SAL-07",
+      "domain": "salvage",
+      "domain_pr": 1289,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P1",
+      "proposed_issues": [
+        "GAP-06",
+        "GAP-07"
+      ],
+      "expected_behavior": "onInstanceFailure sends client event, normal exit strips five effects; expiry callback, event completion and proper cleanup need independent observation",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "instance remaining time and failure callback",
+        "status effects after exit and real zone/instance",
+        "no reward change, quest/points full baseline"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "zone_to",
+        "inventory",
+        "snapshot",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Client event response to timeout not independently established by source alone",
+        "Need no stale instance and no Pathos post-exit, or quarantine"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Arrapago_Remnants/instances/arrapago_remnants.lua",
+          "line_start": 39,
+          "line_end": 64,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Bhaflau_Remnants/instances/bhaflau_remnants.lua",
+          "line_start": 143,
+          "line_end": 180,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-01",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "observe-now",
+      "audited_lane": "observe-now",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Report only observed values; quest status/actual GEO unlock remains UNKNOWN without job/quest readback",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "test-character-vars",
+        "test-character-keyitems"
+      ],
+      "readback_missing": [],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Quest status / unlocked job not provided by bounded current endpoints",
+        "Observe-now is limited to vars and KIs, no job assertion"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 69,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/dances_with_luopans.lua",
+          "line_start": 19,
+          "line_end": 65,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Read-only persisted-variable/KI baseline ONLY after operator config and persisted-state freshness/completeness check"
+    },
+    {
+      "scenario_id": "RG-02",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source chooses event 33 below threshold vs event 31 above; threshold value is not fabricated and decoded client event must be verified",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "main level,source ADVANCED_JOB_LEVEL",
+        "quest log status and captured event ID",
+        "GEO unlocked-job bit"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Client event 33 vs 31 needs local decoder confirmation and bound character levels"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 69,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-03",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source triggers 34 then tradeComplete, removes soil and grants LUOPAN; cannot assert without trade inventory and KI delta",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "items PETRIFIED_LOG before/after across containers",
+        "chars.keyitems soil,LUOPAN before/after",
+        "quest state,event 34 response"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Confirm exact required trade quantity and client event completion in captured evidence",
+        "Cannot GM-award LUOPAN as normal-trade success oracle"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 28,
+          "line_end": 34,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 95,
+          "line_end": 115,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-04",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Source sets DwL_Prog=1 only after random 9–480 sec timer while remaining in locus; no guaranteed fixed elapsed time",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "DwL_Prog char_var and DwL_Locus,DwL_RestUntil local vars",
+        "resting tick/event evidence with monotonic timestamps"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Random delay and localvars require query or event timeline; no forced GM var as oracle",
+        "Region trigger identity and zone mapping require local source confirmation"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/globals/dances_with_luopans.lua",
+          "line_start": 19,
+          "line_end": 65,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-05",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "On successful npcUtil.giveItem for PLATE_OF_INDI_POISON + MATRE_BELL, source unlocks GEO, grants JOB_GESTURE_GEOMANCER and completes quest",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "char_inventory all containers for 6074/21460",
+        "GEO unlock state,quest log,gesture KI, DwL_Prog",
+        "event 36 completion"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Without independent job unlock/quest status and complete inventory no PASS",
+        "Prove no duplication on repeated interaction through source and readback"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Western_Adoulin/npcs/Sylvie.lua",
+          "line_start": 95,
+          "line_end": 115,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-06",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "observe-now",
+      "audited_lane": "observe-now",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Actual quest progress and RUN unlocked flag UNKNOWN from vars and KI alone",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [
+        "test-character-vars",
+        "test-character-keyitems"
+      ],
+      "readback_missing": [],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Quest status and job unlock are outside this bounded observation",
+        "No client interaction or event dispatch"
+      ],
+      "permissions": [
+        "bearer_token",
+        "approved_charid_allowlist",
+        "dedicated_SELECT_only_DB_account"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 37,
+          "line_end": 58,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+          "line_start": 17,
+          "line_end": 22,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Read-only persisted-variable/KI baseline ONLY after operator config and persisted-state freshness/completeness check"
+    },
+    {
+      "scenario_id": "RG-07",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "Petal only granted while quest accepted and not already held; Octavien selects event 26 on accepted+petal; actual option/packet UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "quest state, RUN_COTR char_var,petal KI",
+        "Octavien client event IDs/options",
+        "source/target NPC bindings"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Client trigger IDs must be validated against source; no raw capture here",
+        "NPC position script warns SQL vs LSB mismatch"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Yahse_Hunting_Grounds/npcs/Yahse_Wildflower.lua",
+          "line_start": 17,
+          "line_end": 22,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 37,
+          "line_end": 58,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 82,
+          "line_end": 105,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "RG-08",
+      "domain": "run_geo_unlock",
+      "domain_pr": 1290,
+      "domain_issue": 1254,
+      "declared_lane": "needs-mutation",
+      "audited_lane": "needs-mutation",
+      "priority": "P0",
+      "proposed_issues": [
+        "GAP-04",
+        "GAP-07"
+      ],
+      "expected_behavior": "RUN_COTR=3 on option 1; successful giveItem(20781) unlocks RUN, grants gesture KI, removes petal, completes quest; failure should not claim completion",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "RUN_COTR before/after,quest status,job unlock,gesture KI",
+        "SOWILO_CLAYMORE all-container quantity,free slots,petal KI",
+        "HP/MP at event update where option==1"
+      ],
+      "xiheadless_candidates": [
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event",
+        "snapshot",
+        "inventory",
+        "keyitems"
+      ],
+      "blocking_gaps": [
+        "Potential HP/MP halving at csid26 option1 must be isolated and authorized",
+        "Independent item grant failure semantics of npcUtil.giveItem need source review"
+      ],
+      "permissions": [
+        "operator_approval",
+        "disposable_character",
+        "client_control_if_applicable",
+        "server_read_grant",
+        "cleanup_verification"
+      ],
+      "source_revision": "86d4467d446569c741d76d296e640c3b844ad844",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 64,
+          "line_end": 75,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "scripts/zones/Eastern_Adoulin/npcs/Octavien.lua",
+          "line_start": 82,
+          "line_end": 105,
+          "commit": "86d4467d446569c741d76d296e640c3b844ad844"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": ""
+    },
+    {
+      "scenario_id": "CHO-01",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "Only source DDL proves proposed columns/tables, not migration application; deployed schema compatibility UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "database schema information_schema table/columns for char_chocobos and char_pet",
+        "actual source SHA and migration ledger"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Phase 0 branch not confirmed merged/deployed; README states migration not applied live",
+        "MyISAM backups and idempotent dry-run require local operator"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/down.sql",
+          "line_start": 1,
+          "line_end": 3,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-02",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "Absence must be observed; getChocoboRaisingInfo nil is a proposed behavior from TEST_PLAN not runtime-proven",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "char_chocobos WHERE charid keyed by authorized test fixture",
+        "Lua getChocoboRaisingInfo return vs authoritative row"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Read-only char_chocobos fixed-query endpoint not available",
+        "No row required is a test plan, not source-guaranteed for all characters"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-03",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "The row fields and upsert binding are declared, but exact persistence/reload behavior UNKNOWN until read-back tests",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "char_chocobos full row before/after relog, including stage/age/stats/charid",
+        "Lua getter output, server C++ and SQL save/load trace"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Actual migration not applied; data fixtures require owner validation",
+        "Do not infer lifecycle correctness from a successful Lua setter acknowledgement"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.h",
+          "line_start": 161,
+          "line_end": 178,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-04",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "API declares 24 extra-data bytes and setter/save method; expected byte-for-byte equality is a TEST_PLAN proposal, not observed",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "full 24-byte extra-data before/after save, relog and moved container",
+        "char_inventory.extra or equivalent full blob and inventory item identity"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Present supervisor inventory readback omits extra bytes",
+        "Item move/trade integrity needs separate permission and source inspection"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/lua/lua_item.h",
+          "line_start": 75,
+          "line_end": 76,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-05",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "32-byte declared struct and database blob demonstrate proposed layout only; bitfield meaning and runtime roundtrip UNKNOWN",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "char_pet.chocobo_user_data exact blob and authorized charid",
+        "getChocoboUserData and getFieldChocobo result before/after relog"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Mount appearance bit layout unverified for this client build",
+        "No blob-safe readback in existing bounded interface"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/entities/charentity.h",
+          "line_start": 161,
+          "line_end": 178,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/char_pet.sql",
+          "line_start": 14,
+          "line_end": 19,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/lua/lua_baseentity.h",
+          "line_start": 133,
+          "line_end": 139,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/mountutils.h",
+          "line_start": 28,
+          "line_end": 57,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-06",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "README claims deletion path but delete postcondition must be verified against row set and unrelated character preservation",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "char_chocobos rows for deleted/control charid before and after",
+        "char_pet state and character-deletion audit"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Destructive deletion must never be auto-dispatched; prohibit on shared accounts",
+        "No deployed cleanup implementation evidence; requires authorized local dry-run and approval"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-07",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "UNKNOWN — Phase 0 explicitly excludes trainer scripts and daily model; cannot define normative event IDs, day advancement or care-plan outcomes",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "chocobo daily state schema plus stable NPC/dialog event and pet/egg exdata",
+        "owner-verified time/day model, accepted events and independent reward progression"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Trainer/daily event VM not present in audited Phase 0",
+        "Actual target DSP and client DAT event mappings require local source/capture verification"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/TEST_PLAN.md",
+          "line_start": 3,
+          "line_end": 17,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-08",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "UNKNOWN — Phase 0 excludes mount packet/model and whistle; declared packed property bit layout is explicitly unverified",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "mount state/appearance packets, registered field chocobo and time limit",
+        "whistle item/quest status and effect/zone authoritative before/after"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Mount and whistle gameplay not in Phase 0; avoid inventing model/packet IDs",
+        "Permission, packet client-version and owner-controlled cleanup unverified"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "src/map/utils/mountutils.h",
+          "line_start": 28,
+          "line_end": 57,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    },
+    {
+      "scenario_id": "CHO-09",
+      "domain": "chocobo_raising",
+      "domain_pr": 1291,
+      "domain_issue": 1254,
+      "declared_lane": "needs-deploy",
+      "audited_lane": "needs-deploy",
+      "priority": "P2",
+      "proposed_issues": [
+        "GAP-08"
+      ],
+      "expected_behavior": "down.sql deletes table and column; never execute against live state as automatic teardown",
+      "expected_confidence": "source_condition_only_until_independent_readback",
+      "readback_available": [],
+      "readback_missing": [
+        "pre/post isolated schema fingerprint and backup manifest",
+        "migration ledger and rollback owner signoff"
+      ],
+      "xiheadless_candidates": [
+        "inventory",
+        "snapshot",
+        "npc_interact",
+        "trade_to_npc",
+        "wait_for_event"
+      ],
+      "blocking_gaps": [
+        "Destructive rollback explicitly flagged in source; no live DB writes approved",
+        "Potential data loss risk; do not treat down.sql as safe fixture cleanup"
+      ],
+      "permissions": [
+        "deployment_review",
+        "schema_migration_if_applicable",
+        "operator_approval_for_future_mutation"
+      ],
+      "source_revision": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd",
+      "source_refs": [
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/down.sql",
+          "line_start": 1,
+          "line_end": 3,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "sql/slices/chocobo-raising-core/up.sql",
+          "line_start": 1,
+          "line_end": 36,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        },
+        {
+          "repository": "sarthax/darkstar-to-valhalla",
+          "path": "docs/slices/chocobo-raising-core/README.md",
+          "line_start": 3,
+          "line_end": 16,
+          "commit": "55e1baa382bcf1905c329c36d3a67fa244dbd6cd"
+        }
+      ],
+      "verdict": "NOT_RUN_IN_THIS_AUDIT",
+      "runner_state": "unassigned",
+      "v2_import": "BLOCKED_REVIEWED_MAPPER_REQUIRED",
+      "review_note": "Raising branch is not merged into DSP main; unverified schema migration and gameplay implementation"
+    }
+  ]
+}

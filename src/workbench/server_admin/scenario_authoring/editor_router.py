@@ -6,19 +6,28 @@ draft store; it does not define an alternate spec or execute any capabilities.
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Any
 
+from .context_handoff import coverage_context, inspect_evidence_review
+from .validation_feedback import field_errors
+from workbench.captures.scenario_readiness_viewer import inspect_paired_readiness
 from workbench.runtime.paths import GUI_ROOT
 from workbench.runtime.legacy_settings import get_dsp_root
 from workbench.server_admin.scenario_authoring.catalog_adapter import (
     CatalogUnavailable, search_catalog,
 )
 from workbench.server_admin.feature_testing.scenario_presentation import scenario_presentation
+from workbench.server_admin.feature_testing.scenario_contract_v2 import (
+    compatibility_report, source_attribution_report,
+)
+from workbench.server_admin.feature_testing import typed_action_library
 from workbench.server_admin.feature_testing.router import load_test_catalog
 from workbench.server_admin.feature_testing.spec_drafts import _validate_draft
 from workbench.server_admin.feature_testing.test_specifications import (
@@ -122,12 +131,56 @@ def validate_editor_spec(payload: dict) -> dict:
         "catalog_identity": "UNRESOLVED",
         "reader_view": scenario_presentation(spec),
     }
+    # This read-only canonical report never fabricates runtime/source observations.
+    # Legacy v1 has no v2 namespace or new UI requirements.
+    v2_report = compatibility_report(spec) if "contract_v2" in spec else None
+    # Agent C's merged canonical report is the sole authority for descriptive
+    # CASE/STEP scope. Never infer from oracle, parameter or capture step IDs.
+    attribution = source_attribution_report(spec) if "contract_v2" in spec else None
     return {"valid": True, "canonical_specification": spec, "preview": preview,
+            "contract_v2_compatibility": v2_report,
+            "contract_v2_source_attribution": attribution,
             "reader_view": preview["reader_view"],
             "execution_enabled": False, "operator_review_required": True,
             "warnings": (["Assertions without step coverage: " + ", ".join(uncovered)] if uncovered else [])
                         + (["UNKNOWN expected oracle in " + ", ".join(unknowns)] if unknowns else [])
                         + gaps}
+
+
+class TypedStepRequest(BaseModel):
+    template_id: str
+    action_value: Any = None
+    expectation_value: Any = None
+
+
+@router.get("/typed-library", include_in_schema=False)
+def typed_library(request: Request):
+    """The reviewed typed action library (#1409) as read-only data; nothing here executes anything."""
+    return typed_action_library.export_registry()
+
+
+@router.post("/typed-step", include_in_schema=False)
+def typed_step(request: Request, body: TypedStepRequest):
+    """Validate values against a library template and return the native draft step, or say what is wrong."""
+    _local_origin(request)
+    try:
+        return typed_action_library.build_step(body.template_id, body.action_value, body.expectation_value)
+    except typed_action_library.TypedStepError as exc:
+        raise HTTPException(422, {"message": str(exc), "part": exc.part}) from exc
+
+
+class TypedImportRequest(BaseModel):
+    steps: Any = None
+
+
+@router.post("/typed-import", include_in_schema=False)
+def typed_import(request: Request, body: TypedImportRequest):
+    """Review pasted native scenario steps against the typed library. Nothing is accepted or stored here."""
+    _local_origin(request)
+    try:
+        return typed_action_library.review_native_steps(body.steps)
+    except ValueError as exc:
+        raise HTTPException(422, {"message": str(exc)}) from exc
 
 
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
@@ -179,6 +232,89 @@ def search_editor_catalog(request: Request, kind: str, query: str, limit: int = 
         raise HTTPException(422, str(exc) + " Resolve: " + _validation_help(str(exc))) from exc
 
 
+class CoverageReferenceRequest(BaseModel):
+    context_ref: str
+    source: dict
+
+
+@router.post("/handoff/coverage/inspect", include_in_schema=False)
+def inspect_coverage_handoff(request: Request, body: CoverageReferenceRequest):
+    """Check the bounded existing coverage endpoint response; no draft writes."""
+    _local_origin(request)
+    try:
+        return coverage_context(body.source, body.context_ref)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+class EvidenceReviewRequest(BaseModel):
+    review: dict
+
+
+@router.post("/handoff/evidence/inspect", include_in_schema=False)
+def inspect_evidence_handoff(request: Request, body: EvidenceReviewRequest):
+    """Validate *untrusted* exported review JSON; never store or approve it."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Evidence authoring is local-only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin evidence import refused")
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(415, "Evidence review requires JSON")
+    try:
+        size = int(request.headers.get("content-length", "0") or "0")
+    except ValueError:
+        raise HTTPException(400, "Invalid payload size") from None
+    # Offline Reviewer allows up to 4 MB of indexed projection, plus the
+    # browser's bounded step/binding decision envelope. Validate the parsed
+    # body as well, since Content-Length is not a security boundary.
+    # Browser JSON.stringify sends compact UTF-8 rather than Python's default
+    # ASCII-escaped, space-padded JSON. Count the complete request envelope;
+    # otherwise valid Unicode captures can be incorrectly rejected.
+    encoded = json.dumps({"review": body.review}, ensure_ascii=False,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if size > 5_000_000 or len(encoded) > 5_000_000:
+        raise HTTPException(413, "Evidence review too large; narrow the offline capture export")
+    try:
+        return inspect_evidence_review(body.review)
+    except (ValueError, KeyError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Unsupported, missing, modified or incompatible evidence review: " + str(exc)) from exc
+
+
+class PairedReadinessRequest(BaseModel):
+    review: dict
+    sidecar: dict
+
+
+@router.post("/handoff/readiness/inspect", include_in_schema=False)
+def inspect_readiness_handoff(request: Request, body: PairedReadinessRequest):
+    """Strict local-only noncanonical pair inspection, never canonical import."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Capture readiness inspection is local-only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin capture inspection refused")
+    if request.headers.get("x-requested-with") != "toolkit-ui":
+        raise HTTPException(403, "Local editor request required")
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(415, "Capture readiness requires JSON")
+    try:
+        size = int(request.headers.get("content-length", "0") or "0")
+    except ValueError:
+        raise HTTPException(400, "Invalid payload size") from None
+    try:
+        encoded = json.dumps({"review": body.review, "sidecar": body.sidecar},
+                             ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Invalid capture readiness JSON: non-finite or unsupported value") from exc
+    if size > 9_100_000 or len(encoded) > 9_100_000:
+        raise HTTPException(413, "Selected capture pair too large")
+    try:
+        return inspect_paired_readiness(body.review, body.sidecar)
+    except (ValueError, KeyError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Capture readiness pair rejected: " + str(exc)) from exc
+
+
 @router.get("/seed/{feature_id}/{case_id}", include_in_schema=False)
 def seed(request: Request, feature_id: str, case_id: str):
     """Read a published spec for fork/copy only; it is never editable in place."""
@@ -216,4 +352,9 @@ def validate(request: Request, body: ValidationRequest):
     try:
         return validate_editor_spec(body.specification)
     except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
+        # Canonical validation still rejects the unmodified specification.
+        # Detailed errors are display-only and never written to the draft.
+        detail = {"message": "Canonical scenario validation rejected",
+                  "canonical_error": str(exc),
+                  "errors": field_errors(body.specification, str(exc))}
+        raise HTTPException(422, detail) from exc

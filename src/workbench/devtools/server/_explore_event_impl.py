@@ -209,11 +209,11 @@ def ensure_export(zone_folder_name: str, ffxi_path: str) -> Path:
     print(f"[{zone_folder_name}] no cached events/dialog export -- generating via the packaged Mission Toolkit CLI...")
     # the Mission Toolkit CLI's own --out-dir defaults to the RELATIVE path "mission_reports", resolved
     # against the subprocess's cwd -- without cwd=TOOLS_ROOT here, this silently inherited whatever
-    # directory the GUI server process itself happened to be started from (e.g. D:\Claude, not
-    # D:\Claude\mission_toolkit), writing real generated output to a stray mission_reports/ next to
+    # directory the GUI server process itself happened to be started from (e.g. a parent directory, not
+    # <local>/mission_toolkit), writing real generated output to a stray mission_reports/ next to
     # the wrong directory every time. events_yml.exists() below then correctly found nothing at the
     # real path, and the page just rendered "0 events found" with no error -- confirmed live: 12
-    # zones' worth of real exports had silently piled up at D:\Claude\mission_reports\ this way.
+    # zones' worth of real exports had silently piled up at <local>/mission_reports\ this way.
     result = subprocess.run(
         [sys.executable, "-m", "workbench.devtools.app.mission_toolkit", zone_folder_name, "--ffxi-path", ffxi_path],
         capture_output=True, text=True, cwd=str(TOOLS_ROOT),
