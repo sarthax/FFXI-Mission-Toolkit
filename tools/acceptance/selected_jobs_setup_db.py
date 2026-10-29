@@ -1,0 +1,13 @@
+import os, pymysql, sys
+pw=open(os.environ.get("SYNTH_PW_FILE", ".synth_pw")).read().strip()
+c=pymysql.connect(host="127.0.0.1",port=3398,user="root",password="")
+cur=c.cursor()
+cur.execute("CREATE DATABASE synth_acc")
+cur.execute("USE synth_acc")
+cur.execute("CREATE TABLE chars (charid INT UNSIGNED PRIMARY KEY, charname VARCHAR(15))")
+cur.execute("CREATE TABLE char_stats (charid INT UNSIGNED, mjob TINYINT UNSIGNED, sjob TINYINT UNSIGNED, mlvl TINYINT UNSIGNED, slvl TINYINT UNSIGNED)")
+cur.executemany("INSERT INTO chars VALUES (%s,%s)",[(900001,'SynthA'),(900002,'SynthB'),(900003,'SynthC'),(900004,'SynthD')])
+cur.executemany("INSERT INTO char_stats VALUES (%s,%s,%s,%s,%s)",[(900001,1,2,75,37),(900002,0,0,0,0),(900004,5,6,50,25),(900004,5,6,50,25)])
+cur.execute("CREATE USER 'ro_synth'@'127.0.0.1' IDENTIFIED BY %s",(pw,))
+cur.execute("GRANT SELECT ON synth_acc.* TO 'ro_synth'@'127.0.0.1'")
+c.commit(); print("ok")
