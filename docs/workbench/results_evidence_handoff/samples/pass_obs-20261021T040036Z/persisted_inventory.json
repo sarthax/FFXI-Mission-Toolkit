@@ -1,0 +1,56 @@
+[
+ {
+  "location": 0,
+  "slot": 0,
+  "itemId": 65535,
+  "quantity": 10
+ },
+ {
+  "location": 0,
+  "slot": 1,
+  "itemId": 12637,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 2,
+  "itemId": 12758,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 3,
+  "itemId": 12888,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 4,
+  "itemId": 13009,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 5,
+  "itemId": 16534,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 6,
+  "itemId": 536,
+  "quantity": 1
+ },
+ {
+  "location": 0,
+  "slot": 8,
+  "itemId": 4112,
+  "quantity": 1
+ },
+ {
+  "location": 1,
+  "slot": 1,
+  "itemId": 3,
+  "quantity": 1
+ }
+]

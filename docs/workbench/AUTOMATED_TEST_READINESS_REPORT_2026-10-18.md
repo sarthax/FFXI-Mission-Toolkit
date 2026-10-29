@@ -1,6 +1,6 @@
 # Automated Testing Integration & MCP Readiness — 2026-10-18
 
-Toolkit main 925fa79 (PR #1100). Running DSP: D:\Claude\dsp-branches @ f2d771e0fc (main), DB dspdb_fresh.
+Toolkit main 925fa79 (PR #1100). Running DSP: <local DSP checkout> @ f2d771e0fc (main), DB dspdb_fresh.
 Live automation was run later the same day (see section 6); no push/merge done.
 
 ## 1. Integration health

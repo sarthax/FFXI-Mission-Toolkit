@@ -22,7 +22,9 @@ import shutil
 import sqlite3
 import struct
 
-DB_PATH = os.environ.get("MISSION_TOOLKIT_DB", r"D:\Claude\mission_toolkit\ffxi_zone_database.db")
+from workbench.runtime.paths import REPO_ROOT
+
+DB_PATH = os.environ.get("MISSION_TOOLKIT_DB", str(REPO_ROOT / "ffxi_zone_database.db"))
 
 DDL = """CREATE TABLE IF NOT EXISTS review_queue (
     review_id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, source_path TEXT, capture_id INTEGER,
@@ -32,7 +34,7 @@ DDL = """CREATE TABLE IF NOT EXISTS review_queue (
 
 # status: pending | resolved | dismissed | auto_resolved
 # Failed/partial ingests: a copy of the source archive is kept here for manual inspection (files only; folders stay in place).
-COPY_DIR = os.environ.get("CAPTURE_REVIEW_COPY_DIR", "D:/Claude/review_quarantine")
+COPY_DIR = os.environ.get("CAPTURE_REVIEW_COPY_DIR", str(REPO_ROOT / "review_quarantine"))
 MAX_COPY_BYTES = 4 * 1024 ** 3
 _SKIP_TABLES = {"captures", "capture_tags", "capture_post_meta", "capture_msgid_shift", "msgid_shift_obs", "review_queue"}
 

@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.paths import GUI_ROOT
 from .results import recent_results
+from .run_options import switches as run_option_switches
 from .scenario_presentation import scenario_presentation
 from .test_specifications import specification
 
@@ -93,6 +94,20 @@ def scenario_preflight(feature_id: str, case_id: str):
     return preflight(feature_id, case_id)
 
 
+@router.get("/r8/catalog")
+def r8_scenario_catalog_api():
+    """Published declarations only; never includes staged cases as runners."""
+    from .r8_catalog_preflight import catalog_preview
+    return catalog_preview()
+
+
+@router.get("/r8/preflight/{feature_id}/{case_id}")
+def r8_scenario_preflight_api(feature_id: str, case_id: str):
+    """Advisory GET; no MCP submission, operator action or database access."""
+    from .r8_catalog_preflight import preflight_preview
+    return preflight_preview(feature_id, case_id)
+
+
 @router.get("/catalog/{feature_id}/{case_id}")
 def scenario_api(feature_id: str, case_id: str):
     return scenario_detail(feature_id, case_id)
@@ -137,7 +152,12 @@ def run_page(request: Request, run_id: str):
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if not rows:
-        raise HTTPException(404, "Run not found")
+        # A readable page, not bare JSON: say what was looked for and where to go next.
+        return templates.TemplateResponse(request=request, name="feature_testing_run.html", status_code=404,
+                                          context={"title": "Test Run not found", "run_id": run_id, "records": [],
+                                                   "reevaluations": {}, "scenario_views": {}, "outcomes": {},
+                                                   "missing": True, "results_configured": bool(_results_db()),
+                                                   "overview": None})
     from .normalized_evidence import evaluate_imported_mog09
     reevaluations = {}
     scenario_views = {}
@@ -152,9 +172,58 @@ def run_page(request: Request, run_id: str):
             reevaluations.get(index, {"recorded_verdict": row["verdict"]}),
             run_id,
         )
+    from .execution_jobs import job_for_run
+    from .run_outcome import describe_outcome, summarize_run
+    job = job_for_run(run_id)
+    overview = summarize_run(rows, job)
+    outcomes = {index: describe_outcome(row, job) for index, row in enumerate(rows)}
     return templates.TemplateResponse(request=request, name="feature_testing_run.html",
                                       context={"title": "Test Run", "run_id": run_id, "records": rows,
-                                               "reevaluations": reevaluations, "scenario_views": scenario_views})
+                                               "reevaluations": reevaluations, "scenario_views": scenario_views,
+                                               "outcomes": outcomes, "overview": overview})
+
+
+def _compare_context(request: Request, left: str, right: str, **extra):
+    from .compare_wording import reason_text, transition_text
+    runs = _run_summary(_history())
+    return templates.TemplateResponse(
+        request=request, name="feature_testing_compare.html", status_code=extra.pop("status_code", 200),
+        context={"title": "Compare runs", "left": left, "right": right, "runs": runs[:100],
+                 "results_configured": bool(_results_db()), "reason_text": reason_text,
+                 "transition_text": transition_text, **extra})
+
+
+@router.get("/compare/data")
+def compare_api(left: str, right: str):
+    """The raw comparison of two stored runs (``left`` earlier, ``right`` later). Read-only."""
+    from .stored_run_comparison import compare_stored_runs
+    if not _results_db():
+        raise HTTPException(404, "No evidence database is configured")
+    try:
+        return {**compare_stored_runs(_results_db(), left, right), "execution_enabled": False}
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/compare", response_class=HTMLResponse)
+def compare_page(request: Request, left: str = "", right: str = ""):
+    """Two recorded runs side by side: what changed, and whether the pair can be compared at all."""
+    from .stored_run_comparison import compare_stored_runs
+    left, right = left.strip(), right.strip()
+    if not left or not right:
+        return _compare_context(request, left, right, comparison=None, problem=None)
+    if not _results_db():
+        return _compare_context(request, left, right, comparison=None, status_code=404,
+                                problem="No evidence database is configured, so there is nothing to compare.")
+    if left == right:
+        return _compare_context(request, left, right, comparison=None, status_code=400,
+                                problem="Choose two different runs.")
+    try:
+        comparison = compare_stored_runs(_results_db(), left, right)
+    except ValueError as exc:
+        return _compare_context(request, left, right, comparison=None, status_code=404,
+                                problem=str(exc) if "both runs" in str(exc) else "These runs could not be compared: " + str(exc))
+    return _compare_context(request, left, right, comparison=comparison, problem=None)
 
 
 def _summaries() -> list[dict]:
@@ -233,6 +302,99 @@ def draft_save(request: Request, payload: DraftSaveRequest,
         raise HTTPException(400, str(exc)) from exc
 
 
+def _local_read(request: Request) -> None:
+    """Catalog reads are local-only and same-origin; they expose design-only specifications and run nothing."""
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        raise HTTPException(403, "Local catalog access only")
+    origin = request.headers.get("origin")
+    if origin and origin != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Cross-origin catalog access denied")
+
+
+class CatalogRevisionRequest(BaseModel):
+    specification: dict
+    source: str
+    tags: list[str] = []
+    expected_latest: int = 0
+
+
+class CatalogStateRequest(BaseModel):
+    feature_id: str
+    case_id: str
+    revision: int
+    state: str
+    note: str = ""
+
+
+@router.get("/test-catalog", include_in_schema=False)
+def test_catalog_list(request: Request, q: str = "", feature_id: str = "", tag: str = "", state: str = "",
+                      limit: int = 100, offset: int = 0):
+    _local_read(request)
+    from .test_catalog import list_entries
+    try:
+        return list_entries(q=q, feature_id=feature_id, tag=tag, state=state, limit=limit, offset=offset)
+    except ValueError as exc:
+        raise HTTPException(503 if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else 400, str(exc)) from exc
+
+
+@router.get("/test-catalog/{feature_id}/{case_id}", include_in_schema=False)
+def test_catalog_entry(request: Request, feature_id: str, case_id: str):
+    _local_read(request)
+    from .test_catalog import get_entry
+    try:
+        entry = get_entry(feature_id, case_id)
+    except ValueError as exc:
+        raise HTTPException(503 if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else 400, str(exc)) from exc
+    if entry is None:
+        raise HTTPException(404, "No such catalog entry")
+    return entry
+
+
+@router.post("/test-catalog/revisions", include_in_schema=False)
+def test_catalog_add_revision(request: Request, payload: CatalogRevisionRequest,
+                              x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import add_revision
+    try:
+        return add_revision(payload.specification, source=payload.source, tags=payload.tags,
+                            expected_latest=payload.expected_latest)
+    except ValueError as exc:
+        raise HTTPException(409 if "revision conflict" in str(exc) else 400, str(exc)) from exc
+
+
+class CatalogFromDraftRequest(BaseModel):
+    feature_id: str
+    case_id: str
+    draft_revision: int
+    tags: list[str] = []
+    expected_latest: int | None = None
+
+
+@router.post("/test-catalog/from-draft", include_in_schema=False)
+def test_catalog_from_draft(request: Request, payload: CatalogFromDraftRequest,
+                            x_test_operator_token: str | None = Header(default=None)):
+    """Add a saved draft to the catalog as its next revision (DRAFT state). Content is read from the stored draft."""
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import add_from_draft
+    try:
+        return add_from_draft(payload.feature_id, payload.case_id, payload.draft_revision, tags=payload.tags,
+                              expected_latest=payload.expected_latest)
+    except ValueError as exc:
+        text = str(exc)
+        raise HTTPException(409 if "conflict" in text or "already the latest" in text else 400, text) from exc
+
+
+@router.post("/test-catalog/state", include_in_schema=False)
+def test_catalog_record_state(request: Request, payload: CatalogStateRequest,
+                              x_test_operator_token: str | None = Header(default=None)):
+    _operator_auth(request, x_test_operator_token)
+    from .test_catalog import record_state
+    try:
+        return record_state(payload.feature_id, payload.case_id, payload.revision, payload.state, payload.note)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class EvaluationPreviewRequest(BaseModel):
     feature_id: str
     case_id: str
@@ -305,6 +467,7 @@ class LaunchRequest(BaseModel):
     charid: int
     supervisor_port: int = 8420
     approval: bool = False
+    run_options: dict | None = None
 
 
 def _operator_auth(request: Request, operator_token: str | None) -> None:
@@ -375,7 +538,10 @@ class EnableRequest(BaseModel):
 def setup_enable(request: Request, payload: EnableRequest):
     _setup_guard(request)
     from . import test_execution_settings as setup
-    setup.set_enabled(payload.enabled)
+    try:
+        setup.set_enabled(payload.enabled)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return setup.status()
 
 
@@ -387,7 +553,7 @@ def launch_test(request: Request, payload: LaunchRequest,
         raise HTTPException(400, "Explicit operator confirmation required")
     from .execution_jobs import enqueue
     try:
-        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port)
+        job_id = enqueue(payload.account, payload.charid, payload.supervisor_port, payload.run_options)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     return {"job_id": job_id, "status": "QUEUED", "case_id": "MOG-09"}
@@ -459,12 +625,60 @@ def dashboard_view(*, tab: str = "runs", feature: str = "", verdict: str = "",
             "features": _summaries(), "evidence_count": len(records),
             "builder_preflight": _builder_preflight(),
             "results_configured": bool(_results_db()), "execution_enabled": False,
-            "ui_mode": _ui_mode(), "run_defaults": _run_defaults()}
+            "ui_mode": _ui_mode(), "run_defaults": _run_defaults(),
+            "run_option_switches": run_option_switches()}
+
+
+def _saved_catalog_view(request: Request, q: str, feature_id: str, tag: str, state: str) -> dict:
+    """The saved-revisions list for the Test catalog tab: local readers only, and honest about why it may be empty."""
+    from .test_catalog import STATES, list_entries
+    view = {"q": q[:100], "feature_id": feature_id[:64], "tag": tag[:32], "state": state if state in STATES else "",
+            "states": STATES, "configured": True, "allowed": True, "entries": [], "total": 0, "error": None}
+    if not request.client or request.client.host not in ("127.0.0.1", "::1"):
+        return {**view, "allowed": False}
+    try:
+        found = list_entries(q=view["q"], feature_id=view["feature_id"], tag=view["tag"], state=view["state"], limit=50)
+    except ValueError as exc:
+        if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc):
+            return {**view, "configured": False}
+        return {**view, "error": str(exc)}
+    return {**view, "entries": found["entries"], "total": found["total"]}
+
+
+@router.get("/catalog-entry/{feature_id}/{case_id}", response_class=HTMLResponse)
+def catalog_entry_page(request: Request, feature_id: str, case_id: str, revision: int = 0):
+    """One saved catalog entry: its revisions, review history and a readable view of one revision. Read-only."""
+    from .catalog_view import describe_spec
+    from .test_catalog import get_entry
+    _local_read(request)
+    problem, entry = None, None
+    try:
+        entry = get_entry(feature_id, case_id)
+    except ValueError as exc:
+        problem = ("No catalog store is configured (MISSION_TOOLKIT_TEST_DRAFTS_DB)."
+                   if "MISSION_TOOLKIT_TEST_DRAFTS_DB" in str(exc) else str(exc))
+    if entry is None:
+        return templates.TemplateResponse(request=request, name="feature_testing_catalog_entry.html", status_code=404,
+                                          context={"title": "Catalog entry", "feature_id": feature_id, "case_id": case_id,
+                                                   "entry": None, "problem": problem or "No such catalog entry."})
+    by_number = {r["revision"]: r for r in entry["revisions"]}
+    chosen = by_number.get(revision) or by_number.get(entry["current_published_revision"]) or entry["revisions"][-1]
+    from .test_catalog import allowed_next
+    chosen_state = chosen["events"][-1]["state"] if chosen["events"] else "DRAFT"
+    return templates.TemplateResponse(request=request, name="feature_testing_catalog_entry.html",
+                                      context={"title": "Catalog entry", "feature_id": feature_id, "case_id": case_id,
+                                               "entry": entry, "chosen": chosen, "problem": None,
+                                               "chosen_state": chosen_state, "next_states": allowed_next(chosen_state),
+                                               "described": describe_spec(chosen["specification"]),
+                                               "unknown_revision": bool(revision) and revision not in by_number})
 
 
 @router.get("", response_class=HTMLResponse)
 def dashboard(request: Request, tab: str = "runs", feature: str = "",
-              verdict: str = "", query: str = "", page: int = 1):
+              verdict: str = "", query: str = "", page: int = 1,
+              cq: str = "", cfeature: str = "", ctag: str = "", cstate: str = ""):
     view = dashboard_view(tab=tab, feature=feature, verdict=verdict, query=query, page=page)
+    if view["tab"] == "catalog":
+        view["saved_catalog"] = _saved_catalog_view(request, cq, cfeature, ctag, cstate)
     return templates.TemplateResponse(request=request, name="feature_testing.html",
                                       context={"title": "Feature Testing & Validation", **view})

@@ -1,0 +1,28 @@
+# Scenario Library Import Plan (DRAFT)
+
+Draft-only. Never auto-publish; owner approval is required per scenario.
+
+1. **Fixture shape**: each catalog entry keeps the `xiheadless` native payload verbatim plus `provenance`, `evidence_class`, `confidence`; Toolkit fields are derived, not substituted.
+2. **Stage A**: import entries with `support_status: supported` as DRAFT records only (status stays `draft`, `execution_validated=false`, `eligible_for_publish=false`) into the drafts DB (#1410). `supported` is schema/collector availability, not verification; Stage A never publishes, auto-runs or implies an approved oracle.
+3. **Stage B**: add item/key-item expectations (G-01), then import partial entries.
+4. **Stage C**: quest/mission readback (G-02), then promote quest candidates after dat-extractor verification (G-03).
+
+## Top 10 recommended first slices
+
+1. SL-MOG-009 (already runnable)
+2. SL-NPC-001 Argus event
+3. SL-ZONE-001 settle
+4. SL-PARTY-001 party formation (recorded pass)
+5. SL-ASLT-001 Leujaoam entry
+6. SL-ITEM-001 item possession (needs G-01)
+7. SL-KI-001 key item (needs G-01)
+8. SL-MSN-SD-1, SL-MSN-BA-1, SL-MSN-WI-1 (nation rank 1 mission starters from DSP)
+9. SL-MSN-WI-3 (Price of Peace, widest NPC chain) and the remaining rank 1-2 nation missions
+10. SL-ZONE-002 zone_to
+
+## Proposed next issues
+
+- Item/key-item expectation and oracle in XiHeadless
+- Quest state readback tool
+- Zone-qualified NPC id verifier
+- Toolkit draft import for `scenario-library-draft/1`

@@ -6,7 +6,7 @@
   "status": "done",
   "evidence": "V",
   "detail": "Rows were all zero (NYI since a 2015 pad). Filled GEO {4,3,6,4,4,5,2,2,5} and RUN {2,6,3,4,5,2,4,4,6} from LSB data/grades.yaml (a=1..g=7). Merged to local DSP main (tag slice/geo-run-stat-grades-v1); not built, not pushed to valhalla.",
-  "source": "dsp-branches src/map/grades.cpp; LSB data/grades.yaml",
+  "source": "<DSP checkout> src/map/grades.cpp; LSB data/grades.yaml",
   "note": ""
  },
  {
@@ -36,7 +36,7 @@
   "status": "partial",
   "evidence": "V",
   "detail": "Sylvie.lua written (events 31-37, 39), Ceizak/Yahse rest step (dances_with_luopans.lua + regions + healing hook), Ergon Locus soil triggers in Konschtat/La Theine/Tahrongi. Ids verified vs client. Committed on feature/run-geo-unlock-quests, not pushed, not tested in game.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -46,7 +46,7 @@
   "status": "partial",
   "evidence": "V",
   "detail": "Octavien.lua written (events 23-29) plus Yahse_Wildflower.lua petal NPC. Ids verified vs client. Committed on feature/run-geo-unlock-quests, not pushed, not tested in game.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -206,7 +206,7 @@
   "status": "missing",
   "evidence": "V",
   "detail": "UPDATE npc_list SET name='Ergon_Locus' WHERE npcid IN (17195723,17257120); needed because '???' names cannot be script filenames. Edited in sql/npc_list.sql, no live effect until run. Then confirm nameplates look right in game.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -216,7 +216,7 @@
   "status": "hold",
   "evidence": "V",
   "detail": "DSP row (2.444,-11.442,-16.595) differs from LSB !pos (100.58,-40.15,-63.83). Left as captured; settle with !checknav or capture.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -226,7 +226,7 @@
   "status": "partial",
   "evidence": "",
   "detail": "Circles use NPC row coordinates, radii 11/8/7 from LSB cylinders; untested. Rest timing assumes ~3s healing tick (9s to 480s wait).",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -236,7 +236,7 @@
   "status": "missing",
   "evidence": "",
   "detail": "Offer, decline, soil trade, rest step, Luopan, reward, Matre Bell purchase; Octavien offer, petal, HP/MP halving, reward, full-inventory retry.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -246,7 +246,7 @@
   "status": "missing",
   "evidence": "V",
   "detail": "Client text id should be 7005/7006. Not touched in the quest commit.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  },
  {
@@ -256,7 +256,7 @@
   "status": "hold",
   "evidence": "",
   "detail": "Awaiting user go-ahead. Never push to origin.",
-  "source": "dsp-branches feature/run-geo-unlock-quests 4226102805",
+  "source": "<DSP checkout> feature/run-geo-unlock-quests 4226102805",
   "note": ""
  }
 ]

@@ -9,6 +9,8 @@ import collections
 import re
 import struct
 
+from workbench.runtime.paths import REPO_ROOT
+
 RANGE = range(-60, 61)
 MIN_HITS = 3
 
@@ -348,7 +350,7 @@ def zoneid_for_zone_db(con, zone_db):
     return r[0] if r else None
 
 
-REPORT_PATH = r"D:\Claude\mission_toolkit\docs\shift_report.log"
+REPORT_PATH = str(REPO_ROOT / "docs" / "shift_report.log")
 
 
 def update_after_ingest(con, capture_id, report_path=None):

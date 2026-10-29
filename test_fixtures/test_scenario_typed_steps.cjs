@@ -88,4 +88,87 @@ assert.equal(T.provenanceNote(good, 'npc_id'), 'npc_id = 17719298 (Synthetic Gua
 assert.equal(T.describeAction(built), 'walk_to [1,2], then check x_near = 3');
 assert.equal(T.describeStep({label: 'navigate near'}, built), 'navigate near — ' + T.describeAction(built));
 
+// ---- native import helpers
+assert.deepEqual(T.parseNativeText(''), {error: 'Paste native scenario JSON to review.'});
+assert.deepEqual(T.parseNativeText('   '), {error: 'Paste native scenario JSON to review.'});
+assert.deepEqual(T.parseNativeText(undefined), {error: 'Paste native scenario JSON to review.'});
+assert.match(T.parseNativeText('{oops').error, /^That is not valid JSON: /);
+assert.match(T.parseNativeText('{"name":"solo"}').error, /array of steps\. Wrap a single step/);
+assert.match(T.parseNativeText('"text"').error, /array of steps/);
+assert.match(T.parseNativeText('null').error, /array of steps/);
+assert.match(T.parseNativeText('[]').error, /1 to 100 steps/);
+assert.match(T.parseNativeText(JSON.stringify(Array(101).fill({}))).error, /1 to 100 steps/);
+assert.match(T.parseNativeText('[' + '"x",'.repeat(8000) + '"x"]').error, /too large/);
+assert.deepEqual(T.parseNativeText(' [{"name":"a"}] '), {steps: [{name: 'a'}]});
+assert.equal(T.parseNativeText(JSON.stringify(Array(100).fill(1))).steps.length, 100);
+assert.equal(T.reviewRowText({index: 0, name: 'go', status: 'SUPPORTED', reasons: []}), '#1 go — SUPPORTED');
+assert.equal(T.reviewRowText({index: 3, name: 'bad', status: 'INVALID', reasons: ['a', 'b']}), '#4 bad — INVALID: a; b');
+assert.equal(T.reviewRowText({index: 1, name: null, status: 'INVALID', reasons: ['name']}), '#2 (unnamed) — INVALID: name');
+assert.equal(T.reviewRowText({index: 0, name: 'n'.repeat(300), status: 'SUPPORTED', reasons: []}).length, '#1 '.length + 100 + ' — SUPPORTED'.length);
+assert.equal(T.importProvenance({index: 2, name: 'go'}), 'Imported from pasted native JSON (step 3, "go") — unreviewed source; ' +
+  'shape-checked only; accepted by a human reviewer');
+
+// ---- single-sided steps (an action only, or a check only)
+assert.equal(T.describeAction({do: {walk_to: [1, 2]}}), 'walk_to [1,2]');
+assert.equal(T.describeAction({expect: {zone: 231}}), 'check zone = 231');
+assert.equal(T.describeAction({do: {rest_hp: 50}, expect: {hpp: 90}}), 'rest_hp 50, then check hpp = 90');
+const only = [{name: 'a', step: {do: {walk_to: [1, 2]}}}, {name: 'c', step: {expect: {zone: 231}}}];
+assert.deepEqual(T.nativeScenario(only), [{name: 'a', do: {walk_to: [1, 2]}}, {name: 'c', expect: {zone: 231}}]);
+assert.deepEqual(Object.keys(T.nativeScenario(only)[0]), ['name', 'do'], 'no empty expect object is written');
+assert.deepEqual(Object.keys(T.nativeScenario(only)[1]), ['name', 'expect'], 'no empty do object is written');
+// ---- #1457: export form (saved drafts stay one-sided; the export satisfies XiHeadless' documented shape rules)
+assert.deepEqual(JSON.parse(T.nativeJson(only)), [{name: 'a', do: {walk_to: [1, 2]}, expect: {}}, {name: 'c', expect: {zone: 231}}]);
+assert.deepEqual(T.nativeScenario(only)[0], {name: 'a', do: {walk_to: [1, 2]}}, 'storage form is untouched by the export');
+const pairOnly = [{name: 'p', step: {do: {rest_hp: 50}, expect: {hpp: 90}}}];
+assert.deepEqual(T.exportScenario(pairOnly), T.nativeScenario(pairOnly), 'pairs export unchanged');
+// A mirror of the rules recorded in docs/workbench/SCENARIO_1411_LOCAL_VERIFICATION.md (not the real validator):
+// expect must be an object; an empty expect needs a do; every step needs a do or a non-empty expect.
+const xiShape = step => {
+  if (typeof step.expect !== 'object' || step.expect === null || Array.isArray(step.expect)) return 'expect must be object';
+  const empty = Object.keys(step.expect).length === 0;
+  if (empty && !step.do) return 'empty expect with no do asserts nothing';
+  return null;
+};
+for (const exported of [T.exportScenario(only), T.exportScenario(pairOnly)]) for (const step of exported) assert.equal(xiShape(step), null, step.name);
+assert.equal(xiShape({name: 'x', do: {walk_to: [1, 2]}}), 'expect must be object', 'the mirror rejects what the saved form would have exported');
+
+// ---- #1459: observed paths are acceptance only, per key, and never invented for unknown keys
+const parts = {
+  rest_hp: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'REJECTS', reason: 'scenario_resource_actions_not_yet_supported'}}},
+  wait_ms: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'ACCEPTS'}}},
+  hpp: {observed_paths: {xiheadless_loader: {status: 'ACCEPTS'}, mcp_task_start: {status: 'REJECTS', reason: 'scenario_expectations_not_yet_supported'}}},
+};
+const both = T.observedPaths({do: {rest_hp: 50}, expect: {hpp: 90}}, parts);
+assert.equal(both.loader, true); assert.equal(both.mcp, false);
+assert.deepEqual(both.mcpReasons.sort(), ['scenario_expectations_not_yet_supported', 'scenario_resource_actions_not_yet_supported']);
+assert.equal(T.observedPaths({do: {wait_ms: 100}}, parts).mcp, true);
+assert.equal(T.observedPaths({do: {made_up: 1}}, parts), null, 'an unknown key gets no label rather than a guess');
+assert.match(T.observedText(both), /MCP task start rejects \(.*scenario_expectations_not_yet_supported/);
+assert.match(T.observedText(both), /not proof the step runs/);
+assert.equal(T.observedText(null), '');
+
+// ---- Given/When/Then preview: action -> When, check -> Then, repeats -> And; nothing invented
+const E = (name, step) => ({name, step});
+assert.deepEqual(T.previewLines([]), []);
+assert.deepEqual(T.previewLines([E('a', {do: {walk_to: [1, 2]}, expect: {x_near: 4.2}})]).map(l => l.keyword + ' ' + l.text),
+  ['When walk to [1,2]', 'Then x near is 4.2']);
+assert.deepEqual(T.previewLines([E('a', {do: {rest_hp: 50}}), E('b', {do: {engage: 7}}), E('c', {expect: {hpp: 90}}), E('d', {expect: {zone: 231}})]).map(l => l.keyword),
+  ['When', 'And', 'Then', 'And']);
+assert.deepEqual(T.previewLines([E('a', {do: {rest_hp: 50}, expect: {hpp: 90}}), E('b', {do: {engage: 7}, expect: {event_active: true}})]).map(l => l.keyword),
+  ['When', 'Then', 'When', 'Then'], 'a new action after a check starts a new When');
+assert.equal(T.previewLines([E('<b>x</b>', {do: {accept_invite: true}})])[0].step, '<b>x</b>', 'names pass through as data (rendered with textContent)');
+
+// ---- editor bridge: comparison ignores key order but not content, and the bridge is inert until the builder mounts
+assert.equal(T.sameSteps({library_version: 1, steps: [{name: 'a', do: {x: 1}, expect: {y: 2}}]},
+                         {steps: [{expect: {y: 2}, do: {x: 1}, name: 'a'}], library_version: 1}), true);
+assert.equal(T.sameSteps({steps: [{name: 'a'}]}, {steps: [{name: 'b'}]}), false);
+assert.equal(T.sameSteps({steps: [1, 2]}, {steps: [2, 1]}), false, 'step order is meaning');
+assert.equal(T.sameSteps(null, {steps: []}), false);
+assert.equal(T.bridge.get(), null, 'before mounting there is nothing to read, so the editor leaves native_steps alone');
+
+// ---- read-only while Advanced JSON is the document (#1458): the lock lives in the bridge, not only in browser inert
+assert.equal(T.bridge.locked, false);
+T.bridge.setLocked(true); assert.equal(T.bridge.locked, true);
+T.bridge.setLocked(0); assert.equal(T.bridge.locked, false, 'any falsy value unlocks');
+
 console.log('Scenario typed step builder helpers: PASS');

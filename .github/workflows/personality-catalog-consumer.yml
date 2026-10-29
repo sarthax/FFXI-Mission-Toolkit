@@ -1,0 +1,31 @@
+name: Headless Personality Catalog Consumer (Read Only)
+
+on:
+  pull_request:
+    paths:
+      - "src/workbench/personality_catalog_consumer.py"
+      - "test_fixtures/test_personality_catalog_consumer.py"
+      - "docs/workbench/PERSONALITY_CATALOG_HEADLESS_CONSUMER_V1.md"
+      - ".github/workflows/personality-catalog-consumer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-pin-and-view:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install unit test runner
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile read-only importer
+        run: python -m py_compile src/workbench/personality_catalog_consumer.py test_fixtures/test_personality_catalog_consumer.py
+      - name: Validate pinned Headless schema and non-executable previews
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q test_fixtures/test_personality_catalog_consumer.py

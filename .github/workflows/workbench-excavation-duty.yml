@@ -1,14 +1,6 @@
 name: Workbench Excavation Duty Cross-Fork
 
 on:
-  push:
-    branches:
-      - workbench-rework/audit-foundation
-    paths:
-      - "workbench/adapters/servers/**"
-      - "workbench/migrations/**"
-      - "test_fixtures/test_excavation_duty_crossfork.py"
-      - ".github/workflows/workbench-excavation-duty.yml"
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,444 @@
+{
+ "schema_version": 1,
+ "results": [
+  {
+   "run_id": "obs-20261019T065856Z",
+   "case_id": "MOG-09",
+   "feature_id": "moghancement",
+   "stage": "key_item",
+   "verdict": "PASS",
+   "observed_at": "2026-10-19T07:01:03.725143Z",
+   "evidence": {
+    "assertions": [
+     {
+      "name": "session established for expected character",
+      "expected": 21836,
+      "observed": 21836,
+      "ok": true
+     },
+     {
+      "name": "precondition: Safe holds furnishings with nonzero aura (stored, not installed)",
+      "expected": ">=1",
+      "observed": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       216
+      ],
+      "ok": true
+     },
+     {
+      "name": "active KI equals oracle for empty layout",
+      "expected": 0,
+      "observed": 0,
+      "ok": true
+     },
+     {
+      "name": "aura breakdown all zero",
+      "expected": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "observed": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "ok": true
+     },
+     {
+      "name": "client bag equals persisted char_inventory location 0",
+      "expected": [
+       [
+        0,
+        65535,
+        10
+       ],
+       [
+        1,
+        12636,
+        1
+       ],
+       [
+        2,
+        12757,
+        1
+       ],
+       [
+        3,
+        12887,
+        1
+       ],
+       [
+        4,
+        13008,
+        1
+       ],
+       [
+        5,
+        16534,
+        1
+       ],
+       [
+        6,
+        13496,
+        1
+       ],
+       [
+        7,
+        536,
+        1
+       ],
+       [
+        9,
+        4112,
+        1
+       ]
+      ],
+      "observed": [
+       [
+        0,
+        65535,
+        10
+       ],
+       [
+        1,
+        12636,
+        1
+       ],
+       [
+        2,
+        12757,
+        1
+       ],
+       [
+        3,
+        12887,
+        1
+       ],
+       [
+        4,
+        13008,
+        1
+       ],
+       [
+        5,
+        16534,
+        1
+       ],
+       [
+        6,
+        13496,
+        1
+       ],
+       [
+        7,
+        536,
+        1
+       ],
+       [
+        9,
+        4112,
+        1
+       ]
+      ],
+      "ok": true
+     },
+     {
+      "name": "client Mog Safe equals persisted char_inventory location 1",
+      "expected": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        2,
+        2,
+        1
+       ],
+       [
+        3,
+        3,
+        1
+       ],
+       [
+        4,
+        4,
+        1
+       ],
+       [
+        5,
+        5,
+        1
+       ],
+       [
+        6,
+        6,
+        1
+       ],
+       [
+        7,
+        216,
+        1
+       ],
+       [
+        8,
+        936,
+        12
+       ],
+       [
+        9,
+        936,
+        4
+       ],
+       [
+        10,
+        4386,
+        1
+       ],
+       [
+        11,
+        936,
+        12
+       ],
+       [
+        12,
+        936,
+        4
+       ],
+       [
+        13,
+        4373,
+        1
+       ],
+       [
+        14,
+        4449,
+        1
+       ],
+       [
+        15,
+        770,
+        1
+       ],
+       [
+        16,
+        936,
+        12
+       ],
+       [
+        17,
+        936,
+        4
+       ],
+       [
+        18,
+        4448,
+        1
+       ]
+      ],
+      "observed": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        2,
+        2,
+        1
+       ],
+       [
+        3,
+        3,
+        1
+       ],
+       [
+        4,
+        4,
+        1
+       ],
+       [
+        5,
+        5,
+        1
+       ],
+       [
+        6,
+        6,
+        1
+       ],
+       [
+        7,
+        216,
+        1
+       ],
+       [
+        8,
+        936,
+        12
+       ],
+       [
+        9,
+        936,
+        4
+       ],
+       [
+        10,
+        4386,
+        1
+       ],
+       [
+        11,
+        936,
+        12
+       ],
+       [
+        12,
+        936,
+        4
+       ],
+       [
+        13,
+        4373,
+        1
+       ],
+       [
+        14,
+        4449,
+        1
+       ],
+       [
+        15,
+        770,
+        1
+       ],
+       [
+        16,
+        936,
+        12
+       ],
+       [
+        17,
+        936,
+        4
+       ],
+       [
+        18,
+        4448,
+        1
+       ]
+      ],
+      "ok": true
+     }
+    ],
+    "observations": {
+     "snapshot": {
+      "name": "Menro",
+      "id": 21836,
+      "zone": 235,
+      "inZone": true,
+      "x": -206.19,
+      "y": -10,
+      "z": -2.549,
+      "hp": 31,
+      "maxHp": 31,
+      "mp": 0,
+      "maxMp": 0,
+      "tp": 0,
+      "gil": 10,
+      "mainJob": 1,
+      "mainLevel": 1,
+      "subJob": 0,
+      "subLevel": 0,
+      "engaged": false,
+      "serverStatus": 0,
+      "dead": false,
+      "moving": false,
+      "eventActive": false,
+      "eventId": 0,
+      "partyMembers": 0
+     },
+     "client_key_items": [
+      387
+     ],
+     "gm_info": [
+      "Moghancement: active key item 0 (nation 2)",
+      "Aura  fire 0  ice 0  wind 0  earth 0  lightning 0  water 0  light 0  dark 0",
+      "Held furniture key items:",
+      "Mods (non-zero): none"
+     ],
+     "persisted_row_count": 27,
+     "persistence_polls": 1,
+     "stored_furnishing_item_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      216
+     ],
+     "oracle": {
+      "key_item": 0,
+      "dominant_element": null,
+      "aura": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "winning_item": null,
+      "reason": "no aura or tied dominant elements"
+     },
+     "capability_gaps": [
+      "installed-furniture layout not readable via MCP (only via GM info / DB furniture table)",
+      "client key_items vs persisted key items not compared: no supervisor key-item endpoint"
+     ],
+     "provenance": {
+      "headless_dirty_files": [
+       "M Capabilities/Inventory.cs",
+       " M Game/PacketParsers.cs",
+       " M Game/WorldState.cs",
+       " M Interfaces/IInventory.cs",
+       " M Mcp/McpBrain.cs",
+       "?? tools/observation_runner.py",
+       "?? tools/scenario_runner.py"
+      ],
+      "headless_dll_sha256": "46e4e687b64041291906040291aacb077c65e7bafc3af8b382e4e9b28077894b",
+      "account": "<test-account>",
+      "charid": 21836,
+      "supervisor_base": "http://127.0.0.1:8421",
+      "mutation": "none (read-only `!moghancement info` only)"
+     },
+     "raw_artifacts": [
+      "<DATA_DIR>\\artifacts\\run1\\client_observations.json",
+      "<DATA_DIR>\\artifacts\\run1\\persisted_inventory.json"
+     ]
+    }
+   },
+   "dsp_commit": "f2d771e0fc818cf2b2a65aea123253f5f4be438c",
+   "headless_commit": "1c657bc46b7297479337b86027d9c15dfcc551d4",
+   "toolkit_commit": "700213b65ca76f1c030a682be279cf4f11927c25"
+  }
+ ]
+}

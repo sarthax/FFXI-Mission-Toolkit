@@ -168,6 +168,12 @@ Imported/recalculated PASS is not independently verified proof.
 <label class="sd-field">Saved drafts<select id="sd-drafts"><option value="">No draft selected</option></select></label>
 <button type="button" id="sd-open-draft">Open selected draft</button>
 </div>
+<div class="sd-bar" id="sd-catalog-add">
+<label class="sd-field">Catalog tags (optional, comma separated)<input type="text" id="sd-catalog-tags" autocomplete="off" maxlength="200" placeholder="e.g. inventory, read-only"></label>
+<button type="button" id="sd-add-to-catalog">Add selected saved draft to the Test catalog</button>
+<small class="sd-muted">Adds the selected <strong>saved</strong> draft (not unsaved edits) as the next catalog revision in the DRAFT state. Review and publishing are separate, and nothing here makes a scenario runnable. Uses the operator token above.</small>
+</div>
+<p id="sd-catalog-result" class="sd-result" role="status" aria-live="polite"></p>
 <p class="sd-muted">Saving uses the existing operator-authorized, revision-checked <code>/feature-testing/builder/drafts</code> endpoint. It cannot overwrite published specifications or enable any runner.</p>
 <p id="sd-result" class="sd-result" role="status" aria-live="polite">No validation performed.</p>
 <section id="sd-validation-summary" class="sd-warning" role="alert" aria-label="Validation field errors" hidden></section>

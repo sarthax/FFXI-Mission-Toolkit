@@ -1,6 +1,6 @@
 {
  "generated": "2026-10-09T16:04:19",
- "server_root": "D:\\Claude\\dsp-master",
+ "server_root": "<local>/<DSP checkout>",
  "systems": [
   {
    "id": "enlist",

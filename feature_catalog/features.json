@@ -163,13 +163,13 @@
       "id": "scenario-developer-design-only",
       "module": "Validation",
       "name": "Scenario Developer (design-only)",
-      "summary": "Edit and validate draft specifications; no publish-to-test-catalog or scenario RUN workflow.",
+      "summary": "Edit and validate draft specifications, including typed native Headless steps saved with the draft; no publish-to-test-catalog or scenario RUN workflow.",
       "route": "/scenario-developer",
       "implementation": "partial",
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Inspect and edit non-executable canonical scenario drafts without treating them as runnable tests.",
-      "how_to_use": "Open Guided or Advanced, review field warnings, validate the canonical draft and save with a synthetic design-only operator token; review expected revision/CAS conflicts. Browse existing published definitions separately at /feature-testing?tab=catalog and prior evidence at /validation/runs.",
+      "how_to_use": "Open Guided or Advanced, review field warnings, validate the canonical draft and save with a synthetic design-only operator token; review expected revision/CAS conflicts. Use the typed step builder for actions and checks (see Typed native steps). Add a saved draft to the Test catalog as a DRAFT revision with the Add to catalog control; browse saved revisions read-only in the Test catalog tab. Browse existing published definitions separately at /feature-testing?tab=catalog and prior evidence at /validation/runs.",
       "caveat": "PRODUCT NOT ACCEPTED (#1406). No draft publish, arbitrary RUN, Headless launch/status/cancel or result import; The #1403 missing-steps and malformed-cleanup crashes are fixed. Previous browser-control PASS is not end-to-end acceptance.",
       "source_refs": [
         "gui/static/scenario_developer.js",
@@ -177,6 +177,30 @@
       ],
       "test_refs": [
         "test_fixtures/test_help_catalog_1405.cjs"
+      ]
+    },
+    {
+      "id": "scenario-developer-typed-steps",
+      "parent_id": "scenario-developer-design-only",
+      "module": "Validation",
+      "name": "Typed native steps",
+      "summary": "Build, import-review, save with the draft and preview native Headless steps from reviewed actions and checks.",
+      "route": "/scenario-developer",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help#help-feature-testing",
+      "purpose": "Author action and check steps for a design-only draft without hand-writing native JSON.",
+      "how_to_use": "In Scenario Developer, use the typed step builder: add a reviewed action and check pair, an action alone or a check alone, use the NPC and zone pickers, or paste native JSON to review before accepting steps. Steps are saved with the draft as native_steps (1 to 50) and shown as a When / Then preview.",
+      "caveat": "Design-only. The server-side review checks step shape against a pinned XiHeadless schema; it does not prove the runner executes a step. Each step lists what XiHeadless loaders accepted when the key was tried (acceptance only; the MCP task path accepted only wait_ms at the recorded commit). Export writes an empty expect for action-only steps because XiHeadless requires it. Picker IDs come from a local DSP source and are not verified for a zone or client. Provenance notes are not saved. The builder is read-only while Advanced JSON is open.",
+      "source_refs": [
+        "gui/static/scenario_typed_steps.js",
+        "src/workbench/server_admin/feature_testing/typed_action_library.py"
+      ],
+      "test_refs": [
+        "test_fixtures/test_typed_action_library_1409.py",
+        "test_fixtures/test_native_steps_schema_1411.py",
+        "test_fixtures/test_scenario_typed_steps_1411.py",
+        "test_fixtures/test_scenario_typed_steps.cjs"
       ]
     },
     {
@@ -1331,13 +1355,37 @@
       "validation": "unverified",
       "help": "/help#help-feature-testing",
       "purpose": "Prepare test specifications and inspect run results without granting unapproved execution.",
-      "how_to_use": "Open Feature Testing, choose a readiness case, build a scenario and review preflight, observed results and assertion differences.",
+      "how_to_use": "Open Feature Testing, choose a readiness case, build a scenario and review preflight, observed results and assertion differences. Open a run from Run history for a plain-language summary and the compared values; use Compare with another run to see two recorded runs side by side.",
       "caveat": "Design-only plans are not executable tests; execution support and live result evidence must be verified separately.",
       "source_refs": [
         "src/workbench/server_admin/feature_testing/router.py"
       ],
       "test_refs": [
         "test_fixtures/test_feature_testing_builder.py"
+      ]
+    },
+    {
+      "id": "testing-run-results",
+      "parent_id": "feature-testing",
+      "module": "Validation",
+      "name": "Run results and Compare runs",
+      "summary": "Read an imported run in plain language and compare two recorded runs without running anything.",
+      "route": "/feature-testing",
+      "implementation": "partial",
+      "validation": "unverified",
+      "help": "/help#help-feature-testing",
+      "purpose": "Let a person explain what a recorded run does and does not show, and whether two runs can be compared.",
+      "how_to_use": "Open Run history, open a run for the What happened summary and the compared values for each step, then use Compare with another run to pick an earlier and a later run.",
+      "caveat": "Read-only and based on imported reports, which are not independently authenticated. A verdict is what the report recorded. Compare runs reports whether a pair is comparable and why not; a comparable pair is only a candidate regression or fix and never shows a cause. Most real pairs are not comparable until the runner records environment and fixtures; rows imported before the importer recorded a definition fingerprint cannot be compared.",
+      "source_refs": [
+        "src/workbench/server_admin/feature_testing/run_outcome.py",
+        "src/workbench/server_admin/feature_testing/stored_run_comparison.py",
+        "gui/templates/feature_testing_compare.html"
+      ],
+      "test_refs": [
+        "test_fixtures/test_run_outcome_1408.py",
+        "test_fixtures/test_stored_run_comparison_1408.py",
+        "test_fixtures/test_compare_page_1408.py"
       ]
     },
     {

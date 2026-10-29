@@ -24,7 +24,7 @@ def test_preview_endpoint_is_not_supervisor_tool(monkeypatch):
     from workbench.server_admin.feature_testing.supervisor import supervisor_openapi
     assert "/feature-testing/builder/evaluate" not in supervisor_openapi()["paths"]
     host=pytest.importorskip("workbench.app.host",exc_type=Exception)
-    client=TestClient(host.app)
+    client=TestClient(host.app, client=("127.0.0.1", 50000))
     response=client.post("/feature-testing/builder/evaluate",json={
         "feature_id":"inventory_observation","case_id":"INV-OBS-01",
         "observations":{"client_bag":[],"db_bag":[],"client_safe":[],"db_safe":[]}})
@@ -33,6 +33,6 @@ def test_preview_endpoint_is_not_supervisor_tool(monkeypatch):
 
 def test_gui_preview_visible():
     from pathlib import Path
-    html=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text()
+    html=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text(encoding="utf-8")
     assert 'id="ft-evaluation-form"' in html
     assert "/feature-testing/builder/evaluate" in html

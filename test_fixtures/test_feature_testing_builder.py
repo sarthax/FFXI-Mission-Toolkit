@@ -47,4 +47,4 @@ def test_builder_host_route_renders_when_available(monkeypatch, tmp_path):
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_RESULTS_DB", str(tmp_path / "missing.sqlite"))
     response = TestClient(host.app).get("/feature-testing?tab=builder")
     assert response.status_code == 200
-    assert "Build a deterministic test" in response.text
+    assert "Run a test" in response.text

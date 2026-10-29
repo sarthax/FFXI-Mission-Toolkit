@@ -346,7 +346,7 @@ def rebuild_events(ffxi_path: str) -> int:
 
 
 def rebuild_lsb_index() -> str:
-    """LSB is bundled in the repo (D:\\Claude\\mission_toolkit\\LandSandBoat), no download/path
+    """LSB is bundled in the repo (<local>/mission_toolkit\\LandSandBoat), no download/path
     setting needed -- unlike the other rebuild_* functions above, this never depends on ffxi_path
     or TOPAZ_PATH being configured beyond what settings.py already resolves at import time."""
     con = get_con()
@@ -7370,6 +7370,29 @@ def topdown_variants(zoneid: int | None) -> dict:
         "collision": (TOPDOWN_DIR / f"{zoneid}.json").exists(),
         "detailed": (TOPDOWN_DIR / f"{zoneid}_detailed.json").exists(),
     }
+
+
+@app.post("/captures/topdown/{zoneid}/build")
+def captures_build_topdown(zoneid: int):
+    """UI-triggered equivalent of `py -3 build_zone_topdown.py <zoneid>`: builds the collision and
+    detailed top-down caches the capture path plots need. Returns build_one's own diagnostics so a
+    failure (no geometry path, DAT missing, ...) is shown instead of a bare pass/fail."""
+    import contextlib
+    import io
+    from workbench.devtools.spatial import build_topdown as bt
+    ffxi = settings_mod.get_ffxi_install()
+    if not ffxi:
+        return JSONResponse({"ok": False, "log": "FFXI install path isn't configured -- set it on the Settings page first"}, status_code=400)
+    buf = io.StringIO()
+    con = sqlite3.connect(str(bt.DB_PATH))
+    try:
+        with contextlib.redirect_stdout(buf):
+            ok = bt.build_one(con, zoneid, ffxi)
+    except Exception as ex:
+        return JSONResponse({"ok": False, "log": f"{buf.getvalue().strip()}\nbuild failed: {ex}".strip()}, status_code=500)
+    finally:
+        con.close()
+    return JSONResponse({"ok": ok, "log": buf.getvalue().strip(), **topdown_variants(zoneid)})
 
 
 @app.get("/captures/plot", response_class=HTMLResponse)

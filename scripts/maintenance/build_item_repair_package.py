@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the hand-off package of item-script repairs.
 
-Output (default D:\\Claude\\Item-Script-Repairs):
+Output (default <repo>/Item-Script-Repairs):
   README.md, REPORT.md, manifest.json
   ready/scripts/globals/items/*.lua   drop-in files; every value sourced (see header + manifest)
   ready/RENAMES.txt                   misnamed files to rename
@@ -13,6 +13,7 @@ Nothing here is invented: values come from LandSandBoat data or the BG Wiki dump
 source states is left blank and listed in manifest.json under "missing".
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -23,8 +24,8 @@ from workbench.editors.items import item_proc_sync as ps
 from workbench.editors.items import item_summary as isum
 
 ROOT = REPO_ROOT
-DSP = get_dsp_root() or Path(r"D:\Claude\dsp-master")
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"D:\Claude\Item-Script-Repairs")
+DSP = get_dsp_root() or Path(os.environ.get("DSP_ROOT", "dsp-checkout"))
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "Item-Script-Repairs"
 
 # Template specs: what the wiki confirms (effect/element) and what no source supplies (missing).
 # kind: dmg(element) | status(EFFECT, ele) | drain(HP) | other

@@ -1,6 +1,6 @@
 # Kuluu vs our DSP server: compatibility
 
-Server under test: `D:\Claude\dsp-branches` (DSP lineage, `DSGame-server_64.exe`). Kuluu: `a7752b3`. Method: source comparison only; no Kuluu-to-DSP connection was needed to establish the first blocker (see below).
+Server under test: `<local DSP checkout>` (DSP lineage, `DSGame-server_64.exe`). Kuluu: `a7752b3`. Method: source comparison only; no Kuluu-to-DSP connection was needed to establish the first blocker (see below).
 
 ## Verified blocker 1 - authentication (source evidence)
 | | DSP (`src/login/login_auth.cpp`) | Kuluu |

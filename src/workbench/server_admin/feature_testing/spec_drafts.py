@@ -51,6 +51,14 @@ def get_drafts(limit=100):
     return [{"feature_id":r[0],"case_id":r[1],"revision":r[2],"specification":json.loads(r[3])} for r in rows]
 
 
+def get_draft(feature_id: str, case_id: str) -> dict | None:
+    """One saved draft with its current revision, or None. Read-only."""
+    with _db() as conn:
+        row = conn.execute("SELECT revision,content FROM test_spec_drafts WHERE feature_id=? AND case_id=?",
+                           (feature_id, case_id)).fetchone()
+    return {"feature_id": feature_id, "case_id": case_id, "revision": row[0], "specification": json.loads(row[1])} if row else None
+
+
 def save_draft(payload, expected_revision: int):
     spec=_validate_draft(payload)
     if type(expected_revision) is not int or expected_revision < 0:

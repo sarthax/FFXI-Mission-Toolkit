@@ -1,0 +1,37 @@
+name: R8 Evidence Summary Design Contract (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "docs/workbench/R8_EVIDENCE_SUMMARY_AND_PROPOSAL_CONTRACT_1325.md"
+      - "test_fixtures/r8_evidence_summary_vectors_synthetic.json"
+      - "test_fixtures/test_r8_evidence_summary_contract.py"
+      - ".github/workflows/r8-evidence-summary-design.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-design-contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Strict JSON fixture parse
+        run: python -m json.tool test_fixtures/r8_evidence_summary_vectors_synthetic.json > /dev/null
+      - name: Deterministic nonpromotion / replay / conflict tests
+        run: python -m unittest discover -s test_fixtures -p 'test_r8_evidence_summary_contract.py' -v
+      - name: Explicit no-execution disclaimer
+        run: |
+          grep -q 'DESIGN ONLY / NONCANONICAL' docs/workbench/R8_EVIDENCE_SUMMARY_AND_PROPOSAL_CONTRACT_1325.md
+          grep -q 'not_a_canonical_importer_report' test_fixtures/r8_evidence_summary_vectors_synthetic.json

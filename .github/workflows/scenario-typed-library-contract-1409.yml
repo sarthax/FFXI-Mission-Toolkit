@@ -1,6 +1,7 @@
 name: Scenario Typed Library Contract 1409
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "tools/scenario_typed_library_contract_1409.py"
       - "test_fixtures/test_scenario_typed_library_contract_1409.py"
@@ -13,8 +14,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   typed-proposal:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +29,7 @@ jobs:
           python-version: "3.11"
       - run: python test_fixtures/test_scenario_typed_library_contract_1409.py
   typed-action-library:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

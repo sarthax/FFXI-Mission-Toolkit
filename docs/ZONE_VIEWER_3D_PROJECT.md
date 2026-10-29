@@ -9,7 +9,7 @@ useful for level editing, and eventually support real terrain navigation (fly-th
 instead of the current top-down-only workflow. Agreed to do this in 3 phases against
 `zone_view3d.html`, informed by (not copied from) Soverance/Vanalytics' React Three
 Fiber zone viewer (MIT licensed, vendored reference at
-`D:\Claude\FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\`).
+`<local>/FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\`).
 
 ## Phase 1 — spawn markers + click-to-fly camera
 **Status: DONE, verified.**
@@ -149,5 +149,5 @@ end-to-end against the live DB).
 | Old/likely-dead write-back fn | `workbench.devtools.spatial.active_zone_plot` lines ~174-201 (`update_position`, `EDIT_LOG`) |
 | Server routes | `gui_server.py` — search `zone_view3d`, `/zoneplot/` |
 | Vendored DAT parser lib | `gui/static/ffxi-dat/*.js` (from Soverance/Vanalytics, MIT) |
-| Reference source (not copied, ported) | `D:\Claude\FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\ThreeZoneViewer.tsx` (lines 430-670 = scene construction), `SpawnMarkers.tsx`, `FlyCamera` (for later terrain-nav phase) |
+| Reference source (not copied, ported) | `<local>/FFXI-Tools\vanalytics-full\src\Vanalytics.Web\src\components\zone\ThreeZoneViewer.tsx` (lines 430-670 = scene construction), `SpawnMarkers.tsx`, `FlyCamera` (for later terrain-nav phase) |
 | Edit-log output | `data/zoneplot_edit_log.sql` |

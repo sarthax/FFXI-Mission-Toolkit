@@ -198,7 +198,7 @@ def main() -> None:
     assert '- "src/workbench/app/**"' in character_workflow
     assert '- "src/workbench/runtime/settings_store.py"' in character_workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
-    assert 'src/workbench/devtools/features/checker.py' in ancient_vows
+    # workbench-ancient-vows is manual-only since the local-first CI change: it carries no path filter to assert on
     assert 'src/workbench/core/services/feature_checker.py' not in ancient_vows
     assert '"feature_checker.py"' not in ancient_vows
 

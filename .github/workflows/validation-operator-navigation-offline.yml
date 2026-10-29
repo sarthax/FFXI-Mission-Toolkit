@@ -1,0 +1,37 @@
+name: Validation Operator Navigation (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "gui/templates/validation_dashboard.html"
+      - "test_fixtures/test_validation_operator_navigation.py"
+      - "test_fixtures/test_gui_shell.py"
+      - "src/workbench/gui_shell.py"
+      - "docs/workbench/R8_VALIDATION_OPERATOR_NAVIGATION_1333.md"
+      - ".github/workflows/validation-operator-navigation-offline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  navigation:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline template dependencies
+        run: python -m pip install --disable-pip-version-check -e . pytest jinja2 markupsafe
+      - name: Render missing-DB and synthetic-history navigation fixtures
+        env:
+          PYTHONPATH: "src:test_fixtures:."
+        run: python -m pytest -q test_fixtures/test_validation_operator_navigation.py

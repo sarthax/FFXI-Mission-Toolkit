@@ -48,7 +48,7 @@ def test_reconciliation_http_authentication_and_approval(monkeypatch):
     host = pytest.importorskip("workbench.app.host", exc_type=Exception)
     from fastapi.testclient import TestClient
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "a"*64)
-    c = TestClient(host.app)
+    c = TestClient(host.app, client=("127.0.0.1", 50000))
     path = "/feature-testing/builder/jobs/" + "a"*32 + "/reconcile"
     assert c.post(path, json={"acknowledged":True}).status_code == 403
     assert c.post(path, json={"acknowledged":False},

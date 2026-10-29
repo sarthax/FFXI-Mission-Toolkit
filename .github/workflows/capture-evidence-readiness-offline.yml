@@ -2,6 +2,7 @@ name: Capture Evidence Readiness (Offline)
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "src/workbench/captures/scenario_identity_readiness.py"
       - "src/workbench/captures/scenario_readiness_summary.py"
@@ -24,6 +25,7 @@ concurrency:
 
 jobs:
   focused-capture-review:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

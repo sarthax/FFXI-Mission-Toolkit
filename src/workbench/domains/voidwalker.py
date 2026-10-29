@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime, json, re, sqlite3
 from pathlib import Path
 
-ROOT = Path(r"D:\Claude\dsp-branches")
+from workbench.runtime.local_roots import dsp_root
+
 DATA = Path(__file__).resolve().parents[3] / "data" / "voidwalker"
 VALID = DATA / "validation.json"
 BACKLOG = DATA / "backlog.json"
@@ -20,7 +21,7 @@ _MOB = re.compile(r"^\s*(\d{8}), -- (.+)$")
 
 
 def _root(r=None):
-    return Path(r) if r else ROOT
+    return Path(r) if r else (dsp_root() or Path("<dsp-root-not-configured>"))
 
 
 def parse_data(root: Path) -> list[dict]:

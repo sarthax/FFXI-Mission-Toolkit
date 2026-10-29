@@ -167,7 +167,15 @@
     renderCatalogSteps();
   }
 
+  // The typed builder is read-only exactly while Advanced JSON is the document, whichever path got us here.
+  function syncTypedLock() {
+    const locked=mode==='advanced';
+    const panel=document.getElementById&&document.getElementById('sd-typed-steps');if(panel)panel.inert=locked;
+    if(window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge)window.ScenarioTypedSteps.bridge.setLocked(locked);
+  }
   function render() {
+    syncTypedLock();
+    if(window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge)window.ScenarioTypedSteps.bridge.sync(spec.native_steps);
     $('sd-case').value=spec.case_id;
     $('sd-title').value=spec.name;
     $('sd-purpose').value=spec.purpose||'';
@@ -208,6 +216,13 @@
     spec.observations=selections($('sd-observations'));
     spec.authoring=spec.authoring||{};
     spec.authoring.blocking_gaps=lineItems($('sd-gaps').value);
+    // Typed builder steps live in spec.native_steps. A null answer means the builder is not showing the draft's
+    // steps (still loading, unavailable, or unable to display them); then the saved steps are left exactly as they are.
+    const bridge=window.ScenarioTypedSteps&&window.ScenarioTypedSteps.bridge;
+    const typed=bridge&&bridge.get();
+    if(typed&&!bridge.sameSteps(typed.native,spec.native_steps||null)){
+      if(typed.native)spec.native_steps=typed.native;else delete spec.native_steps;
+    }
   }
   function current() {
     if(mode==='advanced') spec=M.parseAdvanced($('sd-advanced-json').value);
@@ -225,6 +240,8 @@
     catch(err){show('Cannot switch mode: '+err.message);return;}
     if(mode!==target)resetReadinessViewer();
     mode=target;
+    // In Advanced the JSON text is the document, so the builder is read-only until Guided returns.
+    syncTypedLock();
     $('sd-guided-panel').hidden=target!=='guided';
     $('sd-advanced-panel').hidden=target!=='advanced';
     $('sd-guided').setAttribute('aria-pressed',String(target==='guided'));
@@ -879,6 +896,27 @@
     }
   });
   draftGuard.start('new',spec);
+  // Add a saved draft to the Test catalog (#1410): the server reads the stored draft, so only what was saved is added.
+  let catalogAddPending=false;
+  $('sd-add-to-catalog').addEventListener('click',async()=>{
+    if(catalogAddPending)return;
+    const out=$('sd-catalog-result');
+    const d=drafts[Number($('sd-drafts').value)];
+    if(!d){out.textContent='List the local drafts and select one first; only a saved draft can be added.';return;}
+    const tags=$('sd-catalog-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    catalogAddPending=true;$('sd-add-to-catalog').disabled=true;
+    try{
+      const added=await call('/feature-testing/test-catalog/from-draft','POST',
+        {feature_id:d.feature_id,case_id:d.case_id,draft_revision:d.revision,tags},true);
+      out.replaceChildren(document.createTextNode('Added '+added.feature_id+'/'+added.case_id+' as catalog revision r'+added.revision+
+        ' (DRAFT, from saved draft revision '+d.revision+'). It is not reviewed or runnable. '));
+      const link=el('a','','Open the catalog entry');
+      link.href='/feature-testing/catalog-entry/'+encodeURIComponent(added.feature_id)+'/'+encodeURIComponent(added.case_id);
+      out.append(link);
+    }catch(e){out.textContent='Not added to the catalog: '+e.message;}
+    finally{catalogAddPending=false;$('sd-add-to-catalog').disabled=false;}
+  });
+  if(document.addEventListener)document.addEventListener('sd-typed-change',()=>{if(mode==='guided'){readGuidedFields();updateRevision();}});
   (async()=> {
     try{
       options=await call('/scenario-developer/options');

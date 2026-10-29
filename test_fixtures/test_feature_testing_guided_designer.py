@@ -27,6 +27,6 @@ def test_draft_preview_denies_runner_binding():
 
 def test_designer_shows_form_and_advanced_json():
     from pathlib import Path
-    source=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text()
+    source=(Path(__file__).resolve().parents[1]/"gui/templates/feature_testing.html").read_text(encoding="utf-8")
     for key in ("ft-guided-designer","ft-design-add","ft-design-generate","ft-design-preview","ft-draft-json"):
         assert key in source

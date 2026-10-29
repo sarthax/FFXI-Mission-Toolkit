@@ -4,9 +4,9 @@ Audit date 2026-10-18. Status vocabulary: Verified working / Implemented but unt
 
 ## What "our headless" actually is (inventory)
 
-**It is not inside `D:\Claude\mission_toolkit`.** The headless client lives in `D:\Claude\FFXI-Tools\headless-research\xiheadless-dsp` (C# .NET 9, not a git repository). It is a DSP port of the upstream `JasonPulse/xiheadless` (LandSandBoat target). The Mission Toolkit only *consumes* its telemetry (live-client feed) and owns the Ashita bridge (`src/workbench/runtime/live_client/*`, `addons/workbench_live/*.lua`, `native/ashita_workbench_probe`). No Toolkit doc mentions the headless client (grep of `docs/` found none), which is itself a documentation gap.
+**It is not inside `<local>/mission_toolkit`.** The headless client lives in `<local>/FFXI-Tools\headless-research\xiheadless-dsp` (C# .NET 9, not a git repository). It is a DSP port of the upstream `JasonPulse/xiheadless` (LandSandBoat target). The Mission Toolkit only *consumes* its telemetry (live-client feed) and owns the Ashita bridge (`src/workbench/runtime/live_client/*`, `addons/workbench_live/*.lua`, `native/ashita_workbench_probe`). No Toolkit doc mentions the headless client (grep of `docs/` found none), which is itself a documentation gap.
 
-Toolkit state at audit: branch `feature/live-client-activity-feed` @ `94b2349b`; uncommitted: `M docs/shift_report.log`, untracked `data/assault/assault_reviews.db`, `data/root_archive/`, four `definitions.d/*.json`; 1 stash (`wip-before-main-sync-20261013`); worktrees `mt_domain`, `mt_pr1059`, `mt_research`, `mt_wt_ashita_plugin`. All left untouched. This research is committed from a separate worktree `D:\Claude\mt_kuluu_research` (branch `research/kuluu-headless-comparison`, cut from `main` @ `f5a2cbd8`).
+Toolkit state at audit: branch `feature/live-client-activity-feed` @ `94b2349b`; uncommitted: `M docs/shift_report.log`, untracked `data/assault/assault_reviews.db`, `data/root_archive/`, four `definitions.d/*.json`; 1 stash (`wip-before-main-sync-20261013`); worktrees `mt_domain`, `mt_pr1059`, `mt_research`, `mt_wt_ashita_plugin`. All left untouched. This research is committed from a separate worktree `<local>/mt_kuluu_research` (branch `research/kuluu-headless-comparison`, cut from `main` @ `f5a2cbd8`).
 
 | Layer | Files (xiheadless-dsp) |
 |---|---|
@@ -17,11 +17,11 @@ Toolkit state at audit: branch `feature/live-client-activity-feed` @ `94b2349b`;
 | Capabilities (interfaces in `Interfaces/`) | `Capabilities/{Perception,Events,Zoning,Inventory,Gear,Combat,Magic,Party,Chat,Shop,AuctionHouse,Bazaar,Crafting,Delivery,Quests,TradeNpc,JobChange,Lifecycle}.cs` |
 | Navigation | `Navigation/{NavMesh,Navigator,NavLinks}.cs` (DotRecast `.nav`, `XIBOT_NAVMESH_DIR`) |
 | Scenario / test layer | `Brains/ScenarioBrain.cs` (JSON steps + `expect` keys, writes `scenario_results.json`), `scenario_*.json`, `prep_*.py` (DB char staging), `run_*.sh/py` |
-| Telemetry out | `Game/TelemetryWriter.cs` -> `D:\Claude\FFXI-Tools\headless-research\telemetry\*.jsonl` |
+| Telemetry out | `Game/TelemetryWriter.cs` -> `<local>/FFXI-Tools\headless-research\telemetry\*.jsonl` |
 | Brains | 45 files in `Brains/` (job brains, `DuoFightBrain`, `SurvivalGuideBrain`, `GmBrain`, ...) |
 | Unit-test project | **None.** No `*.Tests` project; only scenario/brain-driven live tests |
 
-Direct dependencies: DSP server (`D:\Claude\dsp-branches`, DB `dspdb_fresh`) for everything; retail client **not required**; Ashita not required; Toolkit only for telemetry display and for SQL-derived inputs (e.g. `sg_guides.json` built from `survival_guides_apply.sql`). Sibling research repos in `headless-research/`: `xiheadless` (upstream LSB), `GordianXI` (C# GUI client, protocol reference only), `headless-xi-rust` (search-server toy client).
+Direct dependencies: DSP server (`<local DSP checkout>`, DB `dspdb_fresh`) for everything; retail client **not required**; Ashita not required; Toolkit only for telemetry display and for SQL-derived inputs (e.g. `sg_guides.json` built from `survival_guides_apply.sql`). Sibling research repos in `headless-research/`: `xiheadless` (upstream LSB), `GordianXI` (C# GUI client, protocol reference only), `headless-xi-rust` (search-server toy client).
 
 ## Matrix
 

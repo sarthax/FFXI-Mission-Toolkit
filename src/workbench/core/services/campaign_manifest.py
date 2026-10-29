@@ -1,6 +1,6 @@
 """Cross-link ingested captures to their Discord #campaign posts (post date, uploader, video, category).
 
-Source: D:\\Claude\\docs\\campaign\\campaign_manifest.json (built by build_manifest.py from
+Source: docs/campaign/campaign_manifest.json (built by build_manifest.py from
 CAPTURE_INDEX.md; one row per downloadable file). Nothing here invents data: a capture is only
 linked when its label/source path contains the manifest row's own title (or, for Dropbox zips, the
 zip's real filename). Ambiguous or unmatched captures are reported, never guessed.
@@ -16,7 +16,7 @@ import re
 import sqlite3
 from pathlib import Path
 
-MANIFEST_PATH = Path(os.environ.get("CAMPAIGN_MANIFEST", r"D:\Claude\docs\campaign\campaign_manifest.json"))
+MANIFEST_PATH = Path(os.environ.get("CAMPAIGN_MANIFEST", str(Path(__file__).resolve().parents[4] / "docs" / "campaign" / "campaign_manifest.json")))
 
 # manifest capture_type / tag -> real CAPTURE_TAGS names (see _build_index_impl.CAPTURE_TAGS)
 _TYPE_TAGS = {

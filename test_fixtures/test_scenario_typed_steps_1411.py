@@ -63,23 +63,39 @@ def test_non_finite_numbers_in_the_request_body_are_rejected():
         assert response.status_code == 422, raw
 
 
-def test_the_builder_post_is_local_only_json_only_and_same_origin():
+def test_the_builder_post_rejects_non_json_body():
     body = {"template_id": "talk_to_npc", "action_value": 1, "expectation_value": True}
-    assert post(client(("203.0.113.9", 5000)), body).status_code == 403          # not a local client
-    assert post(client(), body, headers={"origin": "http://evil.example"}).status_code == 403
     response = client().post("/scenario-developer/typed-step", content=json.dumps(body),
                              headers={"content-type": "text/plain"})
     assert response.status_code in (415, 422)  # refused before any step is built (same ordering as /validate)
     assert "do" not in response.text
 
 
-def test_no_process_or_database_is_used_by_the_routes(monkeypatch):
+# Security and side-effect contracts are shared, but each route is still
+# exercised independently. Param ids keep failed endpoints obvious.
+BUILDER_BODY = {"template_id": "talk_to_npc", "action_value": 1, "expectation_value": True}
+REVIEW_STEPS = [{"name": "go", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}}]
+
+
+@pytest.mark.parametrize("operation", [
+    pytest.param(lambda c, **kw: post(c, BUILDER_BODY, **kw), id="typed-step"),
+    pytest.param(lambda c, **kw: review_post(c, REVIEW_STEPS, **kw), id="typed-import"),
+])
+def test_typed_writes_reject_nonlocal_and_cross_origin(operation):
+    assert operation(client(("203.0.113.9", 5000))).status_code == 403
+    assert operation(client(), headers={"origin": "http://evil.example"}).status_code == 403
+
+
+@pytest.mark.parametrize("operation", [
+    pytest.param(lambda c: c.get("/scenario-developer/typed-library"), id="typed-library"),
+    pytest.param(lambda c: post(c, BUILDER_BODY), id="typed-step"),
+    pytest.param(lambda c: review_post(c, REVIEW_STEPS), id="typed-import"),
+])
+def test_typed_routes_do_not_spawn_processes_or_open_database(monkeypatch, operation):
     import sqlite3, subprocess
     monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no process")))
     monkeypatch.setattr(sqlite3, "connect", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no database")))
-    c = client()
-    assert c.get("/scenario-developer/typed-library").status_code == 200
-    assert post(c, {"template_id": "talk_to_npc", "action_value": 1, "expectation_value": True}).status_code == 200
+    assert operation(client()).status_code == 200
 
 
 def test_page_wires_the_builder_without_touching_the_canonical_editor():
@@ -147,3 +163,34 @@ def test_picker_search_is_local_only_and_needs_the_editor_header(fake_dsp):
     assert client().get("/scenario-developer/catalog/search?kind=npc&query=guard").status_code == 403
     assert search(client(("203.0.113.9", 5000)), "npc", "guard").status_code == 403
     assert search(client(), "npc", "x" * 65).status_code == 422
+
+
+# --- native import review route ---------------------------------------------------------------
+
+def review_post(c, steps, **kwargs):
+    return c.post("/scenario-developer/typed-import", json={"steps": steps}, **kwargs)
+
+
+def test_import_review_route_reports_each_step_and_accepts_nothing():
+    steps = [{"name": "go", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}},
+             {"name": "bad", "do": {"talk_npc": -1}, "expect": {"event_active": True}},
+             {"name": "odd", "do": {"dance": 1}, "expect": {"zone": 1}}]
+    response = review_post(client(), steps)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source_trust"] == "UNREVIEWED_EXTERNAL_INPUT"
+    assert [r["status"] for r in body["steps"]] == ["SUPPORTED", "INVALID", "UNSUPPORTED"]
+    assert body["counts"] == {"SUPPORTED": 1, "UNSUPPORTED": 1, "INVALID": 1}
+    assert body["steps"][0]["step"]["do"] == {"walk_to": [1, 2]} and body["steps"][1]["step"] is None
+
+
+@pytest.mark.parametrize("steps", [None, {}, "x", [], [None] * 101])
+def test_import_review_route_rejects_a_bad_scenario_with_a_message(steps):
+    response = review_post(client(), steps)
+    assert response.status_code == 422
+    assert "array of 1 to 100 steps" in response.json()["detail"]["message"]
+
+
+def test_import_review_route_rejects_oversized_payload():
+    big = [{"name": "a", "do": {"walk_to": [1, 2]}, "expect": {"x_near": 3}, "pad": "x" * 40000}]
+    assert review_post(client(), big).status_code == 413

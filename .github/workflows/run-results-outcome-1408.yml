@@ -1,0 +1,54 @@
+name: Run Results outcome states and Compare runs (Offline)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "src/workbench/server_admin/feature_testing/run_outcome.py"
+      - "src/workbench/server_admin/feature_testing/execution_jobs.py"
+      - "src/workbench/server_admin/feature_testing/router.py"
+      - "gui/templates/feature_testing_run.html"
+      - "gui/templates/feature_testing_outcome.html"
+      - "gui/templates/feature_testing_compare.html"
+      - "src/workbench/server_admin/feature_testing/compare_wording.py"
+      - "test_fixtures/test_compare_page_1408.py"
+      - "gui/templates/feature_testing_steps.html"
+      - "src/workbench/server_admin/feature_testing/stored_run_comparison.py"
+      - "src/workbench/server_admin/feature_testing/revision_comparison.py"
+      - "test_fixtures/test_run_outcome_1408.py"
+      - "test_fixtures/test_stored_run_comparison_1408.py"
+      - "test_fixtures/test_revision_comparison.py"
+      - "test_fixtures/test_feature_testing_importer.py"
+      - "test_fixtures/results_v2_recorded/**"
+      - "data/testing/feature_test_readiness.json"
+      - "src/workbench/server_admin/feature_testing/importer.py"
+      - "src/workbench/server_admin/feature_testing/scenario_presentation.py"
+      - "test_fixtures/test_feature_testing_run_history.py"
+      - "test_fixtures/test_feature_testing_run_reevaluation.py"
+      - ".github/workflows/run-results-outcome-1408.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-results-outcome:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install offline Workbench dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt pytest httpx
+      - name: Run Results outcome description, job lookup and rendered page (synthetic records only)
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          python -m pytest -q test_fixtures/test_compare_page_1408.py test_fixtures/test_run_outcome_1408.py test_fixtures/test_stored_run_comparison_1408.py test_fixtures/test_revision_comparison.py test_fixtures/test_feature_testing_importer.py test_fixtures/test_feature_testing_run_history.py test_fixtures/test_feature_testing_run_reevaluation.py test_fixtures/test_feature_testing_scenario_presentation.py test_fixtures/test_feature_testing_dashboard.py

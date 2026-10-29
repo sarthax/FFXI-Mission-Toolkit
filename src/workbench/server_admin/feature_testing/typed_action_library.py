@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import copy
 import math
+import re
 import struct
 
 SCHEMA = "toolkit-typed-action-library/1"
@@ -181,6 +182,76 @@ def _public(template: dict) -> dict:
     return out
 
 
+def _derive_parts() -> tuple[dict[str, dict], dict[str, dict]]:
+    """Independent action and check definitions, derived from the reviewed templates.
+
+    Every action and every check was reviewed on its own (the guard validates them separately); the templates
+    only fix which ones were reviewed *as pairs*. A check used by two templates must carry one identical spec.
+    """
+    actions: dict[str, dict] = {}
+    checks: dict[str, dict] = {}
+    for template in _TEMPLATES:
+        if template["kind"] != "action_expectation":
+            continue
+        action, check = template["action"], template["expectation"]
+        if action["native_key"] in actions:
+            raise RuntimeError("an action must belong to exactly one reviewed template")
+        actions[action["native_key"]] = {
+            "native_key": action["native_key"], "label": template["label"], "param": action["param"],
+            "limitations": template["limitations"], "source_ref": template["source_ref"]}
+        known = checks.get(check["native_key"])
+        if known is not None and known["param"] != check["param"]:
+            raise RuntimeError("a check shared by two templates must have one parameter spec")
+        checks.setdefault(check["native_key"], {
+            "native_key": check["native_key"], "label": check["native_key"].replace("_", " "),
+            "param": check["param"], "source_ref": template["source_ref"]})
+    return actions, checks
+
+
+_ACTION_DEFS, _CHECK_DEFS = _derive_parts()
+
+
+# What the local verification observed when each native key was fed to XiHeadless' own loaders (an offline harness
+# around ScenarioFileValidation.CheckStructure and ScenarioTaskTools.Start; nothing was executed against a client).
+# This is an observation about acceptance, not about behaviour: a key the loader accepts may still not be dispatched.
+_PATHS_SOURCE = ("xiheadless-main@e5e80350711d5d2ec814c893a17c63baf3ef98a9:Brains/ScenarioFileValidation.cs"
+                 " + ScenarioTaskTools.Start, as recorded in sarthax/FFXI-Mission-Toolkit#1456")
+_MCP_RESOURCE = "scenario_resource_actions_not_yet_supported"
+_MCP_LEGACY = "scenario_legacy_actions_not_supported"
+_MCP_EXPECT = "scenario_expectations_not_yet_supported"
+_MCP_REJECTS = {"walk_to": _MCP_RESOURCE, "talk_npc": _MCP_RESOURCE, "examine_npc": _MCP_RESOURCE,
+                "event_update": _MCP_RESOURCE, "event_finish": _MCP_RESOURCE, "rest_hp": _MCP_RESOURCE,
+                "engage": _MCP_RESOURCE, "invite": _MCP_LEGACY, "accept_invite": _MCP_LEGACY,
+                **{key: _MCP_EXPECT for key in ("x_near", "event_active", "event_id", "event_param0", "zone", "hpp",
+                                                "party_members_gt", "entities_gt")}}
+
+
+def _observed_paths(native_key: str) -> dict:
+    reason = _MCP_REJECTS.get(native_key)
+    mcp = {"status": "REJECTS", "reason": reason} if reason else {"status": "ACCEPTS"}
+    return {"xiheadless_loader": {"status": "ACCEPTS",
+                                  "note": "an action-only step is accepted only when exported with an empty expect"},
+            "mcp_task_start": mcp, "source": _PATHS_SOURCE, "execution_tested": False}
+
+
+def _public_part(part: dict) -> dict:
+    out = copy.deepcopy(part)
+    out["param"]["constraint"] = _constraint(out["param"])
+    out["observed_paths"] = _observed_paths(out["native_key"])
+    out.update({"support_tier": _HEADLESS, "execution_enabled": False})
+    return out
+
+
+def list_actions() -> list[dict]:
+    """Every reviewed native action (10), as independent copies, in a stable order."""
+    return [_public_part(a) for a in _ACTION_DEFS.values()]
+
+
+def list_checks() -> list[dict]:
+    """Every reviewed native check (8), as independent copies, in a stable order."""
+    return [_public_part(c) for c in _CHECK_DEFS.values()]
+
+
 def list_templates() -> list[dict]:
     """Every template, in a stable order, as independent copies."""
     return [_public(t) for t in _TEMPLATES]
@@ -196,7 +267,8 @@ def get_template(template_id: str) -> dict:
 def export_registry() -> dict:
     """The full versioned registry as plain JSON-serializable data (deterministic)."""
     return {"schema": SCHEMA, "library_version": LIBRARY_VERSION, "native_schema_head": NATIVE_SCHEMA_HEAD,
-            "headless_wire_contract_approved": False, "templates": list_templates()}
+            "headless_wire_contract_approved": False, "templates": list_templates(),
+            "actions": list_actions(), "checks": list_checks()}
 
 
 def build_step(template_id: str, action_value: object, expectation_value: object) -> dict:
@@ -219,3 +291,224 @@ def build_step(template_id: str, action_value: object, expectation_value: object
             "expect": {template["expectation"]["native_key"]: copy.deepcopy(expectation_value)},
             "support_tier": template["support_tier"], "native_schema_head": NATIVE_SCHEMA_HEAD,
             "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False}
+
+
+# --- reviewing native scenario JSON (e.g. written by an agent or copied from a scenario file) -------------------
+
+MAX_IMPORT_STEPS = 100
+MAX_NATIVE_STEPS = 50  # steps stored with one draft
+_MAX_NAME = 100
+_MAX_NOTE = 300
+_NATIVE_FIELDS = {"name", "do", "expect", "timeout_ms"}
+# Per-step timeout_ms, as XiHeadless ScenarioFileValidation.CheckStructure (pinned e5e80350) checks it: a JSON number that
+# is an Int32, 0..3600000 ms, allowed with any action or check. Absent means the runner default (10000 ms); never inferred.
+_STEP_TIMEOUT_MAX = 3600000
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _template_by_pair() -> dict[tuple[str, str], str]:
+    return {(t["action"]["native_key"], t["expectation"]["native_key"]): t["id"]
+            for t in _TEMPLATES if t["kind"] == "action_expectation"}
+
+
+# How XiHeadless e5e8035 treats several keys in one step (Brains/ScenarioBrain.cs, ScenarioExpectationSchema.cs):
+# every key in `expect` must hold (AND, order irrelevant), and the runner executes the keys of `do` in a FIXED order
+# written into its code, not in file order: walk_to, talk_npc, invite, accept_invite, wait_ms, then the "control"
+# group (engage, examine_npc, event_update, event_finish, rest_hp). The control group is dispatched by iterating a
+# dictionary built from the file, so the order inside it is the dictionary's enumeration order. That is not a stated
+# contract, so a step with two control actions is refused (open question, see the docs) and every multi-action step
+# must be written in the runner's order so that file order and execution order agree.
+RUNNER_ACTION_ORDER = ("walk_to", "talk_npc", "invite", "accept_invite", "wait_ms")
+RUNNER_CONTROL_GROUP = ("engage", "examine_npc", "event_update", "event_finish", "rest_hp")
+
+
+def _action_order_problem(keys: list[str]) -> str | None:
+    """Why a multi-action ``do`` cannot be accepted, or None. Single actions are always fine."""
+    if len(keys) < 2:
+        return None
+    controls = [k for k in keys if k in RUNNER_CONTROL_GROUP]
+    if len(controls) > 1:
+        return ("actions " + ", ".join(controls) + " belong to one runner group whose execution order is the "
+                "enumeration order of a dictionary built from the file, which is not a stated contract; "
+                "at most one of them is supported per step")
+    runner_order = [k for k in (*RUNNER_ACTION_ORDER, *RUNNER_CONTROL_GROUP) if k in keys]
+    if keys != runner_order:
+        return ("the runner executes these actions as " + " -> ".join(runner_order) + " regardless of file order; "
+                "write them in that order so the step reads the way it runs")
+    return None
+
+
+def _side(kind: str, part: object, registry: dict[str, dict]) -> tuple[str, list[str], list[str]]:
+    """Review one side (``do`` or ``expect``): returns (status, reasons, native keys in file order).
+
+    One or more keys are allowed. Every key must be reviewed and its value must pass; an invalid value outranks an
+    unsupported key. Several ``expect`` keys are all required to hold (order is irrelevant); several ``do`` keys are
+    checked by ``_action_order_problem``.
+    """
+    noun = "action" if kind == "do" else "check"
+    if not isinstance(part, dict):
+        return "INVALID", [f"{kind} must be an object"], []
+    if not part:
+        return "UNSUPPORTED", [f"at least one {noun} is needed"], []
+    keys = list(part)
+    invalid, unsupported = [], []
+    for key in keys:
+        definition = registry.get(key)
+        if definition is None:
+            unsupported.append(f"no reviewed {noun} {key!r}")
+            continue
+        problem = check_param(definition["param"], part[key])
+        if problem:
+            invalid.append(f"{noun} {key!r}: parameter {definition['param']['name']!r} {problem}")
+    if invalid:
+        return "INVALID", invalid + unsupported, keys
+    if unsupported:
+        return "UNSUPPORTED", unsupported, keys
+    if kind == "do":
+        problem = _action_order_problem(keys)
+        if problem:
+            return "UNSUPPORTED", [problem], keys
+    return "SUPPORTED", [], keys
+
+
+def _review_one(index: int, step: object, pairs: dict[tuple[str, str], str], *, stored: bool = False) -> dict:
+    """Review one native step. ``stored=True`` is the draft field: it also allows an optional ``note``."""
+    def row(status, reasons, name=None, built=None, template_id=None):
+        return {"index": index, "name": name, "status": status, "template_id": template_id,
+                "step": built, "reasons": reasons}
+
+    if not isinstance(step, dict):
+        return row("INVALID", ["step is not an object"])
+    name = step.get("name")
+    if not isinstance(name, str) or not name.strip() or len(name.strip()) > _MAX_NAME:
+        return row("INVALID", [f"name must be non-empty text of at most {_MAX_NAME} characters"])
+    name = name.strip()
+    extra = sorted(str(k) for k in set(step) - _NATIVE_FIELDS - ({"note"} if stored else set()))
+    if extra:  # never drop fields silently: a step the library cannot keep whole is not imported or stored
+        return row("UNSUPPORTED", ["unsupported field(s): " + ", ".join(extra) +
+                                   " (they cannot be kept, so the step is not accepted)"], name)
+    if "timeout_ms" in step and not (_is_int(step["timeout_ms"]) and 0 <= step["timeout_ms"] <= _STEP_TIMEOUT_MAX):
+        return row("INVALID", [f"timeout_ms must be an integer 0..{_STEP_TIMEOUT_MAX} (milliseconds)"], name)
+    if not stored and step.get("expect") == {} and "do" in step:
+        # The export form of an action-only step (XiHeadless requires an expect object); it means "no check".
+        step = {k: v for k, v in step.items() if k != "expect"}
+    if "do" not in step and "expect" not in step:
+        return row("UNSUPPORTED", ["needs an action (do), a check (expect), or both"], name)
+    built: dict = {}
+    keys: dict[str, list[str]] = {}
+    statuses, reasons = [], []
+    for kind, registry in (("do", _ACTION_DEFS), ("expect", _CHECK_DEFS)):
+        if kind not in step:
+            continue
+        status, why, key = _side(kind, step[kind], registry)
+        statuses.append(status)
+        reasons += why
+        if status == "SUPPORTED":
+            keys[kind] = key
+            built[kind] = copy.deepcopy(step[kind])
+    if "INVALID" in statuses:
+        return row("INVALID", reasons, name)
+    if "UNSUPPORTED" in statuses:
+        return row("UNSUPPORTED", reasons, name)
+    single = {k: v[0] for k, v in keys.items() if len(v) == 1}
+    pair = (single.get("do"), single.get("expect")) if len(single) == len(keys) else None
+    built.update({"template_id": pairs.get(pair) if pair else None,
+                  "support_tier": _HEADLESS, "native_schema_head": NATIVE_SCHEMA_HEAD,
+                  **({"timeout_ms": step["timeout_ms"]} if "timeout_ms" in step else {}),
+                  "oracle_status": "UNAPPROVED", "verdict": "UNKNOWN", "execution_enabled": False})
+    return row("SUPPORTED", [], name, built, built["template_id"])
+
+
+def review_native_steps(steps: object) -> dict:
+    """Review native scenario steps against the typed library without trusting them.
+
+    A step may have an action (``do``), a check (``expect``), or both, each holding one or more reviewed native
+    keys (several checks must all hold; several actions follow the runner-order rules above). Every step is reported as ``SUPPORTED`` (reviewed shape, values pass), ``UNSUPPORTED`` (well formed but
+    outside what the library models) or ``INVALID`` (malformed, or a value that is rejected), with reasons.
+    Nothing is accepted automatically: the result is for a human reviewer. A passing step has only had its
+    *shape* checked; its source stays unreviewed, its oracle UNAPPROVED and its verdict UNKNOWN.
+    """
+    if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_IMPORT_STEPS:
+        raise ValueError(f"a native scenario must be an array of 1 to {MAX_IMPORT_STEPS} steps")
+    pairs = _template_by_pair()
+    rows = [_review_one(i, step, pairs) for i, step in enumerate(steps)]
+    counts = {status: sum(1 for r in rows if r["status"] == status) for status in ("SUPPORTED", "UNSUPPORTED", "INVALID")}
+    return {"schema": "toolkit-typed-native-review/1", "source_trust": "UNREVIEWED_EXTERNAL_INPUT",
+            "native_schema_head": NATIVE_SCHEMA_HEAD, "steps": rows, "counts": counts}
+
+
+def validate_native_steps(value: object) -> object:
+    """Validate the ``native_steps`` field stored with a draft; returns ``value`` unchanged or raises ValueError.
+
+    Shape: ``{"library_version": 1, "steps": [...]}`` with 1 to 50 steps. Every stored step must be SUPPORTED by
+    this library (so nothing malformed or unreviewed is ever saved), have a unique name with no surrounding
+    whitespace, and may carry a short ``note`` (provenance text). Nothing is trimmed or ignored.
+    """
+    if not isinstance(value, dict) or set(value) != {"library_version", "steps"}:
+        raise ValueError("invalid native_steps: expected exactly library_version and steps")
+    if type(value["library_version"]) is not int or value["library_version"] != LIBRARY_VERSION:
+        raise ValueError("unsupported native_steps library version")
+    steps = value["steps"]
+    if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_NATIVE_STEPS:
+        raise ValueError(f"native_steps must have 1 to {MAX_NATIVE_STEPS} steps")
+    pairs, names = _template_by_pair(), set()
+    for index, step in enumerate(steps):
+        result = _review_one(index, step, pairs, stored=True)
+        if result["status"] != "SUPPORTED":
+            raise ValueError(f"native_steps[{index}] is {result['status'].lower()}: " + "; ".join(result["reasons"]))
+        name = step["name"]
+        if name != name.strip():
+            raise ValueError(f"native_steps[{index}] name must not have leading or trailing whitespace")
+        if name in names:
+            raise ValueError(f"native_steps[{index}] duplicates the name {name!r}")
+        names.add(name)
+        if "note" in step:
+            note = step["note"]
+            if not isinstance(note, str) or not 1 <= len(note) <= _MAX_NOTE or _CONTROL.search(note):
+                raise ValueError(f"native_steps[{index}] note must be 1 to {_MAX_NOTE} characters of plain text")
+    return value
+
+
+def export_native_scenario(value: object) -> list[dict]:
+    """XiHeadless scenario file content (a JSON array) for validated ``native_steps``; ``timeout_ms`` is passed unchanged.
+
+    ``note`` is provenance text and is not part of the native schema, so it is dropped; an action-only step gets the
+    empty ``expect`` object the native loader requires.
+    """
+    validate_native_steps(value)
+    out = []
+    for step in value["steps"]:
+        item: dict = {"name": step["name"]}
+        if "timeout_ms" in step:
+            item["timeout_ms"] = step["timeout_ms"]
+        if "do" in step:
+            item["do"] = copy.deepcopy(step["do"])
+        item["expect"] = copy.deepcopy(step.get("expect", {}))
+        out.append(item)
+    return out
+
+
+def execution_path_blockers(steps: object) -> dict:
+    """Read-only unsupported-step blocker: which stored/reviewed native steps each execution path would reject.
+
+    Uses the recorded acceptance observations (``_MCP_REJECTS``); it runs nothing and proves nothing about
+    behaviour. ``mcp_task_start`` is blocked if any step uses a rejected key; the runner loader accepts every
+    reviewed key (action-only steps are exported with an empty expect). An empty ``blocked_steps`` list is
+    not authorization to run.
+    """
+    if not isinstance(steps, list):
+        raise ValueError("steps must be an array")
+    blocked = []
+    for index, step in enumerate(steps):
+        if not isinstance(step, dict):
+            raise ValueError(f"steps[{index}] must be an object")
+        for side in ("do", "expect"):
+            part = step.get(side)
+            for key in (part if isinstance(part, dict) else {}):
+                reason = _MCP_REJECTS.get(key)
+                if reason:
+                    blocked.append({"step": index, "name": step.get("name"), "side": side, "key": key, "reason": reason})
+    return {"schema": "toolkit-execution-path-blockers/1", "source": _PATHS_SOURCE, "execution_tested": False,
+            "mcp_task_start": {"status": "BLOCKED" if blocked else "NO_KNOWN_BLOCKERS", "blocked_steps": blocked},
+            "xiheadless_loader": {"status": "NO_KNOWN_BLOCKERS", "blocked_steps": []},
+            "execution_enabled": False}

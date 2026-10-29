@@ -17,7 +17,7 @@ def test_operator_token_required(monkeypatch):
 def test_operator_routes_require_auth_and_approval(monkeypatch):
     host = pytest.importorskip("workbench.app.host", exc_type=Exception)
     monkeypatch.setenv("MISSION_TOOLKIT_TEST_OPERATOR_TOKEN", "a" * 64)
-    client = TestClient(host.app)
+    client = TestClient(host.app, client=("127.0.0.1", 50000))
     body = {"account": "xitest07", "charid": 21836, "supervisor_port": 8420, "approval": True}
     assert client.post("/feature-testing/builder/launch", json=body).status_code == 403
     headers = {"X-Test-Operator-Token": "a" * 64}
@@ -35,7 +35,7 @@ def test_supervisor_contract_does_not_expose_execution():
 
 def test_gui_has_explicit_approval():
     from pathlib import Path
-    html = (Path(__file__).resolve().parents[1] / "gui/templates/feature_testing.html").read_text()
+    html = (Path(__file__).resolve().parents[1] / "gui/templates/feature_testing.html").read_text(encoding="utf-8")
     assert 'id="ft-run-approval"' in html
     assert 'id="ft-operator-token"' in html
     assert 'builder/launch' in html
