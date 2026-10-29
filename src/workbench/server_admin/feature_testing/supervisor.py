@@ -8,7 +8,7 @@ from __future__ import annotations
 import hmac
 import os
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from workbench.server_admin.feature_testing.router import _results_db, _run_summary
 from workbench.server_admin.feature_testing.results import recent_results, results_for_run
@@ -22,7 +22,12 @@ from .source_diagnostics import search_source
 from .failure_diagnostics import failure_summary
 from .investigation_dossier import investigation_dossier
 
-router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"])
+def _require_auth(authorization: str | None = Header(default=None)) -> None:
+    """Runs as a dependency so a bad or missing token is refused (403) before FastAPI validates typed query input (422)."""
+    _authorize(authorization)
+
+
+router = APIRouter(prefix="/api/supervisor", tags=["Local Test Supervisor"], dependencies=[Depends(_require_auth)])
 
 
 def _authorize(authorization: str | None) -> None:
