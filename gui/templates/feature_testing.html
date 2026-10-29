@@ -26,6 +26,7 @@
 .ft-feedback{padding:.5rem .75rem;border-radius:.4rem;border:1px solid var(--wb-border,#777)}
 .ft-filters label.ft-check{flex-direction:row;align-items:center;gap:.5rem;min-width:0;max-width:26rem}
 .ft-check input{min-height:auto;width:auto}
+#ft-run-options{flex:1 1 100%;max-width:46rem}#ft-run-options .ft-check{display:grid;grid-template-columns:1.1rem minmax(11rem,14rem) 1fr;align-items:baseline;column-gap:.6rem;max-width:none;padding:.2rem 0}#ft-run-options .ft-check input{margin:0;align-self:center}#ft-run-options .ft-opt-name{white-space:nowrap}#ft-run-options small{color:var(--muted,#8a8f98);line-height:1.3}@media (max-width:620px){ #ft-run-options .ft-check{grid-template-columns:1.1rem 1fr}#ft-run-options small{grid-column:2}#ft-run-options .ft-opt-name{white-space:normal}}
 .ft-job{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.35rem 0}
 .ft-pill{display:inline-block;padding:.1rem .6rem;border-radius:1rem;font-size:.8rem;font-weight:700;border:1px solid currentColor}
 .ft-pass{color:#2e9d4f}.ft-fail{color:#d33}.ft-blocked,.ft-interrupted{color:#c77d00}.ft-unknown{color:#6b7280}.ft-running,.ft-queued{color:#2f6fd6}
@@ -76,7 +77,7 @@
 <label>Supervisor port<input id="ft-run-port" type="number" min="1" max="65535" value="8420" required></label>
 <fieldset id="ft-run-options"><legend>Run options</legend>
 <p class="ft-note">Defaults are the safe state. Shortcut switches skip normal bot behaviour, so a run that uses them is recorded as such and is not a normal-play result. Some switches only work on xiheadless builds that carry them.</p>
-{% for opt in run_option_switches %}<label class="ft-check"><input type="checkbox" data-env="{{ opt.env }}" {% if opt.default %}checked{% endif %}> {{ opt.label }}{% if opt.shortcut %} <strong>(shortcut)</strong>{% endif %} <small>{{ opt.help }}</small></label>
+{% for opt in run_option_switches %}<label class="ft-check"><input type="checkbox" data-env="{{ opt.env }}" {% if opt.default %}checked{% endif %}><span class="ft-opt-name">{{ opt.label }}{% if opt.shortcut %} <strong>(shortcut)</strong>{% endif %}</span><small>{{ opt.help }}</small></label>
 {% endfor %}</fieldset>
 <label class="ft-check"><input id="ft-run-approval" type="checkbox" required> I authorize the read-only MOG-09 run on this disposable character</label>
 <button type="submit" class="ft-primary" {% if not builder_preflight.ready_for_operator_review %}disabled aria-disabled="true" title="Fix blocked prerequisites before requesting operator launch"{% endif %}>Launch MOG-09</button>
