@@ -48,6 +48,7 @@ def test_isolated_openapi_contains_only_read_only_supervisor_tools():
         "/api/supervisor/test-character-progression",
         "/api/supervisor/test-character-keyitems",
         "/api/supervisor/test-character-vars",
+        "/api/supervisor/test-character-selected-jobs",
     }
     assert all(set(methods) == {"get"} for methods in spec["paths"].values())
     assert all(operation["operationId"].startswith("supervisor_")
