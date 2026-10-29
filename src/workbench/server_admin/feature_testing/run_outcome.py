@@ -111,6 +111,9 @@ def summarize_run(records: list[dict], job: dict | None = None) -> dict:
             linked_job = {"status": status, "meaning": _JOB_MEANING[status]}
         else:
             linked_job = {"status": "UNKNOWN", "meaning": "status not recognized"}
+    # Settings are a launcher record, NOT proof that a shortcut was actually
+    # exercised by the bot. Absent or invalid legacy data stays NOT_RECORDED.
+    options = _run_options_summary(job.get("run_options")) if isinstance(job, dict) else None
     return {"record_count": len(records), "scenario_count": len(scenarios),
             "verdict_counts": presented, "mixed_recorded_verdicts": len(presented) > 1,
-            "job": linked_job}
+            "job": linked_job, "run_options": options}
