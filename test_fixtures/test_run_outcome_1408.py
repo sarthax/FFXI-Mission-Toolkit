@@ -259,6 +259,34 @@ def test_recorded_fail_keeps_unrelated_steps_and_the_limits(recorded_client):
     assert "Assertion FAILED" in step_card(html, 5)
 
 
+def test_recorded_run_shows_all_six_steps_equally_with_expected_and_observed(recorded_client):
+    # A runner-reported PASS must not hide passing steps, and failures do not
+    # get privileged visibility. The cards remain user-collapsible.
+    for run_id in ("obs-20261021T025326Z", "obs-20261021T040036Z"):
+        html = recorded_client.get("/feature-testing/run/" + run_id).text
+        assert html.count('<li><details class="ft-step" open>') == 6
+        assert html.count('<summary class="ft-step-line">') == 6
+        for number in range(1, 7):
+            card = step_card(html, number)
+            assert "Expected outcome" in card and "Observed outcome" in card
+        assert "Expand all" in html and "Collapse all" in html
+        assert "Independent verification: NOT_ESTABLISHED" in html
+
+
+def test_recorded_steps_put_human_intent_first_and_ids_behind_disclosure(recorded_client):
+    html = recorded_client.get("/feature-testing/run/obs-20261021T025326Z").text
+    assert html.count('<summary>Technical step ID</summary>') == 6
+    # Every step headline is human-readable rather than an assertion ID/value dump.
+    for number in range(1, 7):
+        card = step_card(html, number)
+        summary = card.split("</summary>", 1)[0]
+        assert 'class="ft-brief"' in summary
+        assert "<code>" not in summary
+        assert "Technical step ID" not in summary
+        assert '<details class="ft-tech"><summary>Technical step ID</summary>' in card
+        assert "Assertion contracts and provenance for step" in card
+
+
 def test_recorded_pass_is_still_only_a_recorded_verdict(recorded_client):
     html = recorded_client.get("/feature-testing/run/obs-20261021T040036Z").text
     assert "nothing independent has confirmed it" in html and "Independent verification: NOT_ESTABLISHED" in html
