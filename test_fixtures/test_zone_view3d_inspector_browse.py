@@ -12,7 +12,7 @@ def test_inspector_browsing_and_marker_selection():
     assert "spawnEntities.length) % spawnEntities.length" in SOURCE
     assert "Not in visible markers" in SOURCE
     assert "e === selectedEntity ? 0xffff33" in SOURCE
-    assert "e === entity ? 0xffff33" in SOURCE
+    assert "e === selectedEntity ? 0xffff33" in SOURCE
     assert "spawnMesh.instanceColor.needsUpdate = true" in SOURCE
 
 

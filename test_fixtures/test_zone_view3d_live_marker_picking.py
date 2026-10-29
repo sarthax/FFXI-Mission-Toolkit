@@ -10,6 +10,6 @@ def test_live_marker_selection_uses_current_pointer_and_nearest_hit():
     assert "raycaster.setFromCamera(pointerNdc, camera)" in SOURCE
     assert "raycaster.intersectObjects(liveEntityPool.filter(x => x.visible), false)" in SOURCE
     assert "liveHit.distance <= spawnHit.distance" in SOURCE
-    assert "liveSelectedEntityId = String(entity.id ?? '')" in SOURCE
+    assert "liveSelectedEntityId = liveEntityIdentity(e)" in SOURCE
     assert "inspectEntity(entity)" in SOURCE
     assert "flyTo(new THREE.Vector3(entity.x, -entity.y, -entity.z))" in SOURCE

@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
-PATTERN = re.compile(r"D:[\\/]+Claude|dsp-branches|dsp-master|dsp-wt-")
+PATTERN = re.compile(r"D:[\\/]+Claude|dsp-branches(?!@main:)|dsp-master|dsp-wt-")
+# `dsp-branches@main:<sha>` is a pinned git provenance reference (repo@branch:commit), not a checkout path.
 EXEMPT_PREFIXES = ("docs/archive/", "data/assault/", "vendor/", "backport-workspace/", "test_fixtures/test_no_hardcoded_local_paths.py")
 TEXT_SUFFIXES = {".py", ".js", ".cjs", ".html", ".json", ".md", ".yml", ".yaml", ".txt", ".toml", ".bat", ".ps1"}
 

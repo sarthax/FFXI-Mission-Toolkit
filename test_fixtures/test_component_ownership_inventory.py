@@ -46,8 +46,8 @@ def test_root_python_ownership_map_is_exact():
     mapped = manifest["root_python_files"]
     actual = {p.name for p in ROOT.glob("*.py")}
 
-    assert len(mapped) == 97
-    assert set(mapped) == actual
+    # Root scripts are being retired; the map is historical. A root script must never be unowned.
+    assert actual <= set(mapped), sorted(actual - set(mapped))
     assert set(mapped.values()) <= set(manifest["owners"])
 
 

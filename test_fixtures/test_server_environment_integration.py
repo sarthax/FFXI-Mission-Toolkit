@@ -43,7 +43,7 @@ def test_named_active_profile_overrides_legacy_server_root(monkeypatch):
         "name": "LSB Test",
         "environment": "test",
         "family": "lsb",
-        "server_root": "D:/servers/lsb-test",
+        "server_root": str(Path("D:/servers/lsb-test")),  # native separators: backslashes on Windows
         "enabled": True,
         "is_active": True,
         "legacy": False,

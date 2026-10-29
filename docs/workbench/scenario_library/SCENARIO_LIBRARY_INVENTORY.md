@@ -67,4 +67,4 @@ Missions (getCurrentMission), status effects, doors/switches/teleports, Feature 
 
 Nation mission facts (rank 1-2, 15 missions) come from DSP main `febdc00209` NPC scripts via `_extract_dsp_missions.py` -> `dsp_mission_extract.json`. Per owner direction (2026-10-24), LSB/WoTG-sourced scenarios were REMOVED: their dialog/event ids are shifted versus DSP/Valhalla and DSP has no WoTG mission scripts. WoTG is not part of this library.
 
-DSP quest facts come from `dsp-branches` main `febdc00209` scripts and `sql/npc_list.sql` (19 NPC scripts, `dsp_source_extract.json`). npc_list ids were checked against the script zone with the id>>12 rule only; the client-id offset is NOT verified (project caveat).
+DSP quest facts come from `dsp-branches@main:febdc00209` scripts and `sql/npc_list.sql` (19 NPC scripts, `dsp_source_extract.json`). npc_list ids were checked against the script zone with the id>>12 rule only; the client-id offset is NOT verified (project caveat).

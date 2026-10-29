@@ -29,7 +29,7 @@ def test_preview_binding_carries_policy_provenance(tmp_path):
     binding = preview_policy_binding(active)
     assert binding["family"] == "topaz"
     assert binding["source_kind"] == "active"
-    assert binding["source_path"].endswith("conf/map.conf")
+    assert binding["source_path"].replace("\\", "/").endswith("conf/map.conf")
     assert binding["policy_fingerprint"] == active.policy_fingerprint
     assert binding["policy_ready"] is True
     assert binding["executor_enabled"] is False

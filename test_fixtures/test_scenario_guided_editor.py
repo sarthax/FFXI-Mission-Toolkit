@@ -149,7 +149,7 @@ def test_local_origin_required_even_for_nonmutating_validation():
 def test_host_serves_editor_and_canonical_validation(monkeypatch):
     from fastapi.testclient import TestClient
     host = pytest.importorskip("workbench.app.host", exc_type=Exception)
-    client = TestClient(host.app)
+    client = TestClient(host.app, client=("127.0.0.1", 50000))
     response = client.get("/scenario-developer")
     assert response.status_code == 200
     assert "Guided Scenario Developer" in response.text

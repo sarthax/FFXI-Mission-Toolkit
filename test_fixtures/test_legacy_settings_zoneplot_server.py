@@ -24,6 +24,7 @@ class _FakeSettings:
 def test_zoneplot_server_bridge_reads_and_writes_existing_store(tmp_path, monkeypatch):
     fake = _FakeSettings(tmp_path / "settings.db")
     monkeypatch.setattr(legacy_settings, "_module", lambda: fake)
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)  # a real active profile would override the store
 
     assert legacy_settings.get_zoneplot_server() == "topaz"
     legacy_settings.set_zoneplot_server("dsp")
@@ -33,6 +34,7 @@ def test_zoneplot_server_bridge_reads_and_writes_existing_store(tmp_path, monkey
 def test_zoneplot_server_bridge_preserves_topaz_fallback(tmp_path, monkeypatch):
     fake = _FakeSettings(tmp_path / "settings.db")
     monkeypatch.setattr(legacy_settings, "_module", lambda: fake)
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)
 
     con = sqlite3.connect(str(fake.DB_PATH))
     fake.set_many(con, {"zoneplot_server": "unexpected"})

@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_behavior_graph_interaction_layer_is_wired():
     template = (ROOT / "gui" / "templates" / "behavior_visualizer.html").read_text(encoding="utf-8")
-    script = (ROOT / "gui" / "static" / "behavior_graph_interactions.js").read_text(encoding="utf-8")
+    script = (ROOT / "gui" / "static" / "behavior_graph_interactions_core.js").read_text(encoding="utf-8")
 
     assert '/static/behavior_graph_interactions.js' in template
     assert "behavior-zoom-in" in script
@@ -20,7 +20,7 @@ def test_behavior_graph_interaction_layer_is_wired():
 
 
 def test_behavior_graph_uses_directed_causal_path_focus():
-    script = (ROOT / "gui" / "static" / "behavior_graph_interactions.js").read_text(encoding="utf-8")
+    script = (ROOT / "gui" / "static" / "behavior_graph_interactions_core.js").read_text(encoding="utf-8")
 
     assert "function causalPath(id)" in script
     assert "walk(id, incoming, edge => edge.source)" in script
@@ -34,7 +34,7 @@ def test_behavior_graph_uses_directed_causal_path_focus():
 
 
 def test_behavior_node_inspector_stays_visible_beside_graph():
-    script = (ROOT / "gui" / "static" / "behavior_graph_interactions.js").read_text(encoding="utf-8")
+    script = (ROOT / "gui" / "static" / "behavior_graph_interactions_core.js").read_text(encoding="utf-8")
 
     assert "behavior-workspace" in script
     assert "grid-template-columns:minmax(0,1fr) minmax(320px,380px)" in script
@@ -48,7 +48,7 @@ def test_behavior_node_inspector_stays_visible_beside_graph():
 
 
 def test_plain_behavior_is_default_and_preserves_technical_graph():
-    script = (ROOT / "gui" / "static" / "behavior_graph_interactions.js").read_text(encoding="utf-8")
+    script = (ROOT / "gui" / "static" / "behavior_graph_interactions_core.js").read_text(encoding="utf-8")
 
     assert "let mode = 'plain'" in script
     assert "Plain Behavior" in script

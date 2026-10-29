@@ -7,13 +7,13 @@ from workbench.client.models import look_decode as look
 from workbench.client.models import mob_model_tables
 from workbench.client.models import resolver as client_model_resolver
 from workbench.client.models import schedule_dump as msd
-from workbench.devtools.spatial import zone_plot
+from workbench.runtime import server_env
 from workbench.runtime.legacy_settings import get_ffxi_install
 
 
 def _db_row(kind: str, eid: int, server=None):
     """Fetch the raw look_t blob for a mob or NPC from the live DB."""
-    db = zone_plot._db(server)
+    db = server_env.connect(server)
     cu = db.cursor()
     try:
         if kind == "m":

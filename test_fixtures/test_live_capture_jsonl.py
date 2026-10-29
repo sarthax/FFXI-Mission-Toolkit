@@ -45,7 +45,7 @@ class NativeLiveCaptureJsonlTests(unittest.TestCase):
         import hashlib
         import json
         from workbench.captures.live_capture_jsonl import ingest_manifest
-        payload = row(1) + row(2, session_id="other")
+        payload = row(1) + row(2, session_id="other", dropped_before=1)
         manifest = json.dumps({"schema_version": 1, "client_id": "ashita-a", "session_id": "s1", "segments": [{"filename": "segment-000001.jsonl", "sha256": hashlib.sha256(payload).hexdigest(), "first_sequence": 1, "last_sequence": 2}]}).encode()
         class Source:
             def read_bytes(self, name):

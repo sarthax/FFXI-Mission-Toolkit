@@ -124,7 +124,7 @@ Every root-level Python file present at the start of Phase A has exactly one own
 
 | Root file | Final ownership / intended destination | Notes |
 | --- | --- | --- |
-| historical `item_dat_tools.py` | Editors items/client → `src/workbench/editors/items/dat_tools.py` | Root alias retired; write/backup behavior remains package-owned. |
+| historical `item_dat_tools.py` | Client → `src/workbench/client/dat/item_dat_tools.py` (loader) and `item_dat_tools_impl.py` | Root alias retired; `editors/items/dat_tools.py` is a `sys.modules` alias to the client loader; write/backup behavior remains package-owned. |
 | historical `item_edit.py` | Editors items → `src/workbench/editors/items/editor.py` | Root alias retired; Item Editor backend remains package-owned. |
 | historical `zone_edit.py` | Editors zone → `src/workbench/editors/zone/editor.py` | Root alias retired; write/journal/backup behavior remains package-owned. |
 | `fix_zone_door_props.py` | Editors zone/maintenance → `src/workbench/editors/zone/fix_door_props.py` | Intentional data modification. |

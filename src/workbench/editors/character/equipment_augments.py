@@ -88,7 +88,7 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
     path = root / "sql" / "augments.sql" if root else None
     mods = _mod_names(root)
     try:  # item editor's enum comments; only trusted when the name matches this server's modifier.h
-        from workbench.editors.items._dat_tools_impl import _explicit_mod_unit
+        from workbench.client.dat.item_dat_tools_impl import _explicit_mod_unit
     except Exception:
         _explicit_mod_unit = lambda _c: None
     entries: dict[int, dict[str, Any]] = {}
@@ -121,7 +121,7 @@ def native_bonuses(connection, item_ids, root: Path | str | None) -> dict[int, l
         return out
     mods = _mod_names(Path(root) if root else None)
     try:
-        from workbench.editors.items._dat_tools_impl import _explicit_mod_unit
+        from workbench.client.dat.item_dat_tools_impl import _explicit_mod_unit
     except Exception:
         _explicit_mod_unit = lambda _c: None
     for i in range(0, len(ids), 500):

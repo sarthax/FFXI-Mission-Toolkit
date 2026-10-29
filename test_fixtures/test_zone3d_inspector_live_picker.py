@@ -12,7 +12,7 @@ def test_inspector_live_picker_contract():
     assert 'id="zone3d-inspector-live-open"' in text
     assert "refreshInspectorLivePicker();" in text
     assert "liveEntityAgeSeconds(e) <= 3" in text
-    assert "inspectorLiveSelect.dataset.signature !== signature" in text
+    assert "syncSelectOptions(inspectorLiveSelect" in text
     assert "inspectEntity(e);" in text
     assert "liveSelectedEntityId = liveEntityIdentity(e);" in text
     assert "if (entity.live_observation)" in text

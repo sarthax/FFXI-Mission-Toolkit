@@ -16,41 +16,17 @@ from workbench.runtime.legacy_settings import (
     get_zoneplot_server,
     set_zoneplot_server,
 )
+from workbench.runtime import server_env
 from workbench.runtime.paths import DATA_ROOT
 
 # Conf filenames to try, in order, under whichever server root is active.
-CONF_NAMES = ["conf/map.conf", "conf/map_darkstar.conf"]
+CONF_NAMES = server_env.CONF_NAMES
 
 
-def get_server() -> str:
-    """Which server Zone Plot is currently pointed at: ``topaz`` or ``dsp``."""
-    return get_zoneplot_server()
-
-
-def set_server(server: str):
-    if server not in ("topaz", "dsp"):
-        raise ValueError('server must be "topaz" or "dsp"')
-    if server == "dsp" and get_dsp_root() is None:
-        raise ValueError("DSP server path isn't configured yet -- set it on the Settings page first")
-    set_zoneplot_server(server)
-
-
-def _server_root(server=None) -> Path:
-    server = server or get_server()
-    if server == "dsp":
-        root = get_dsp_root()
-        if root is None:
-            raise ValueError("DSP server path isn't configured yet -- set it on the Settings page first")
-        return root
-    return get_topaz_root()
-
-
-def _conf_path(root: Path) -> Path:
-    for name in CONF_NAMES:
-        p = root / name
-        if p.exists():
-            return p
-    raise FileNotFoundError(f"no mysql conf found under {root} (tried {', '.join(CONF_NAMES)})")
+get_server = server_env.legacy_get_server
+set_server = server_env.legacy_set_server
+_server_root = server_env.legacy_server_root
+_conf_path = server_env.conf_path
 
 
 def _nav_dirs(server=None):
@@ -66,24 +42,10 @@ def _nav_dirs(server=None):
 
 
 def _db(server=None):
-    try:
-        import mysql.connector
-    except ModuleNotFoundError:  # toolkit venv has no mysql-connector: borrow it from the user site-packages
-        import glob, os, sys
-        for d in glob.glob(os.path.expandvars(r"%APPDATA%\Python\Python3*\site-packages")):
-            if os.path.isdir(os.path.join(d, "mysql")) and d not in sys.path:
-                sys.path.append(d)
-        import mysql.connector
-    root = _server_root(server)
-    c = _conf_path(root).read_text()
-    g = lambda k: re.search(k + r":\s*(\S+)", c).group(1)
-    return mysql.connector.connect(host=g("mysql_host"), port=int(g("mysql_port")), user=g("mysql_login"),
-                                   password=g("mysql_password"), database=g("mysql_database"))
+    return server_env.connect(server, resolver=_server_root)
 
 
-def _columns(cu, table):
-    cu.execute(f"describe {table}")
-    return {r[0] for r in cu.fetchall()}
+_columns = server_env.columns
 
 
 def zone_list(server=None):

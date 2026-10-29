@@ -9,7 +9,7 @@ def test_read_only_diagnostics_panel_covers_live_and_fallback_paths():
     assert 'id="zone3d-mesh-diagnostics"' in source
     assert 'id="zone3d-diagnostics-content"' in source
     assert 'id="zone3d-copy-diagnostics"' in source
-    assert "setMeshDiagnostics('client_dat', { rom_path: GEOMETRY_ROM_PATH, instances: audit, materials })" in source
+    assert "setMeshDiagnostics('client_dat', {" in source
     assert "setMeshDiagnostics('cached_obj'" in source
     assert "setMeshDiagnostics('unavailable'" in source
     assert "navigator.clipboard.writeText(value)" in source

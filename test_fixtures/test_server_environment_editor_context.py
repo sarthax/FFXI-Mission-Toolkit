@@ -23,8 +23,8 @@ def test_model_catalog_cache_isolated_by_named_environment(monkeypatch):
     }
     calls = []
 
-    monkeypatch.setattr(catalog.zone_plot, "get_environment_key", lambda: state["key"])
-    monkeypatch.setattr(catalog.zone_plot, "get_environment", lambda: state["environment"])
+    monkeypatch.setattr(catalog.server_env, "get_environment_key", lambda: state["key"])
+    monkeypatch.setattr(catalog.server_env, "get_environment", lambda: state["environment"])
     monkeypatch.setattr(catalog, "get_ffxi_install", lambda: None)
     monkeypatch.setattr(catalog, "_collect_server_models", lambda server=None: calls.append(state["key"]) or {})
 

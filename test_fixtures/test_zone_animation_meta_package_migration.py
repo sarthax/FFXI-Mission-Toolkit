@@ -12,7 +12,7 @@ def test_zone_animation_meta_uses_packaged_lsb_index():
     assert zone_animation_meta.LSB_ROOT == build_lsb_index.LSB_ROOT
     source = Path("src/workbench/client/models/zone_animation_meta.py").read_text(encoding="utf-8")
     assert "\nimport build_lsb_index\n" not in source
-    assert "from workbench.devtools.indexing import build_lsb_index" in source
+    assert "from workbench.devtools" not in source
 
 
 def test_root_zone_animation_meta_launcher_is_retired():

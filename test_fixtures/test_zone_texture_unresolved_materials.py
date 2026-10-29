@@ -15,5 +15,5 @@ def test_zone_parser_never_replaces_unresolved_material_with_majority_texture():
 
 def test_viewer_reports_unresolved_texture_names_for_real_dat_diagnosis():
     viewer = (ROOT / "gui/templates/zone_view3d.html").read_text(encoding="utf-8")
-    assert "unresolved_texture_names: zoneData.textureDiagnostics?.unresolvedNames || []" in viewer
+    assert "unresolved_texture_names: unresolved" in viewer
     assert "setMeshDiagnostics('client_dat'" in viewer

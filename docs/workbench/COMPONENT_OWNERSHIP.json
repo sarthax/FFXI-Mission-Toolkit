@@ -77,7 +77,8 @@
     "src/workbench/core/services/timeline_alignment.py": "captures",
     "src/workbench/core/services/validation_run.py": "validation_packages",
     "src/workbench/core/services/wiki_evidence_graph.py": "devtools",
-    "src/workbench/domains/salvage_reconstruction.py": "captures"
+    "src/workbench/domains/salvage_reconstruction.py": "captures",
+    "src/workbench/personality_catalog_consumer.py": "devtools"
   },
   "needs_split_review": [
     "src/workbench/core/services/capability_producers.py",
@@ -137,6 +138,21 @@
       "note": "salvage_reconstruction.py override belongs to captures.",
       "owner": "devtools",
       "prefix": "src/workbench/domains/"
+    },
+    {
+      "note": "Integrated app composition root (gui_server.py was bootstrap_tests).",
+      "owner": "bootstrap_tests",
+      "prefix": "src/workbench/app/"
+    },
+    {
+      "note": "Shared packet decode/opcode index; packet_opcode_index.py was captures.",
+      "owner": "captures",
+      "prefix": "src/workbench/packets/"
+    },
+    {
+      "note": "Server admin tooling (feature testing, calculators, scenario authoring, GM commands).",
+      "owner": "devtools",
+      "prefix": "src/workbench/server_admin/"
     }
   ],
   "root_python_files": {

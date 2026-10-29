@@ -14,5 +14,5 @@ def test_entity_pairing_contract():
     assert "pairLine.visible = false;" in text
     assert "updateEntityPair();" in text
     assert "no fresh Ashita observation" in text
-    assert "no matching server marker loaded" in text
+    assert "no matching record in loaded zone data" in text
     assert "Ambiguous ID " in text

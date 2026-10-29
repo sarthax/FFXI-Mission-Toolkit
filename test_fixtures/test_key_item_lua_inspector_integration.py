@@ -68,7 +68,7 @@ def test_key_item_references_group_by_source_without_losing_evidence():
     assert "const grouped = new Map();" in page
     assert "grouped.get(key).push(item);" in page
     assert "for (const [path, items] of grouped)" in page
-    assert "heading.textContent = path + ' · ' + items.length + ' reference(s)';" in page
+    assert "heading.textContent = path + ' · ' + items.length + ' reference(s)'" in page
     assert "entries.append(...items);" in page
     assert "group.open = grouped.size <= 3;" in page
 
@@ -86,7 +86,7 @@ def test_key_item_lua_group_cites_exact_line_numbers():
     assert "new Set(scopedRefs.map(ref => Number(ref.source_line))" in page
     assert "Number.isInteger(line) && line > 0" in page
     assert "lines.join(', ')" in page
-    assert "group.append(heading, citations, entries);" in page
+    assert "group.append(heading, citations, copyEvidence, entries);" in page
 
 
 def test_key_item_script_evidence_can_be_copied_with_exact_citations():

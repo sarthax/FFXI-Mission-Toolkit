@@ -45,4 +45,4 @@ def test_plain_projection_collapses_helper_plumbing_but_keeps_semantic_helper_ev
 def test_helper_projection_remains_explicitly_evidence_only():
     result = build_plain_behavior_projection(_helper_graph())
     assert result["safety"]["evidence_preserved"] is True
-    assert "does not infer runtime outcomes" in result["safety"]["semantics"]
+    assert "does not imply runtime order" in result["safety"]["semantics"]

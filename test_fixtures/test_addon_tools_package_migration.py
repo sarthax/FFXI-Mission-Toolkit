@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -24,6 +25,9 @@ with tempfile.TemporaryDirectory() as td:
         "assert m.ADDONS_DIR == ADDONS_ROOT; "
         "assert m.human_size(1024) == '1KB'"
     )
-    subprocess.run([sys.executable, "-c", code], cwd=td, check=True)
+    # The child runs outside the repo, so hand it the same import root this process resolved workbench from.
+    src_root = str(Path(canonical.__file__).resolve().parents[2])
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [src_root, os.environ.get("PYTHONPATH")]))}
+    subprocess.run([sys.executable, "-c", code], cwd=td, check=True, env=env)
 
 print("addon tools package migration: PASS")
