@@ -51,7 +51,7 @@
 <div class="ft-metadata"><span><strong>Stage:</strong> {{ result.stage }}</span><span><strong>Observed UTC:</strong> {{ result.observed_at }}</span></div>
 {% with outcome=outcomes.get(loop.index0) %}{% include "feature_testing_outcome.html" %}{% endwith %}
 {% set reevaluation = reevaluations.get(loop.index0) %}
-{% with scenario_view=scenario_views.get(loop.index0) %}{% include "feature_testing_steps.html" %}{% endwith %}
+{% with scenario_view=scenario_views.get(loop.index0), story_anchor_prefix="ft-record-" ~ loop.index0 ~ "-" %}{% include "feature_testing_steps.html" %}{% endwith %}
 {% if reevaluation %}
 <details class="ft-tech"{% if reevaluation.error or (reevaluation.evaluation and reevaluation.recorded_verdict != reevaluation.evaluation.verdict) %} open{% endif %}><summary><strong>Technical assertion report</strong> — specification reevaluation{% if reevaluation.error %} (blocked){% elif reevaluation.recorded_verdict != reevaluation.evaluation.verdict %} (verdict mismatch){% endif %}</summary>
 <section class="ft-result" aria-label="Specification reevaluation">
