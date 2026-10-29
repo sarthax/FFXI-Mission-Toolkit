@@ -60,7 +60,7 @@ import time
 import zipfile
 from pathlib import Path
 
-import entity_profile
+from workbench.devtools.entities import profile as entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
 from workbench.captures import ashita_packet_ingest, live_capture_jsonl
