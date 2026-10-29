@@ -34,6 +34,7 @@
 <dl>
 <dt>Recorded verdicts</dt><dd><div class="ft-run-verdicts" aria-label="Imported result counts by verdict">{% for item in overview.verdict_counts %}<span><strong>{{ item.verdict }}</strong>: {{ item.count }}</span>{% endfor %}</div></dd>
 <dt>Runner lifecycle</dt><dd>{% if overview.job %}<strong>{{ overview.job.status }}</strong> — {{ overview.job.meaning }}. A finished job is not proof of PASS.{% else %}No linked runner job. Imported evidence does not establish whether a task executed.{% endif %}</dd>
+<dt>Shortcut settings</dt><dd>{% if not overview.run_options or not overview.run_options.recorded %}Not recorded for this run; shortcut use cannot be determined.{% elif overview.run_options.shortcuts %}<strong>Enabled in launcher settings: {{ overview.run_options.shortcuts|join(', ') }}.</strong> This is not a normal-play run configuration. Enabling a switch is not evidence that the bot used it.{% else %}No shortcut switches enabled in recorded launcher settings. This is a configuration record, not independent proof of normal gameplay.{% endif %}</dd>
 <dt>Independent gameplay verification</dt><dd><strong>NOT_ESTABLISHED</strong> by these stored reports. A reported PASS is not an independently authenticated outcome.</dd>
 </dl>
 {% if overview.mixed_recorded_verdicts %}<p><strong>Mixed recorded verdicts:</strong> inspect each record below; no single overall verdict is inferred.</p>{% endif %}
