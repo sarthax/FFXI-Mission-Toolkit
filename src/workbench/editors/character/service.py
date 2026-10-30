@@ -14,7 +14,7 @@ from .item_transactions import apply_item_injection, build_item_injection_plan
 from .packed_transactions import apply_packed_edit, build_packed_edit_plan
 from .scalar_transactions import apply_scalar_edit, build_scalar_edit_plan, editable_columns
 from .schema import CharacterSchema, discover_character_schema
-from .session_state import detect_online_state
+from .session_state import detect_online_state, detect_online_states
 from .spell_transactions import apply_spell_edit, build_spell_edit_plan, learned_spell_ids, search_spell_catalog
 
 
@@ -65,9 +65,13 @@ class CharacterEditorService:
         cursor = self.connection.cursor()
         try:
             cursor.execute(sql, tuple(params))
-            return self._dict_rows(cursor)
+            rows = self._dict_rows(cursor)
         finally:
             cursor.close()
+        states = detect_online_states(self.connection, self.schema, [r[id_col] for r in rows])
+        for row in rows:
+            row["online"] = states.get(int(row[id_col]))
+        return rows
 
     def _identity(self, char_id: int) -> dict[str, Any] | None:
         table = self._chars_table()
