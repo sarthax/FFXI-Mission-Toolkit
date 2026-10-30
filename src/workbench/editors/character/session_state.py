@@ -43,3 +43,25 @@ def detect_online_state(connection, schema, char_id: int) -> SessionState:
         return SessionState(char_id, cursor.fetchone() is not None, "accounts_sessions", "session_row_lookup")
     finally:
         cursor.close()
+
+
+def detect_online_states(connection, schema, char_ids) -> dict[int, bool | None]:
+    """Batch form of detect_online_state for list views: one query, same rules, None when undetectable."""
+    ids = sorted({int(c) for c in char_ids if int(c) > 0})
+    if not ids:
+        return {}
+    table = schema.table("accounts_sessions") if hasattr(schema, "table") else None
+    columns = set(table.column_names) if table is not None else set()
+    key = "charid" if "charid" in columns else ("char_id" if "char_id" in columns else None)
+    if key is None:
+        return {i: None for i in ids}
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            f"SELECT DISTINCT `{key}` FROM `accounts_sessions` WHERE `{key}` IN ({', '.join(['%s'] * len(ids))})",
+            tuple(ids),
+        )
+        online = {int(row[0]) for row in cursor.fetchall()}
+    finally:
+        cursor.close()
+    return {i: i in online for i in ids}
