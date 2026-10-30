@@ -58,6 +58,26 @@
   .section-link.mutation { color:var(--amber); }
   .section-link.mutation::before { content:"Edit"; font-size:8px; font-weight:700; text-transform:uppercase; }
   .section-link.legacy::after { content:"legacy"; font-size:8px; color:var(--muted); text-transform:uppercase; }
+  .ws-item { display:inline-flex; align-items:center; flex:none; }
+  .ws-caret {
+    border:0; background:none; color:var(--muted); cursor:pointer; font-size:9px; padding:4px 3px; margin-left:-3px;
+    border-radius:4px;
+  }
+  .ws-caret:hover,.ws-caret[aria-expanded=true] { color:var(--accent); background:var(--accent-soft); }
+  .ws-panel {
+    position:fixed; z-index:120; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; padding:7px;
+    border:1px solid var(--border); border-radius:7px; background:var(--surface); box-shadow:0 8px 24px rgba(0,0,0,.28);
+  }
+  .ws-panel[hidden] { display:none; }
+  .ws-filter { width:100%; margin-bottom:4px; padding:4px 7px; font:inherit; font-size:12px; color:var(--ink); background:var(--bg); border:1px solid var(--border); border-radius:5px; }
+  .ws-group { padding:6px 7px 3px; color:var(--muted); text-transform:uppercase; font-size:9px; font-weight:700; letter-spacing:.05em; }
+  .ws-row { display:flex; align-items:center; }
+  .ws-row:hover { background:var(--accent-soft); border-radius:5px; }
+  .ws-link { flex:1; min-width:0; padding:4px 7px; font-size:12px; font-weight:600; color:var(--ink); text-decoration:none; }
+  .ws-row:hover .ws-link { color:var(--accent); }
+  .ws-star { border:0; background:none; cursor:pointer; color:var(--muted); font-size:14px; line-height:1; padding:2px 6px; }
+  .ws-star.on,.ws-star:hover { color:var(--amber); }
+  .ws-empty { padding:8px; color:var(--muted); font-size:12px; }
   .shell-spacer { flex:1; min-width:8px; }
   .shell-menu { position:relative; flex:none; }
   .shell-menu > summary { list-style:none; cursor:pointer; }
@@ -252,8 +272,9 @@
         <div class="shell-group-title">Workspaces</div>
         {% for workspace in shell.workspaces %}
           {% if workspace.href %}
-          <a class="section-link{% if workspace.name == shell.active_home %} active{% endif %}{% if workspace.planned %} planned{% endif %}"
+          <div class="ws-row"><a class="section-link{% if workspace.name == shell.active_home %} active{% endif %}{% if workspace.planned %} planned{% endif %}"
              href="{{ workspace.href }}">{{ workspace.name }}</a>
+          {% if workspace.sections %}<button type="button" class="ws-caret" data-ws="{{ workspace.name }}" aria-expanded="false" aria-haspopup="menu" title="All {{ workspace.name }} links">▾</button>{% endif %}</div>
           {% else %}
           <span class="section-link planned">{{ workspace.name }}</span>
           {% endif %}
@@ -264,8 +285,9 @@
     <nav class="shell-workspaces" aria-label="Primary workspaces">
       {% for workspace in shell.workspaces %}
         {% if workspace.href %}
-        <a class="workspace-link{% if workspace.name == shell.active_home %} active{% endif %}{% if workspace.planned %} planned{% endif %}"
+        <span class="ws-item"><a class="workspace-link{% if workspace.name == shell.active_home %} active{% endif %}{% if workspace.planned %} planned{% endif %}"
            href="{{ workspace.href }}"{% if workspace.name == shell.active_home %} aria-current="page"{% endif %}>{{ workspace.name }}</a>
+        {% if workspace.sections %}<button type="button" class="ws-caret" data-ws="{{ workspace.name }}" aria-expanded="false" aria-haspopup="menu" title="All {{ workspace.name }} links">▾</button>{% endif %}</span>
         {% else %}
         <span class="workspace-link planned" title="Workspace shell reserved; consolidated page not implemented yet">{{ workspace.name }}</span>
         {% endif %}
@@ -349,6 +371,9 @@
   });
 })();
 </script>
+<script type="application/json" id="shell-nav-data">{{ (shell.workspaces if shell.workspaces is defined else [])|tojson }}</script>
+<script src="/static/shell_favorites.js"></script>
+<script src="/static/shell_nav.js"></script>
 <script src="/static/server_environment_selector.js" defer></script>
 <script src="/static/item_summary_view.js" defer></script>
 <script src="/static/itemedit_weapon_effects.js" defer></script>
