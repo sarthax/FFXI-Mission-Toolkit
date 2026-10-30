@@ -11905,7 +11905,8 @@ def domains_index_page(request: Request):
         rows.append({"key": key, "label": d["label"], "archetype": d["archetype"],
                      "wiki_pages": sum(dsvc.wiki_counts(d["wiki"]["categories"]).values()),
                      "status": dsvc.domain_status(d, res), "total": len(res), "editors": sum(1 for e in res if e["edit"])})
-    return templates.TemplateResponse(request, "domains_index.html", {"request": request, "rows": rows, "roots": list(roots)})
+    from workbench.domains.groups import group_rows
+    return templates.TemplateResponse(request, "domains_index.html", {"request": request, "rows": rows, "roots": list(roots), "groups": group_rows(rows)})
 
 
 @app.get("/domains/voidwatch/tracker.json")

@@ -4,19 +4,100 @@
 {% block page_class %}domains-index-page{% endblock %}
 {% block page_heading %}Domains{% endblock %}
 {% block page_status %}<span class="wb-readonly-badge">Inventory only</span>{% endblock %}
-{% block page_help %}Domain-level implementation inventory. “Present” means expected files/tables exist; it does not prove completeness. Wiki counts are reference-only.{% endblock %}
+{% block page_help %}Domain-level implementation inventory. “Present” means expected files/tables exist; it does not prove completeness. Wiki counts are reference-only. Favorites are stored in this browser only.{% endblock %}
 {% block page_body %}
-<div class="table-wrap"><table>
-<tr><th>Domain</th><th>Archetype</th><th>Wiki pages</th>{% for r in roots %}<th>{{ r|upper }} entities present</th>{% endfor %}<th>Editors</th></tr>
-<tr><td><a href="/domains/assault">Assault</a></td><td>system.assault</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: Assault workspace</td></tr>
-<tr><td><a href="/tools/ws-calc">Weapon Skill Calculator</a></td><td>tool.ws_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if damage calculator</td></tr>
-<tr><td><a href="/tools/magic-calc">Magic Nuke Calculator (elemental + ninjutsu)</a></td><td>tool.magic_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if damage calculator</td></tr>
-<tr><td><a href="/tools/heal-calc">Healing and Defense Overview (WHM/PLD)</a></td><td>tool.heal_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if healing, damage reduction and resists</td></tr>
-<tr><td><a href="/tools/pet-calc">Pet Gear Calculator (SMN/BST/PUP/DRG)</a></td><td>tool.pet_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if pet gear and augment effects</td></tr>
-<tr><td><a href="/tools/melee-calc">Melee Calculator</a></td><td>tool.melee_calc</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: what-if melee damage, haste, TP and procs</td></tr>
-<tr><td><a href="/nyzul">Nyzul Isle</a></td><td>system.nyzul</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: live layout editor</td></tr>
-{% for d in rows %}<tr><td><a href="/domains/{{ d.key }}">{{ d.label }}</a></td><td>{{ d.archetype }}</td><td>{{ d.wiki_pages }}</td>
-{% for r in roots %}<td>{% set s = d.status[r] %}{% if s.configured %}{{ s.present }}/{{ s.total }}{% else %}<span class="muted">not configured</span>{% endif %}</td>{% endfor %}
-<td>{{ d.editors }}/{{ d.total }} entity kinds have an editor</td></tr>{% endfor %}
-</table></div>
+<style>
+  .dm-tools { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .dm-tools input[type=search] { min-width:240px; padding:5px 8px; font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--border); border-radius:5px; }
+  .dm-jump { display:flex; gap:4px; flex-wrap:wrap; }
+  .dm-jump a { padding:2px 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; text-decoration:none; color:var(--ink); }
+  .dm-jump a:hover { color:var(--accent); border-color:var(--accent); }
+  .dm-group { border:1px solid var(--border); border-radius:7px; margin-bottom:10px; background:var(--surface); }
+  .dm-group > summary { cursor:pointer; padding:8px 12px; font-weight:700; list-style:none; display:flex; gap:10px; align-items:baseline; }
+  .dm-group > summary::-webkit-details-marker { display:none; }
+  .dm-group > summary::before { content:"▸"; color:var(--muted); }
+  .dm-group[open] > summary::before { content:"▾"; }
+  .dm-count { color:var(--muted); font-weight:500; font-size:12px; }
+  .dm-blurb { color:var(--muted); font-weight:400; font-size:12px; }
+  .dm-group .table-wrap { padding:0 12px 10px; }
+  .dm-fav-list { display:flex; gap:8px; flex-wrap:wrap; padding:0 12px 10px; }
+  .dm-fav-list a { padding:3px 10px; border:1px solid var(--border); border-radius:6px; text-decoration:none; font-weight:600; font-size:13px; }
+  .dm-fav-list a:hover { color:var(--accent); border-color:var(--accent); }
+  .dm-star { border:0; background:none; cursor:pointer; color:var(--muted); font-size:15px; line-height:1; padding:0 6px 0 0; }
+  .dm-star.on,.dm-star:hover { color:var(--amber); }
+  .dm-empty { padding:0 12px 10px; color:var(--muted); font-size:12px; }
+</style>
+
+<div class="dm-tools">
+  <input id="dm-filter" type="search" placeholder="Filter domains…" aria-label="Filter domains">
+  <nav class="dm-jump" aria-label="Domain groups">
+    <a href="#dm-favorites">★ Favorites</a>
+    {% for g in groups %}<a href="#dm-{{ g.id }}">{{ g.label }}</a>{% endfor %}
+  </nav>
+</div>
+
+<details class="dm-group" id="dm-favorites" open>
+  <summary>★ Favorites <span class="dm-blurb">Pinned from here or from the toolbar menus.</span></summary>
+  <div id="dm-fav-body"></div>
+</details>
+
+{% for g in groups %}
+<details class="dm-group" id="dm-{{ g.id }}" open data-group>
+  <summary>{{ g.label }} <span class="dm-count">{{ g.entries|length }}</span> <span class="dm-blurb">{{ g.blurb }}</span></summary>
+  <div class="table-wrap"><table>
+    <tr><th>Domain</th><th>Archetype</th><th>Wiki pages</th>{% for r in roots %}<th>{{ r|upper }} entities present</th>{% endfor %}<th>Editors</th></tr>
+    {% for d in g.entries %}
+    <tr data-row data-text="{{ (d.label ~ ' ' ~ d.archetype)|lower }}">
+      <td><button type="button" class="dm-star" data-href="{{ d.href }}" data-label="{{ d.label }}" aria-pressed="false" title="Add to favorites">☆</button><a href="{{ d.href }}">{{ d.label }}</a></td>
+      <td>{{ d.archetype }}</td>
+      {% if d.static %}
+      <td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>{{ d.note }}</td>
+      {% else %}
+      <td>{{ d.wiki_pages }}</td>
+      {% for r in roots %}<td>{% set s = d.status[r] %}{% if s.configured %}{{ s.present }}/{{ s.total }}{% else %}<span class="muted">not configured</span>{% endif %}</td>{% endfor %}
+      <td>{{ d.editors }}/{{ d.total }} entity kinds have an editor</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </table></div>
+</details>
+{% endfor %}
+
+<script src="/static/shell_favorites.js"></script>
+<script>
+(function () {
+  var fav = window.MTFav;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+  function paint() {
+    var list = fav ? fav.list() : [];
+    document.querySelectorAll(".dm-star").forEach(function (b) {
+      var on = fav && fav.has(b.dataset.href);
+      b.classList.toggle("on", !!on); b.textContent = on ? "★" : "☆";
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.title = on ? "Remove from favorites" : "Add to favorites";
+    });
+    document.getElementById("dm-fav-body").innerHTML = list.length
+      ? '<div class="dm-fav-list">' + list.map(function (x) { return '<a href="' + esc(x.href) + '">' + esc(x.label) + "</a>"; }).join("") + "</div>"
+      : '<div class="dm-empty">No favorites yet. Click ☆ next to a domain to pin it here.</div>';
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest(".dm-star");
+    if (b && fav) { fav.toggle(b.dataset.href, b.dataset.label); }
+  });
+  document.addEventListener("mt-favorites-changed", paint);
+  document.getElementById("dm-filter").addEventListener("input", function (ev) {
+    var q = ev.target.value.trim().toLowerCase();
+    document.querySelectorAll("[data-group]").forEach(function (g) {
+      var any = false;
+      g.querySelectorAll("[data-row]").forEach(function (r) {
+        var hit = !q || r.dataset.text.indexOf(q) >= 0;
+        r.hidden = !hit; any = any || hit;
+      });
+      g.hidden = !any;
+      if (q && any) g.open = true;
+    });
+  });
+  paint();
+})();
+</script>
 {% endblock %}
