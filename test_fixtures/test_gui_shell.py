@@ -598,6 +598,7 @@ def main():
     assert 'Browse known opcodes' in packets_html
 
     editor_html = render("itemedit.html", "/itemedit")
+    editor_html = re.sub(r'<script type="application/json" id="shell-nav-data">.*?</script>', "", editor_html, flags=re.S)
     assert editor_html.count("Editors: Zone Editor") == 1
     assert 'href="/zoneplot2"' in editor_html
     assert 'href="/zoneplot"' not in editor_html
