@@ -371,7 +371,7 @@
   });
 })();
 </script>
-<script type="application/json" id="shell-nav-data">{{ shell.workspaces|tojson }}</script>
+<script type="application/json" id="shell-nav-data">{{ (shell.workspaces if shell.workspaces is defined else [])|tojson }}</script>
 <script src="/static/shell_favorites.js"></script>
 <script src="/static/shell_nav.js"></script>
 <script src="/static/server_environment_selector.js" defer></script>
