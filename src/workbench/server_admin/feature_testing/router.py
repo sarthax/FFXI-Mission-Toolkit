@@ -545,6 +545,21 @@ def setup_enable(request: Request, payload: EnableRequest):
     return setup.status()
 
 
+@router.post("/setup/quick", include_in_schema=False)
+def setup_quick(request: Request):
+    _setup_guard(request)
+    from . import test_execution_settings as setup
+    result = setup.quick_setup()
+    return {**setup.status(), "quick": result}
+
+
+@router.get("/setup/characters", include_in_schema=False)
+def setup_characters(request: Request):
+    _setup_guard(request)
+    from . import test_execution_settings as setup
+    return setup.candidate_characters()
+
+
 @router.post("/builder/launch", include_in_schema=False)
 def launch_test(request: Request, payload: LaunchRequest,
                 x_test_operator_token: str | None = Header(default=None)):
