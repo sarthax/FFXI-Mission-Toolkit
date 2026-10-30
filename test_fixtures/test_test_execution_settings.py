@@ -97,3 +97,41 @@ def test_ui_auth_requires_same_origin_headers(env):
 def test_default_data_dir_is_outside_repo(monkeypatch):
     monkeypatch.delenv("MISSION_TOOLKIT_TEST_DATA_DIR", raising=False)
     assert not s.data_dir().resolve().is_relative_to(s._REPO.resolve())
+
+
+def test_quick_setup_provisions_without_choosing_characters(env, monkeypatch):
+    root = _checkout(env)
+    (env / "hr" / "x1" / "bin" / "mcp").mkdir(parents=True)
+    (env / "hr" / "x1" / "bin" / "mcp" / "XiHeadless.dll").write_text("")
+    conf = env / "map.conf"
+    conf.write_text("mysql_host: 127.0.0.1\nmysql_port: 3307\nmysql_login: root\nmysql_password: SECRET_X\nmysql_database: synth_db\n")
+    monkeypatch.setenv("MISSION_TOOLKIT_TEST_SERVER_CONF", str(conf))
+    monkeypatch.setattr(s, "_git", lambda *a: "abc1234567" if "rev-parse" in a else "")
+    monkeypatch.setattr(s, "search_roots", lambda: [env / "hr"])
+    out = s.quick_setup()
+    st = s.load()
+    assert st["enabled"] and st["headless_root"] == root
+    assert st["db"]["name"] == "synth_db" and st["db"]["port"] == 3307 and st["db"]["user"] == s.RO_USER
+    assert len(st["db"]["password"]) >= 32 and st["charids"] == [] and st["account"] == ""
+    assert "SECRET_X" not in out["sql"] and "SECRET_X" not in str(st)
+    assert out["sql"].count("GRANT SELECT") == 4 and "INSERT" not in out["sql"] and "UPDATE" not in out["sql"]
+    assert "password" not in [k for k in s.status()["db"] if s.status()["db"][k] == st["db"]["password"]]
+    again = s.quick_setup()["sql"]
+    assert st["db"]["password"] in again          # idempotent: same password, so SQL can be shown again
+    assert s.load()["tokens"] == st["tokens"]
+
+
+def test_quick_setup_keeps_operator_choices(env):
+    s.update(db={"user": "mine", "password": "pw", "name": "keep_db"})
+    out = s.quick_setup()
+    assert s.load()["db"]["user"] == "mine" and out["sql"] == ""
+
+
+def test_candidate_characters_needs_login_and_never_leaks(env, monkeypatch):
+    assert s.candidate_characters()["ok"] is False
+    s.update(db={"user": "u", "password": "SECRET_PW", "name": "d"})
+    def boom(db):
+        raise RuntimeError("fail " + db["password"])
+    monkeypatch.setattr(s, "_db_connect", boom)
+    res = s.candidate_characters()
+    assert res["ok"] is False and "SECRET_PW" not in str(res)

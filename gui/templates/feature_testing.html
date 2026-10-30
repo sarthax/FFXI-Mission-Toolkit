@@ -395,6 +395,18 @@ document.getElementById('ft-evaluation-form').addEventListener('submit',async fu
 <p>Everything needed to run a live test, checked in one place. Fix the red items top to bottom; nothing is stored outside this computer.</p>
 <ul id="ft-setup-steps" aria-live="polite"><li>Checking…</li></ul>
 <div class="ft-filters">
+<button type="button" id="ft-setup-quick">Quick setup (recommended)</button>
+</div>
+<p><small>Quick setup turns on test execution, generates the tokens, picks the only ready XiHeadless checkout, fills in the database name and creates a read-only database login for you to approve below. You then tick your disposable test character. Nothing is chosen for you.</small></p>
+<div id="ft-setup-quick-out" hidden>
+<p>Run this once in your MariaDB console, then press <strong>Find test characters</strong>:</p>
+<pre id="ft-setup-quick-sql"></pre>
+</div>
+<div class="ft-filters">
+<button type="button" id="ft-setup-find">Find test characters</button>
+</div>
+<div id="ft-setup-cands" aria-live="polite"></div>
+<div class="ft-filters">
 <button type="button" id="ft-setup-enable">Turn on test execution</button>
 <button type="button" id="ft-setup-disable">Turn off</button>
 </div>
@@ -440,6 +452,18 @@ $('ft-setup-save').addEventListener('click',()=>run(call('save',{headless_root:$
  db_user:$('ft-setup-dbuser').value,db_password:$('ft-setup-dbpass').value,db_name:$('ft-setup-dbname').value,db_port:Number($('ft-setup-dbport').value)||3306})));
 $('ft-setup-enable').addEventListener('click',()=>run(call('enable',{enabled:true})));
 $('ft-setup-disable').addEventListener('click',()=>run(call('enable',{enabled:false})));
+$('ft-setup-quick').addEventListener('click',()=>call('quick',{}).then(st=>{
+ const q=st.quick||{};$('ft-setup-quick-out').hidden=!q.sql;$('ft-setup-quick-sql').textContent=q.sql||'';show(st);}).catch(e=>{note.textContent='Quick setup failed: '+e.message;}));
+$('ft-setup-find').addEventListener('click',()=>call('characters').then(res=>{
+ const box=$('ft-setup-cands');box.replaceChildren();
+ if(!res.ok){box.textContent=res.reason;return;}
+ if(!res.characters.length){box.textContent='No characters found.';return;}
+ for(const c of res.characters){const l=document.createElement('label');l.style.display='block';const cb=document.createElement('input');cb.type='checkbox';cb.value=c.charid;cb.dataset.account=c.account;l.append(cb,' '+c.name+' (id '+c.charid+', account '+c.account+')');box.appendChild(l);}
+ const btn=document.createElement('button');btn.type='button';btn.textContent='Use ticked characters';
+ btn.addEventListener('click',()=>{const t=[...box.querySelectorAll('input:checked')];
+  if(!t.length){note.textContent='Tick at least one disposable test character.';return;}
+  run(call('save',{charids:t.map(x=>x.value).join(','),account:t[0].dataset.account}));});
+ box.appendChild(btn);}).catch(e=>{note.textContent='Could not list characters: '+e.message;}));
 run(call('status'));
 })();
 </script>

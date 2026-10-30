@@ -402,6 +402,95 @@ def set_enabled(enabled: bool) -> dict:
     return settings
 
 
+RO_USER = "toolkit_ro"
+
+
+def server_conf_candidates() -> list[Path]:
+    override = os.environ.get("MISSION_TOOLKIT_TEST_SERVER_CONF", "")
+    return ([Path(override)] if override else []) + [_REPO.parent / "dsp-branches" / "conf" / "map_darkstar.conf"]
+
+
+def server_db_defaults() -> dict:
+    """Database name/port from the server's map conf. Only these two keys are read; never the login or password."""
+    for conf in server_conf_candidates():
+        try:
+            text = conf.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        found = dict(re.findall(r"^mysql_(port|database):\s*(\S+)", text, re.M))
+        if found.get("database") and re.fullmatch(r"\w{1,64}", found["database"]):
+            port = int(found["port"]) if found.get("port", "").isdigit() else 3306
+            return {"name": found["database"], "port": port if 1 <= port <= 65535 else 3306, "source": str(conf)}
+    return {}
+
+
+def readonly_sql(db_name: str, password: str) -> str:
+    """The one statement block the operator runs once. SELECT only, on the columns the verdict compare needs."""
+    db = db_name if re.fullmatch(r"\w{1,64}", db_name or "") else "dspdb"
+    who = f"'{RO_USER}'@'127.0.0.1'"
+    return "\n".join([
+        f"CREATE USER IF NOT EXISTS {who} IDENTIFIED BY '{password}';",
+        f"ALTER USER {who} IDENTIFIED BY '{password}';",
+        f"GRANT SELECT ON {db}.char_inventory TO {who};",
+        f"GRANT SELECT ON {db}.char_vars TO {who};",
+        f"GRANT SELECT (charid, accid, charname, keyitems) ON {db}.chars TO {who};",
+        f"GRANT SELECT (id, login) ON {db}.accounts TO {who};"])
+
+
+def quick_setup() -> dict:
+    """One click: turn on, pick the only usable checkout, prefill DB name/port, mint the read-only DB password.
+
+    Returns {"sql": ...} for the operator to run once; the password is not part of status() output.
+    Existing operator choices are never overwritten. Characters are never chosen here.
+    """
+    settings = set_enabled(True)
+    usable = [r for r in detect_headless_roots() if r["has_dll"] and r["clean"]]
+    if not settings["headless_root"] and len(usable) == 1:
+        settings["headless_root"] = usable[0]["path"]
+    defaults = server_db_defaults()
+    db = settings["db"]
+    if defaults and not db["name"]:
+        db["name"], db["port"] = defaults["name"], defaults["port"]
+    if not db["user"] and not db["password"]:
+        db["user"], db["password"] = RO_USER, _token()
+    _save(settings)
+    apply_to_environ(settings)
+    sql = readonly_sql(db["name"], db["password"]) if db["user"] == RO_USER and db["password"] else ""
+    return {"sql": sql, "db_name_from_server_conf": bool(defaults)}
+
+
+def _db_connect(db: dict):
+    try:
+        import pymysql
+        return pymysql.connect(host="127.0.0.1", port=int(db["port"]), user=db["user"], password=db["password"],
+                               database=db["name"], connect_timeout=3, read_timeout=5)
+    except ImportError:
+        import mysql.connector
+        return mysql.connector.connect(host="127.0.0.1", port=int(db["port"]), user=db["user"],
+                                       password=db["password"], database=db["name"], connection_timeout=3)
+
+
+def candidate_characters(limit: int = 50) -> dict:
+    """Characters visible to the read-only login, for the operator to tick. Nothing is selected automatically."""
+    db = load()["db"]
+    if not (db["user"] and db["password"] and db["name"]):
+        return {"ok": False, "reason": "Run the read-only database SQL first, then reload.", "characters": []}
+    try:
+        conn = _db_connect(db)
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT c.charid, c.charname, a.login FROM chars c JOIN accounts a ON a.id = c.accid "
+                        "ORDER BY c.charid DESC LIMIT %s", (int(limit),))
+            rows = cur.fetchall()
+        finally:
+            conn.close()
+    except Exception as exc:  # driver-specific errors; never echo credentials
+        return {"ok": False, "reason": "Database not reachable with the read-only login (" + type(exc).__name__ + ")",
+                "characters": []}
+    return {"ok": True, "reason": "", "characters": [
+        {"charid": int(r[0]), "name": str(r[1]), "account": str(r[2])} for r in rows]}
+
+
 def status() -> dict:
     """Plain-language checklist for the Setup tab; contains no secrets."""
     from .execution_preflight import preflight
